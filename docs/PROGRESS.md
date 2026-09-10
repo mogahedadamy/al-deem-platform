@@ -512,6 +512,20 @@ env.www / env.learn / env.erp / env.core-api (قوالب الأسرار) + READM
 7. طلب نسخة ورقية → pending → **approved → printed → delivered** عبر ERP
 8. طلب مكرر أثناء الجري: 409 ✓ / بعد التسليم: 201 ✓
 
+## ✅ الجولة 13 — UX عربية كاملة: 404/error pages + تدقيق a11y
+
+### تدقيق الوصول (manual acceptance blueprint)
+- [x] lang="ar" dir="rtl" في كل التطبيقات ✓ | h1 واحد لكل صفحة ✓
+- [x] أزرار بنص ظاهر (screen reader سليم) ✓ | الصور بلا alt: 0 ✓
+- [x] progressbars بـaria-valuenow (لوحة الطالب) ✓
+
+### صفحات 404 عربية (كانت الإنجليزية الافتراضية!)
+- [x] www/not-found: "٤٠٤ — الصفحة غير موجودة" + الرئيسية/تصفّح الدورات — مثبت عبر apex
+- [x] learn/not-found: لوحة التحكم/الدورات — مثبت عبر النطاق مع جلسة حقيقية
+- [x] erp/not-found: الرئيسية
+- [x] error.tsx (500) في www (إعادة المحاولة + تواصل) وlearn (إعادة المحاولة) — عربية بالكامل
+- [x] tsc 0 errors × 3 + builds نظيفة
+
 ## 🔜 ما تبقى (تحسينات ما بعد الإطلاق)
 1. تدوير الأسرار الفعلي عند الإطلاق (openssl rand) + KC_HOSTNAME=auth.alameedtraining.com
 2. DNS: A records للنطاقات أو Cloudflare proxy (SSL Full — نفس نمط v1)
