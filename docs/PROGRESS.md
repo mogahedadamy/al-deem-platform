@@ -266,12 +266,33 @@
 
 ---
 
+## ✅ Dry-Run القبول الكامل (رحلة سارة — طالبة جديدة من الصفر)
+
+**12 خطوة، كلها نجحت، بتدقيق كامل:**
+1. مستخدمة جديدة في Keycloak (سارة محمد) → أول دخول → **placeholder profile تلقائي** ✓
+2. كتالوج 3 دورات مع الأسعار ✓
+3. تسجيل في "مهارات التواصل المهني" (15,000 ج.س) ✓
+4. رفع إيصال التحويل (bank ref TRX-99881) ✓
+5. **قبل الاعتماد: مشاهدة الدروس مرفوضة 403** (entitlement حقيقي) ✓
+6. الموظف المالي يعتمد → التسجيل active ذريًا ✓
+7. مشاهدة الدرس → 100% → **completed تلقائيًا** ✓
+8. المدرّب أنشئ اختبار (سؤالان) ✓
+9. إجابة 100% → passed ✓
+10. **شهادة ALD-2026-8b833682 صدرت فورًا باسم سارة محمد** ✓
+11. التحقق العام بالرقم التسلسلي (بلا مصادقة) ✓
+12. طلب نسخة ورقية → pending في قائمة erp ✓
+
+**Audit trail لرحلتها الكاملة**: enrollment.created → payment.submitted → lesson.viewed → quiz.attempted → certificate.issued → paper_certificate.requested
+
+**الحالة النهائية**: 5 مستخدمين، 3 دورات منشورة، 3 تسجيلات (1 نشط + 2 مكتملة)، 2 شهادة صادرة، 49 audit log.
+
+---
+
 ## 🔜 ما تبقى للإطلاق (Beta/Production)
-1. **تجربة كاملة لطالب جديد**: دورة ثالثة → تسجيل → دفع → تعلّم → اختبار → شهادة (dry-run القبول)
-2. Caddy reverse proxy للـsubdomains (www/learn/erp.alameedtraining.com) + HTTPS
-3. تدوير الأسرار (AUTH_SECRET، DB، Keycloak) من .env.example
-4. packages/api-client من openapi.yaml (35 paths)
-5. Sentry/CI-CD + backups Postgres المجدولة
+1. Caddy reverse proxy للـsubdomains (www/learn/erp.alameedtraining.com) + HTTPS
+2. تدوير الأسرار (AUTH_SECRET، DB، Keycloak) من .env.example
+3. packages/api-client من openapi.yaml (35 paths)
+4. Sentry/CI-CD + backups Postgres المجدولة
 
 ---
 
