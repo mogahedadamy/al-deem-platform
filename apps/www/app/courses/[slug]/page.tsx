@@ -18,6 +18,13 @@ export async function generateMetadata({
     return {
       title: course.title,
       description: course.summary,
+      alternates: { canonical: `/courses/${slug}` },
+      openGraph: {
+        title: course.title,
+        description: course.summary,
+        type: "website",
+        locale: "ar_SD",
+      },
     };
   } catch {
     return { title: "تعذر تحميل الدورة" };

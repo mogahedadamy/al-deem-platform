@@ -460,6 +460,14 @@ env.www / env.learn / env.erp / env.core-api (قوالب الأسرار) + READM
 - Grade تُرجع نسبة مئوية (0-100) وليس نقاطًا — أولّد الاختبار بناء على السلوك الفعلي
 - 29 test function تغطي كل قواعد العمل الحرجة (invariants خادمية)
 
+## ✅ الجولة 10 — SEO + OpenGraph (www)
+
+- [x] robots.ts: يسمح بالعام (/, /courses, /about, /contact, /verify) + Disallow /api/ + ربط sitemap — مثبت عبر النطاق
+- [x] sitemap.ts: 5 صفحات ثابتة + **الدورات المنشورة من DB** (revalidate ساعة) — 8 URLs حية عبر apex
+- [x] metadataBase + OpenGraph (locale ar_SD) + Twitter card في root layout
+- [x] canonical + OG لكل صفحة دورة من DB
+- [x] tsc 0 errors + build نظيف (robots.txt وsitemap.xml يظهران في output)
+
 ## 🔜 ما تبقى (تحسينات ما بعد الإطلاق)
 1. تدوير الأسرار الفعلي عند الإطلاق (openssl rand) + KC_HOSTNAME=auth.alameedtraining.com
 2. DNS: A records للنطاقات أو Cloudflare proxy (SSL Full — نفس نمط v1)
