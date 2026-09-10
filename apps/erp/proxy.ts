@@ -12,7 +12,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const sessionCookie = request.cookies.get("authjs.session-token");
+  // HTTPS يستخدم __Secure- prefix (الإنتاج)، HTTP بدون prefix (dev)
+  const sessionCookie =
+    request.cookies.get("authjs.session-token") ??
+    request.cookies.get("__Secure-authjs.session-token");
   if (sessionCookie) {
     return NextResponse.next();
   }

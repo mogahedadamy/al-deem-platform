@@ -1,0 +1,5 @@
+# oapi-codegen — Go server types (مستقبليًا للـcore-api نفسه)
+package: apiclient
+generate:
+  - types
+output: src/go-types.gen.go

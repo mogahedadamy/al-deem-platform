@@ -1,0 +1,15 @@
+{
+  "name": "@al-deem/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "files": ["src"],
+  "scripts": {
+    "gen:ts": "openapi-typescript ../../services/core-api/openapi/openapi.yaml --output src/schema.d.ts",
+    "gen:go": "oapi-codegen --config cfg.yaml ../../services/core-api/openapi/openapi.yaml"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7"
+  }
+}

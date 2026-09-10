@@ -179,7 +179,9 @@ func (a *keycloakAuth) verifyToken(ctx context.Context, token string) (*tokenCla
 	return &claims, nil
 }
 
-// publicKey — يجلب/يخزن JWKS (cache ساعة).
+// publicKey — يجلب/يخزن JWKS (cache ساعة). عند دوران مفاتيح Keycloak
+// (إعادة تشغيل/تدوير)، kid الجديد غير موجود في الكاش → إعادة جلب فورية.
+// التوكِنات الموقّعة بمفاتيح قديمة مدفونة ستفشل بشكل صحيح (تنتهي صلاحيتها خلال دقائق).
 func (a *keycloakAuth) publicKey(ctx context.Context, kid string) (*rsa.PublicKey, error) {
 	a.mu.RLock()
 	cached := a.cachedJWKS
@@ -189,6 +191,8 @@ func (a *keycloakAuth) publicKey(ctx context.Context, kid string) (*rsa.PublicKe
 		if k := findKey(cached, kid); k != nil {
 			return rsaKey(k)
 		}
+		// kid جديد (دوران مفاتيح) — تجاوز الكاش
+		slog.Info("jwks cache miss on kid — refreshing (key rotation?)", "kid", kid)
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()

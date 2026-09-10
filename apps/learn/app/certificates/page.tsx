@@ -5,13 +5,7 @@ import { RequestPaperForm } from "./client";
 
 export const metadata = { title: "شهاداتي" };
 
-type Certificate = {
-  id: string;
-  serialNumber: string;
-  courseTitle: string;
-  finalScore: number;
-  issuedAt: string;
-};
+import type { Certificate } from "@al-deem/api-client";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4001/v1";
@@ -68,7 +62,7 @@ export default async function CertificatesPage() {
           </div>
         ) : (
           <ul className="grid gap-6 md:grid-cols-2">
-            {data.items.map((c) => (
+            {data.items.filter((c) => c.id).map((c) => (
               <li
                 key={c.id}
                 className="flex flex-col overflow-hidden rounded-xl border border-border bg-surface"
@@ -98,7 +92,7 @@ export default async function CertificatesPage() {
                   </h3>
                   <p className="mt-1 text-sm text-muted">
                     صدرت في{" "}
-                    {new Date(c.issuedAt).toLocaleDateString("ar-EG", {
+                    {new Date(c.issuedAt ?? "").toLocaleDateString("ar-EG", {
                       dateStyle: "long",
                     })}
                   </p>
@@ -118,7 +112,7 @@ export default async function CertificatesPage() {
                       صفحة التحقق ↗
                     </a>
                   </div>
-                  <RequestPaperForm certificateId={c.id} />
+                  <RequestPaperForm certificateId={c.id!} />
                 </div>
               </li>
             ))}

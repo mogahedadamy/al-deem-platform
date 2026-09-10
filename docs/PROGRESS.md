@@ -288,10 +288,40 @@
 
 ---
 
-## 🔜 ما تبقى للإطلاق (Beta/Production)
-1. Caddy reverse proxy للـsubdomains (www/learn/erp.alameedtraining.com) + HTTPS
-2. تدوير الأسرار (AUTH_SECRET، DB، Keycloak) من .env.example
-3. packages/api-client من openapi.yaml (35 paths)
+## ✅ الجولة 3 — التحضير للإنتاج (Caddy + SSO عبر النطاقات + api-client)
+
+### Caddy — النطاقات الكاملة تعمل
+- [x] `/etc/caddy/Caddyfile.al-deem` محدّث لـv2: apex (www) + learn + erp + api subdomains → 3011/3012/3013/4001
+- [x] **كلها 200 عبر https محليًا**: alameedtraining.com ✓ learn ✓ erp (307 login) ✓ api (/v1/health ok) ✓
+- [x] نسخة v2 في المستودع: `platform/Caddyfile.al-deem-v2` + نسخة v1 محفوظة
+
+### 🔴 اكتشافات وإصلاحات إنتاجية حرجة
+1. **AUTH_URL إلزامي خلف proxy**: Auth.js v5 يبني redirect_uri من request.url.origin (localhost:3012!) وليس x-forwarded-host — Caddy يمرر الرؤوس صحيحة لكن next start يبني origin الداخلي. مع `AUTH_URL=https://learn...` → redirect_uri صحيح.
+2. **__Secure- cookie prefix**: HTTPS يجعل Auth.js يستخدم `__Secure-authjs.session-token` — proxy.ts كان يفحص `authjs.session-token` فقط → **كل المستخدمين كانوا سيُحوَّلون للـlogin رغم الجلسات الصحيحة**! أُصلح في learn+erp (فحص الاسمين).
+3. **دوران مفاتيح Keycloak**: JWT kid جديد بعد إعادة التشغيل — JWKS cache يُجلب فورًا عند kid غير معروف (سلوك صحيح موجود) + سجل واضح.
+4. Keycloak: أُضيف `https://alameedtraining.com/*` لـredirectUris الخاص بـwww (كان www فقط).
+
+### SSO الإنتاجي — مثبت بالكامل عبر النطاقات
+- [x] سارة تسجل دخول عبر learn.alameedtraining.com → Keycloak → callback → **dashboard ببياناتها** ✓
+- [x] **شهادتها ALD-2026-8b833682 تظهر في /certificates** عبر النطاق ✓
+- [x] التحقق العام عبر alameedtraining.com/verify → "شهادة صحيحة ومعتمدة — سارة محمد" ✓
+- [x] admin عبر erp.alameedtraining.com → /users و/reports ببيانات حقيقية ✓
+
+### OpenAPI + packages/api-client
+- [x] أُصلحت أخطاء الـspec: مسار مكرر (نَتيجة إضافات سابقة) + schemas ناقصة (Profile/ProfileWithRoles/UpdateProfileInput/UserPage/RoleKey) + Unauthorized response
+- [x] **38 paths، 14 schemas، 5 responses — spec صالح 100%**
+- [x] **packages/api-client**: openapi-typescript (oapi-codegen يولّد Go فقط) — 1929 سطر أنواع مولّدة
+- [x] **مربوط بالتطبيقات الثلاثة** (workspace:*) وlearn certificates/page.tsx يستورد `Certificate` المشترك
+
+### ملفات الإنتاج (infra/prod/)
+env.www / env.learn / env.erp / env.core-api (قوالب الأسرار) + README بخطوات الإطلاق والنقاط الحرجة المكتشفة
+
+---
+
+## 🔜 ما تبقى (تحسينات ما بعد الإطلاق)
+1. تدوير الأسرار الفعلي عند الإطلاق (openssl rand) + KC_HOSTNAME=auth.alameedtraining.com
+2. DNS: A records للنطاقات أو Cloudflare proxy (SSL Full — نفس نمط v1)
+3. systemd units للخدمات (بدل nohup اليدوي)
 4. Sentry/CI-CD + backups Postgres المجدولة
 
 ---
