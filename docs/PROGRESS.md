@@ -495,6 +495,23 @@ env.www / env.learn / env.erp / env.core-api (قوالب الأسرار) + READM
 ### ملاحظة MFA تشغيلية
 - MFA يمنع password grant لأتمتة الاختبارات — الطريقة الصحيحة: browser flow بإعداد OTP مرة واحدة، أو service account للمراقبة
 
+## ✅ الجولة 12 — رحلة خالد E2E كاملة (قرار #4 بالكامل) + إصلاح تكرار الطلبات الورقية
+
+### إصلاح: طلبات ورقية مكررة كانت مقبولة!
+- [x] RequestPaper كان يقبل طلبات غير محدودة لنفس الشهادة (اكتُشفت بالاختبار — 3 pending لنفس الشهادة!)
+- [x] الإصلاح: طلب واحد نشط لكل شهادة (pending/approved/printed = جارٍ) — 409 "لديك طلب جارٍ لهذه الشهادة"
+- [x] بعد delivered → طلب جديد مسموح 201 (سلوك صحيح)
+
+### رحلة خالد إبراهيم — كل قرار #4 بالحرف (E2E حية)
+1. KC user → JIT profile → student role
+2. enroll → pending_payment → دفع → المالي يعتمد → active (الجولة 11)
+3. مشاهدة الدرس → **completed تلقائي عند 100%**
+4. الاختبار: أسئلة بلا أعلام correct للعميل → إجابات صحيحة → **score 100، passed، certIssued: true فورًا**
+5. الشهادة: **ALD-2026-729936c8** (مهارات التواصل المهني)
+6. التحقق العام عبر apex domain: "خالد إبراهيم — 100 — صحيحة ومعتمدة" ✓
+7. طلب نسخة ورقية → pending → **approved → printed → delivered** عبر ERP
+8. طلب مكرر أثناء الجري: 409 ✓ / بعد التسليم: 201 ✓
+
 ## 🔜 ما تبقى (تحسينات ما بعد الإطلاق)
 1. تدوير الأسرار الفعلي عند الإطلاق (openssl rand) + KC_HOSTNAME=auth.alameedtraining.com
 2. DNS: A records للنطاقات أو Cloudflare proxy (SSL Full — نفس نمط v1)

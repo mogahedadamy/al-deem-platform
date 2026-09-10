@@ -236,6 +236,16 @@ func (s *AssessmentService) RequestPaper(ctx context.Context, actor *iddomain.Ac
 	if address == "" || phone == "" {
 		return nil, platform.ErrValidation
 	}
+	// طلب واحد نشط لكل شهادة — لا تكرار (pending/approved/printed تعني طلبًا جاريًا)
+	existing, err := s.papers.ListByStudent(ctx, actor.ID)
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range existing {
+		if p.CertificateID == certificateID && p.Status != asmdom.PaperDelivered {
+			return nil, &platform.DomainError{Code: "CONFLICT", Msg: "لديك طلب نسخة ورقية جارٍ لهذه الشهادة"}
+		}
+	}
 	r := &asmdom.PaperRequest{
 		CertificateID: certificateID, StudentID: actor.ID,
 		Status: asmdom.PaperPending, DeliveryAddress: address, DeliveryPhone: phone,
