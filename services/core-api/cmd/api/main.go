@@ -198,7 +198,7 @@ func main() {
 		}
 	}
 
-	handler := middleware.RequestID(middleware.Logging(middleware.Recover(mux)))
+	handler := middleware.RequestID(middleware.Logging(middleware.CORS(middleware.Recover(mux))))
 	if limiter != nil {
 		// 120 طلب/دقيقة لكل IP على كل الـAPI
 		handler = limiter.Middleware(120, time.Minute)(handler)

@@ -1,0 +1,55 @@
+# alameedtraining.com — Al Deem Platform v2 (platform/ monorepo).
+# Three Next.js apps (www/learn/erp) + Go core-api, all local ports.
+#
+# TLS: domain proxied via Cloudflare (orange cloud) — ACME challenges can't
+# reach origin, so internal CA + CF "Full" SSL mode (same as before).
+# To switch to direct LE later: grey-cloud records, remove "tls internal".
+#
+# Security headers (Blueprint 16: HSTS/nosniff/DENY/referrer) على كل النطاقات.
+
+(security) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
+
+alameedtraining.com {
+	encode zstd gzip
+	tls internal
+	import security
+	reverse_proxy 127.0.0.1:3011
+}
+
+# Canonical: www → apex
+www.alameedtraining.com {
+	tls internal
+	redir https://alameedtraining.com{uri} permanent
+}
+
+# learn — منصة التعلّم للطلاب والمدربين
+learn.alameedtraining.com {
+	encode zstd gzip
+	tls internal
+	import security
+	reverse_proxy 127.0.0.1:3012
+}
+
+# erp — النظام الإداري (المالية، المحتوى، المستخدمون، التقارير)
+erp.alameedtraining.com {
+	encode zstd gzip
+	tls internal
+	import security
+	reverse_proxy 127.0.0.1:3013
+}
+
+# api — Go core-api
+api.alameedtraining.com {
+	encode zstd gzip
+	tls internal
+	import security
+	reverse_proxy 127.0.0.1:4001
+}

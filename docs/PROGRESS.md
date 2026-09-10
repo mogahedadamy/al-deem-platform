@@ -423,6 +423,23 @@ env.www / env.learn / env.erp / env.core-api (قوالب الأسرار) + READM
 - [x] **مثبت E2E**: webhook recording.completed → worker → الحصة archived + رابط MP4 محفوظ + الحدث processed (عالج 4 أحداث متراكمة)
 - [x] Worker يعمل الآن كخدمة خلفية
 
+## ✅ الجولة 8 — الأمان التشغيلي (Blueprint 16 + قرار #3)
+
+### Security headers عبر Caddy (كل النطاقات)
+- [x] `(security)` snippet في Caddyfile: HSTS (max-age=31536000) + X-Content-Type-Options nosniff + X-Frame-Options DENY + Referrer-Policy strict-origin + إخفاء Server banner
+- [x] مثبت عبر النطاقات الأربعة (كلها ترجع القرون)
+- [x] caddy validate + reload — backup سابق `.pre-headers.bak`
+
+### CORS محدد (core-api)
+- [x] middleware/cors.go: whitelist صريح (النطاقات الأربعة + localhost للتطوير) — النطاق المسموح يحصل على القرون، غير المسموح بلا قرون (المتصفح يمنع)
+- [x] preflight OPTIONS مع Max-Age 600
+- [x] مثبت: learn domain → ACAO header ✓، evil.example.com → بلا قرون ✓
+
+### MFA لموظفي ERP (قرار #3 — كان مطلوبًا وغير مفروض!)
+- [x] CONFIGURE_TOTP required action مفروض على admin@ وfinance@ في Keycloak
+- [x] **مثبت E2E**: دخول finance عبر erp domain بعد الباسورد → "Mobile Authenticator Setup" (Microsoft/Google/FreeOTP + QR) — لا يمكن الوصول للـcallback قبل إعداد OTP
+- [x] سياسة موظف erp: أول دخول يفرض MFA — قرار #3 منفذ حرفيًا
+
 ## 🔜 ما تبقى (تحسينات ما بعد الإطلاق)
 1. تدوير الأسرار الفعلي عند الإطلاق (openssl rand) + KC_HOSTNAME=auth.alameedtraining.com
 2. DNS: A records للنطاقات أو Cloudflare proxy (SSL Full — نفس نمط v1)
