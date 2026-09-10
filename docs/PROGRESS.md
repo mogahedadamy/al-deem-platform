@@ -348,6 +348,21 @@ env.www / env.learn / env.erp / env.core-api (قوالب الأسرار) + READM
 
 ### OpenAPI: 44 paths، 15 schemas — api-client أعيد توليده (2204 سطر)
 
+## ✅ الجولة 5 — UX لوحة الطالب + enrich التسجيلات
+
+### اكتشاف وإصلاح
+- [x] **قسم الطالب في لوحة التحكم كان placeholder "قريبًا — قيد التطوير"** بينما كل الوظائف مبنية! الطالب لم يكن يرى دوراته المسجّلة إطلاقًا
+- [x] أُعيد بناؤه بالكامل: بطاقات إحصائية (دوراتي/مكتملة/شهاداتي) + قائمة التسجيلات مع progress bar وزر متابعة التعلّم/الاختبار لكل دورة نشطة أو مكتملة، وزر "استكمال الدفع" للحالات المعلقة
+- [x] حالة فارغة (لم تسجّل بعد) مع دعوة لتصفّح الكتالوج
+
+### Backend enrich
+- [x] `GET /v1/me/enrollments` أصبح يعيد `courseTitle` + `courseSlug` (JOIN من courses في نفس DB) — الطالب يرى أسماء دوره بدل UUIDs
+- [x] Domain: CourseTitle/CourseSlug على Enrollment (بلا استيراد دوّار — JOIN بسيط)
+
+### التحقق (عبر النطاق الإنتاجي learn.alameedtraining.com)
+- [x] لوحة سارة: بطاقات دوراتي=1 مكتملة=1 شهاداتي=1 + "مهارات التواصل المهني" مكتملة 100% + أزرار متابعة التعلّم/الاختبار
+- [x] tsc 0 errors + next build نظيف + golangci-lint 0 issues
+
 ## 🔜 ما تبقى (تحسينات ما بعد الإطلاق)
 1. تدوير الأسرار الفعلي عند الإطلاق (openssl rand) + KC_HOSTNAME=auth.alameedtraining.com
 2. DNS: A records للنطاقات أو Cloudflare proxy (SSL Full — نفس نمط v1)

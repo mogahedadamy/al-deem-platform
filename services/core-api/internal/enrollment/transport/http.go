@@ -67,6 +67,7 @@ func enrollmentOut(e endom.Enrollment) map[string]any {
 		"id": e.ID, "courseId": e.CourseID, "status": e.Status,
 		"priceAmount": e.PriceAmount, "currency": e.Currency,
 		"progressPct": e.ProgressPct, "startedAt": e.StartedAt, "completedAt": e.CompletedAt,
+		"courseTitle": e.CourseTitle, "courseSlug": e.CourseSlug,
 		"createdAt": e.CreatedAt,
 	}
 }

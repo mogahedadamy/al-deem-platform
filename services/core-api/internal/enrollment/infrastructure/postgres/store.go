@@ -55,9 +55,11 @@ func (s *EnrollmentStore) FindByStudentCourse(ctx context.Context, studentID, co
 }
 
 func (s *EnrollmentStore) ListByStudent(ctx context.Context, studentID string) ([]endom.Enrollment, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id, student_id, course_id, status, price_amount, currency,
-		progress_pct, started_at, completed_at, created_at, updated_at
-		FROM enrollments WHERE student_id = $1 ORDER BY created_at DESC`, studentID)
+	rows, err := s.db.QueryContext(ctx, `SELECT e.id, e.student_id, e.course_id, e.status, e.price_amount, e.currency,
+		e.progress_pct, e.started_at, e.completed_at, e.created_at, e.updated_at,
+		c.title, c.slug
+		FROM enrollments e JOIN courses c ON c.id = e.course_id
+		WHERE e.student_id = $1 ORDER BY e.created_at DESC`, studentID)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +219,8 @@ func collectEnrollments(rows *sql.Rows) ([]endom.Enrollment, error) {
 		e := endom.Enrollment{}
 		var status string
 		if err := rows.Scan(&e.ID, &e.StudentID, &e.CourseID, &status, &e.PriceAmount, &e.Currency,
-			&e.ProgressPct, &e.StartedAt, &e.CompletedAt, &e.CreatedAt, &e.UpdatedAt); err != nil {
+			&e.ProgressPct, &e.StartedAt, &e.CompletedAt, &e.CreatedAt, &e.UpdatedAt,
+			&e.CourseTitle, &e.CourseSlug); err != nil {
 			return nil, err
 		}
 		e.Status = endom.EnrollmentStatus(status)

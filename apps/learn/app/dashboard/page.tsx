@@ -5,6 +5,17 @@ import Link from "next/link";
 
 export const metadata = { title: "لوحة التحكم" };
 
+type MyEnrollment = {
+  id: string;
+  courseId: string;
+  courseTitle: string;
+  courseSlug: string;
+  status: string;
+  progressPct: number;
+  priceAmount: number;
+  currency: string;
+};
+
 type ApiCourse = {
   id: string;
   slug: string;
@@ -44,6 +55,8 @@ export default async function DashboardPage() {
   // جلب /v1/me من core-api — الأدوار الحقيقية من DB (مصدر الحقيقة)
   let roles: string[] = [];
   let myCourses: ApiCourse[] = [];
+  let myEnrollments: MyEnrollment[] = [];
+  let myCertificateCount = 0;
   let apiError: string | null = null;
 
   if (accessToken) {
@@ -69,6 +82,23 @@ export default async function DashboardPage() {
           const data = (await res.json()) as { items: ApiCourse[] };
           myCourses = data.items;
         }
+      }
+      // دورات الطالب المسجّل فيها + شهاداته
+      const enRes = await fetch(`${apiBase}/me/enrollments`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        cache: "no-store",
+      });
+      if (enRes.ok) {
+        const data = (await enRes.json()) as { items: MyEnrollment[] };
+        myEnrollments = data.items;
+      }
+      const certRes = await fetch(`${apiBase}/me/certificates`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        cache: "no-store",
+      });
+      if (certRes.ok) {
+        const data = (await certRes.json()) as { items: unknown[] };
+        myCertificateCount = data.items.length;
       }
     } catch {
       apiError = "تعذر تحميل بياناتك — حاول لاحقًا";
@@ -161,12 +191,130 @@ export default async function DashboardPage() {
             )}
           </section>
         ) : (
-          <section aria-labelledby="student-courses" className="rounded-xl border border-dashed border-border bg-surface px-6 py-14 text-center">
-            <p className="font-semibold text-secondary">دوراتي (قريبًا)</p>
-            <p className="mt-1 text-sm text-muted">
-              التسجيل في الدورات يُفعَّل في المرحلة التالية — منصة التعلم قيد
-              التطوير.
-            </p>
+          <section aria-labelledby="student-courses" className="space-y-8">
+            {/* بطاقات سريعة */}
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="rounded-xl border border-border bg-surface p-5">
+                <p className="text-sm text-muted">دوراتي</p>
+                <p className="mt-1 text-3xl font-black text-secondary">
+                  {myEnrollments.length}
+                </p>
+              </div>
+              <div className="rounded-xl border border-border bg-surface p-5">
+                <p className="text-sm text-muted">مكتملة</p>
+                <p className="mt-1 text-3xl font-black text-secondary">
+                  {myEnrollments.filter((e) => e.status === "completed").length}
+                </p>
+              </div>
+              <Link
+                href="/certificates"
+                className="rounded-xl border border-primary/40 bg-primary/5 p-5 transition-colors hover:bg-primary/10"
+              >
+                <p className="text-sm text-muted">شهاداتي</p>
+                <p className="mt-1 text-3xl font-black text-primary-dark">
+                  {myCertificateCount}
+                </p>
+              </Link>
+            </div>
+
+            <div>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 id="student-courses" className="text-xl font-bold text-secondary">
+                  دوراتي ({myEnrollments.length})
+                </h2>
+                <Link
+                  href="/"
+                  className="text-sm font-semibold text-primary-dark hover:text-primary"
+                >
+                  تصفّح الكتالوج ←
+                </Link>
+              </div>
+              {myEnrollments.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border bg-surface px-6 py-14 text-center">
+                  <p className="font-semibold text-secondary">لم تسجّل في دورات بعد</p>
+                  <p className="mt-1 text-sm text-muted">
+                    تصفّح الكتالوج واختر دورتك الأولى.
+                  </p>
+                  <Link
+                    href="/"
+                    className="mt-4 inline-block rounded-full bg-secondary px-6 py-2.5 text-sm font-semibold text-secondary-foreground"
+                  >
+                    تصفّح الدورات
+                  </Link>
+                </div>
+              ) : (
+                <ul className="space-y-3">
+                  {myEnrollments.map((e) => {
+                    const active = e.status === "active" || e.status === "completed";
+                    return (
+                      <li
+                        key={e.id}
+                        className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-5 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-bold text-secondary">{e.courseTitle}</h3>
+                          <div className="mt-2 flex items-center gap-3">
+                            <div
+                              className="h-2 w-28 overflow-hidden rounded-full bg-border"
+                              role="progressbar"
+                              aria-valuenow={e.progressPct}
+                              aria-valuemin={0}
+                              aria-valuemax={100}
+                            >
+                              <div
+                                className="h-full rounded-full bg-primary transition-all"
+                                style={{ width: `${e.progressPct}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-semibold text-muted">
+                              {e.progressPct}%
+                            </span>
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                                e.status === "completed"
+                                  ? "bg-emerald-50 text-emerald-700"
+                                  : e.status === "active"
+                                    ? "bg-primary/10 text-primary-dark"
+                                    : "bg-amber-50 text-amber-700"
+                              }`}
+                            >
+                              {e.status === "completed"
+                                ? "مكتملة"
+                                : e.status === "active"
+                                  ? "نشطة"
+                                  : "بانتظار اعتماد الدفع"}
+                            </span>
+                          </div>
+                        </div>
+                        {active ? (
+                          <div className="flex shrink-0 gap-2">
+                            <Link
+                              href={`/courses/${e.courseSlug}/learn`}
+                              className="rounded-full bg-secondary px-5 py-2 text-sm font-semibold text-secondary-foreground hover:opacity-90"
+                            >
+                              متابعة التعلّم ←
+                            </Link>
+                            <Link
+                              href={`/courses/${e.courseSlug}/quiz`}
+                              className="rounded-full border-2 border-secondary px-5 py-2 text-sm font-semibold text-secondary hover:bg-secondary hover:text-secondary-foreground"
+                            >
+                              الاختبار
+                            </Link>
+                          </div>
+                        ) : (
+                          <Link
+                            href={`/courses/${e.courseSlug}`}
+                            className="shrink-0 rounded-full bg-amber-600 px-5 py-2 text-sm font-semibold text-white hover:opacity-90"
+                          >
+                            استكمال الدفع
+                          </Link>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
           </section>
         )}
       </div>

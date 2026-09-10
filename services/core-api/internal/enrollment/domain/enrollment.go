@@ -29,6 +29,9 @@ type Enrollment struct {
 	ID          string
 	StudentID   string
 	CourseID    string
+	// معلومات الدورة للعرض (JOIN من catalog في نفس DB)
+	CourseTitle string
+	CourseSlug  string
 	Status      EnrollmentStatus
 	PriceAmount float64
 	Currency    string
