@@ -4,6 +4,7 @@ package transport
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -190,6 +191,7 @@ func (h *EnrollmentHandler) stats(w http.ResponseWriter, r *http.Request, actor 
 	}
 	s, err := h.svc.GetStats(r.Context())
 	if err != nil {
+		slog.Error("stats failed", "err", err)
 		enWriteDomain(w, err)
 		return
 	}

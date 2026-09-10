@@ -809,6 +809,27 @@ paths:
                   certificatesIssued: { type: integer }
                   paperRequests: { type: object, additionalProperties: { type: integer } }
                   courses: { type: object, additionalProperties: { type: integer } }
+                  leads: { type: object, additionalProperties: { type: integer } }
+                  completionRate: { type: integer }
+                  quiz:
+                    type: object
+                    properties:
+                      attempts: { type: integer }
+                      passed: { type: integer }
+                      avgScore: { type: number }
+                  liveSessions:
+                    type: object
+                    properties:
+                      upcoming: { type: integer }
+                      attendance: { type: integer }
+                  courseSummary:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        course: { type: string }
+                        instructor: { type: string }
+                        students: { type: integer }
         "403": { $ref: "#/components/responses/Forbidden" }
 
   /public/courses/{slug}/quiz:

@@ -1660,6 +1660,24 @@ export interface paths {
                             courses?: {
                                 [key: string]: number;
                             };
+                            leads?: {
+                                [key: string]: number;
+                            };
+                            completionRate?: number;
+                            quiz?: {
+                                attempts?: number;
+                                passed?: number;
+                                avgScore?: number;
+                            };
+                            liveSessions?: {
+                                upcoming?: number;
+                                attendance?: number;
+                            };
+                            courseSummary?: {
+                                course?: string;
+                                instructor?: string;
+                                students?: number;
+                            }[];
                         };
                     };
                 };

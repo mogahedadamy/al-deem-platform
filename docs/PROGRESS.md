@@ -387,6 +387,23 @@ env.www / env.learn / env.erp / env.core-api (قوالب الأسرار) + READM
 - [x] ERP /leads عبر erp domain: الاستفساران يظهران + advance new→contacted→qualified بملاحظات محفوظة ✓
 - [x] Go: build+vet+lint 0 issues | TS: tsc نظيف × 3 | builds نظيفة
 
+## ✅ الجولة 6 — تقارير MVP كاملة (R4-B Reports)
+
+### /erp/stats مُوسّع بكل تقارير Blueprint الخمسة
+- [x] **الاستفسارات حسب الحالة** (leads by status)
+- [x] **نتائج الاختبارات**: محاولات/ناجحون/متوسط النسبة (avg=64.29%، 4/7 ناجح — بيانات حقيقية)
+- [x] **نسبة الإكمال**: completed/مدفوعة = 66%
+- [x] **الحصص القادمة والحضور**: 1 قادمة + 1 حضور
+- [x] **ملخص دورات المدرب**: جدول الدورة/المدرب/عدد الطلاب (3 دورات منشورة)
+- [x] **الدفعات والتسجيلات حسب الحالة** (موجود سابقًا)
+
+### إصلاح bug
+- استعلام quiz كان `FILTER (WHERE status = 'graded')` وعمود status غير موجود في quiz_attempts → 500. الصحيح: `FILTER (WHERE passed), avg(score)` — أضفت أيضًا slog.Error في handler للـdiagnosis مستقبلًا
+
+### صفحة التقارير
+- [x] 8 بطاقات (بدل 4) + جدول ملخص الدورات والمدربين
+- [x] مثبت عبر erp domain: 66% إكمال، 64% متوسط، جدول الدورات الثلاث بالمدرب
+
 ## 🔜 ما تبقى (تحسينات ما بعد الإطلاق)
 1. تدوير الأسرار الفعلي عند الإطلاق (openssl rand) + KC_HOSTNAME=auth.alameedtraining.com
 2. DNS: A records للنطاقات أو Cloudflare proxy (SSL Full — نفس نمط v1)

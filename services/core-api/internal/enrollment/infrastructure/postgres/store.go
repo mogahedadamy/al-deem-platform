@@ -390,6 +390,94 @@ func (s *EnrollmentStore) GetStats(ctx context.Context) (map[string]any, error) 
 	}
 	out["courses"] = coursesByStatus
 
+	// ===== MVP تقارير Blueprint R4-B =====
+
+	// الاستفسارات بالحالة والمصدر
+	lrows, err := s.db.QueryContext(ctx, `SELECT status, count(*) FROM leads GROUP BY status`)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = lrows.Close() }()
+	leadsByStatus := map[string]int{}
+	for lrows.Next() {
+		var st string
+		var n int
+		if err := lrows.Scan(&st, &n); err != nil {
+			return nil, err
+		}
+		leadsByStatus[st] = n
+	}
+	out["leads"] = leadsByStatus
+
+	// نتائج الاختبارات: متوسط النسب + معدل النجاح (≥70)
+	var attempts, passed int
+	var avgScore sql.Null[float64]
+	if err := s.db.QueryRowContext(ctx, `
+		SELECT count(*), count(*) FILTER (WHERE passed), avg(score)
+		FROM quiz_attempts`).Scan(&attempts, &passed, &avgScore); err != nil {
+		return nil, err
+	}
+	quiz := map[string]any{"attempts": attempts, "passed": passed}
+	if avgScore.Valid {
+		quiz["avgScore"] = avgScore.V
+	}
+	out["quiz"] = quiz
+
+	// نسبة الإكمال: completed / إجمالي التسجيلات المدفوعة (active+completed)
+	var act, comp int
+	if act = byStatus["active"]; true {
+		comp = byStatus["completed"]
+	}
+	total := act + comp
+	if total > 0 {
+		out["completionRate"] = comp * 100 / total
+	}
+
+	// الحصص القادمة + الحضور الكلي
+	var upcomingSessions int
+	if err := s.db.QueryRowContext(ctx, `
+		SELECT count(*) FROM live_sessions
+		WHERE starts_at > now() AND status IN ('scheduled','join_open','live')`).Scan(&upcomingSessions); err != nil {
+		return nil, err
+	}
+	var totalAttendance int
+	if err := s.db.QueryRowContext(ctx,
+		`SELECT count(*) FROM live_session_attendees`).Scan(&totalAttendance); err != nil {
+		return nil, err
+	}
+	out["liveSessions"] = map[string]int{"upcoming": upcomingSessions, "attendance": totalAttendance}
+
+	// ملخص دورات المدرب: الدورة + عدد الطلاب (للدورات المنشورة)
+	srows, err := s.db.QueryContext(ctx, `
+		SELECT c.title, p.full_name, count(e.id) AS students
+		FROM courses c
+		JOIN profiles p ON p.id = c.instructor_id
+		LEFT JOIN enrollments e ON e.course_id = c.id AND e.status IN ('active','completed')
+		WHERE c.status = 'published'
+		GROUP BY c.title, p.full_name, c.created_at
+		ORDER BY c.created_at`)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = srows.Close() }()
+	type courseRow struct {
+		Course    string `json:"course"`
+		Instructor string `json:"instructor"`
+		Students  int    `json:"students"`
+	}
+	var courses []courseRow
+	for srows.Next() {
+		r := courseRow{}
+		if err := srows.Scan(&r.Course, &r.Instructor, &r.Students); err != nil {
+			return nil, err
+		}
+		courses = append(courses, r)
+	}
+	if courses == nil {
+		courses = []courseRow{}
+	}
+	out["courseSummary"] = courses
+
 	return out, nil
 }
 
