@@ -41,7 +41,11 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: deem
       KC_DB_PASSWORD: deem
-      KC_HOSTNAME: http://localhost:8091
+      # v2: SSO عام عبر auth.alameedtraining.com (Caddy proxy يمرر Host/X-Forwarded-*).
+      # localhost:8091 يظل يعمل (hostname strict معطل) للسيرفرات المحلية.
+      KC_HOSTNAME: https://auth.alameedtraining.com
+      KC_HOSTNAME_STRICT: "false"
+      KC_PROXY_HEADERS: xforwarded
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
     ports:

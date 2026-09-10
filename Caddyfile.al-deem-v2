@@ -53,3 +53,11 @@ api.alameedtraining.com {
 	import security
 	reverse_proxy 127.0.0.1:4001
 }
+
+# auth — Keycloak SSO (إلزامي لسلسلة الدخول عبر الإنترنت)
+auth.alameedtraining.com {
+	encode zstd gzip
+	tls internal
+	import security
+	reverse_proxy 127.0.0.1:8091
+}
