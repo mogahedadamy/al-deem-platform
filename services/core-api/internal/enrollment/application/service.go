@@ -169,6 +169,11 @@ func (s *EnrollmentService) RejectPayment(ctx context.Context, actor *iddomain.A
 		map[string]any{"status": "rejected", "reason": reason})
 }
 
+// GetStats — أرقام حية للتقارير.
+func (s *EnrollmentService) GetStats(ctx context.Context) (map[string]any, error) {
+	return s.enrollments.GetStats(ctx)
+}
+
 // ===== Lesson viewing (entitlement خادمي) =====
 
 // lessonContent — يقرأ محتوى الدرس (عبر closure من catalog module)

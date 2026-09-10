@@ -71,6 +71,24 @@ export default async function ErpHome() {
               مراجعة الدفعات والتسجيلات — موظف مالي مخصص 24/7.
             </p>
           </Link>
+          <Link
+            href="/reports"
+            className="rounded-xl border border-border bg-surface p-5 transition-colors hover:border-primary"
+          >
+            <h2 className="font-bold text-secondary">التقارير</h2>
+            <p className="mt-1 text-sm text-muted">
+              أرقام حية: دورات، تسجيلات، إيراد معتمد، شهادات.
+            </p>
+          </Link>
+          <Link
+            href="/papers"
+            className="rounded-xl border border-border bg-surface p-5 transition-colors hover:border-primary"
+          >
+            <h2 className="font-bold text-secondary">النسخ الورقية</h2>
+            <p className="mt-1 text-sm text-muted">
+              طلبات الشهادات الورقية: اعتماد، طباعة، تسليم.
+            </p>
+          </Link>
         </div>
       </div>
     </div>

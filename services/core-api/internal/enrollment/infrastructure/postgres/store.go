@@ -295,6 +295,88 @@ func (s *EnrollmentStore) ListCourseProgress(ctx context.Context, enrollmentID, 
 	return out, rows.Err()
 }
 
+// GetStats — تجميعات حية للتقارير.
+func (s *EnrollmentStore) GetStats(ctx context.Context) (map[string]any, error) {
+	out := map[string]any{}
+	// التسجيلات بالحالة
+	rows, err := s.db.QueryContext(ctx, `SELECT status, count(*) FROM enrollments GROUP BY status`)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	byStatus := map[string]int{}
+	for rows.Next() {
+		var st string
+		var n int
+		if err := rows.Scan(&st, &n); err != nil {
+			return nil, err
+		}
+		byStatus[st] = n
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	out["enrollments"] = byStatus
+
+	// الدفعات المعتمدة + إجمالي المبالغ (numeric → float64)
+	var approvedCount, pendingCount int
+	var approvedSum float64
+	if err := s.db.QueryRowContext(ctx, `
+		SELECT count(*), COALESCE(sum(amount),0) FROM payment_requests WHERE status = 'approved'`).Scan(&approvedCount, &approvedSum); err != nil {
+		return nil, err
+	}
+	if err := s.db.QueryRowContext(ctx, `
+		SELECT count(*) FROM payment_requests WHERE status = 'submitted'`).Scan(&pendingCount); err != nil {
+		return nil, err
+	}
+	out["paymentsApprovedCount"] = approvedCount
+	out["paymentsApprovedSum"] = approvedSum
+	out["paymentsPendingCount"] = pendingCount
+
+	// الشهادات
+	var certsIssued int
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM certificates`).Scan(&certsIssued); err != nil {
+		return nil, err
+	}
+	out["certificatesIssued"] = certsIssued
+
+	// الطلبات الورقية بالحالة
+	prows, err := s.db.QueryContext(ctx, `SELECT status, count(*) FROM paper_certificate_requests GROUP BY status`)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = prows.Close() }()
+	papers := map[string]int{}
+	for prows.Next() {
+		var st string
+		var n int
+		if err := prows.Scan(&st, &n); err != nil {
+			return nil, err
+		}
+		papers[st] = n
+	}
+	out["paperRequests"] = papers
+
+	// الدورات بالحالة
+	crows, err := s.db.QueryContext(ctx, `SELECT status, count(*) FROM courses GROUP BY status`)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = crows.Close() }()
+	coursesByStatus := map[string]int{}
+	for crows.Next() {
+		var st string
+		var n int
+		if err := crows.Scan(&st, &n); err != nil {
+			return nil, err
+		}
+		coursesByStatus[st] = n
+	}
+	out["courses"] = coursesByStatus
+
+	return out, nil
+}
+
 // compile-time conformance
 var (
 	_ ports.EnrollmentRepository = (*EnrollmentStore)(nil)

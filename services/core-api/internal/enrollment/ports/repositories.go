@@ -19,6 +19,8 @@ type EnrollmentRepository interface {
 	MarkLessonViewed(ctx context.Context, enrollmentID, lessonID, studentID, courseID string) (newPct int, err error)
 	// ListCourseProgress — دروس الدورة مع حالة المشاهدة للطالب
 	ListCourseProgress(ctx context.Context, enrollmentID, courseID string) ([]endom.LessonProgress, error)
+	// GetStats — أرقام حية للتقارير
+	GetStats(ctx context.Context) (map[string]any, error)
 }
 
 type PaymentRepository interface {

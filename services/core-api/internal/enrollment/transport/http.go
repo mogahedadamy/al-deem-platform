@@ -36,6 +36,9 @@ func (h *EnrollmentHandler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /v1/me/payments", h.auth(h.myPayments))
 	mux.HandleFunc("POST /v1/enrollments/{id}/payment", h.auth(h.submitPayment))
 
+	// erp stats (التقارير الأولية)
+	mux.HandleFunc("GET /v1/erp/stats", h.auth(h.stats))
+
 	// lesson viewing (entitlement)
 	mux.HandleFunc("GET /v1/me/enrollments/{id}/lessons", h.auth(h.courseLessons))
 	mux.HandleFunc("GET /v1/me/enrollments/{id}/lessons/{lessonId}", h.auth(h.viewLesson))
@@ -177,6 +180,20 @@ func (h *EnrollmentHandler) reject(w http.ResponseWriter, r *http.Request, actor
 	w.WriteHeader(http.StatusNoContent)
 }
 
+
+// stats — أرقام حية للإدارة (erp_staff/manager + system_admin).
+func (h *EnrollmentHandler) stats(w http.ResponseWriter, r *http.Request, actor *iddomain.Actor) {
+	if !actor.HasRole(iddomain.RoleErpStaff) && !actor.HasRole(iddomain.RoleErpManager) && !actor.HasRole(iddomain.RoleSystemAdmin) {
+		enWriteError(w, platform.ErrForbidden, http.StatusForbidden)
+		return
+	}
+	s, err := h.svc.GetStats(r.Context())
+	if err != nil {
+		enWriteDomain(w, err)
+		return
+	}
+	writeEn(w, http.StatusOK, s)
+}
 
 // ===== lesson viewing (طالب نشط فقط) =====
 

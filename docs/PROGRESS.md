@@ -240,12 +240,38 @@
 - **learn**: `/login` + `/dashboard` (أدوار حقيقية من API) + `/courses/[slug]` (تدفق التسجيل/الإيصال) + `/certificates` (+ طلب ورقية)
 - **erp**: `/login` + `/` + `/users` (إدارة أدوار) + `/review` (نشر/رفض) + `/finance` (اعتماد دفعات)
 
-## 🔜 ما تبقى للإنتاج (R4 الجزء الثاني + إطلاق)
-1. learn: دروس video player + تتبع التقدم (lesson_views) + quiz UI للطالب
-2. التقارير الأولية في erp (إحصاءات الدورات/الإيرادات)
-3. git init + أول commit للـplatform/
-4. Caddy reverse proxy للـsubdomains (نفس سير نشر المرجع) + تدوير الأسرار + backups
-5. packages/api-client من openapi.yaml (30 paths)
+## ✅ R4 (الجزء الثاني) — تجربة الطالب الكاملة + التقارير (مكتملة)
+
+### learn — مشغل الدروس والاختبار
+- [x] `/courses/[slug]/learn` — مشغل كامل: قائمة دروس (✓ للمشاهد) + `<video controls>` + محتوى نصي + progress bar + فتح الدرس التالي تلقائيًا
+- [x] **Entitlement خادمي**: GET الدروس/الدرس عبر `/v1/me/enrollments/{id}/lessons` — طالب نشط/مكتمل فقط، درس دورة أخرى = 403 (مختبر)
+- [x] **lesson_views**: مشاهدة idempotent + إعادة حساب progress_pct في معاملة واحدة + **completed تلقائيًا عند 100%** (مختبر: 1 درس → 100% → completed)
+- [x] `/courses/[slug]/quiz` — واجهة اختبار كاملة: أسئلة اختيار متعدد، تصحيح خادمي، شاشة نتيجة (ناجح/راسب + إعادة)، **صفر تسريب للإجابات** (مختبر: `correct` غير موجود في الـpayload)
+- [x] **إصلاح جوهري**: اجتياز الاختبار أصبح متاحًا للطالب "completed" أيضًا (قرار #4: إكمال الدورة + اختبار — كان active فقط يمنع الطالب المكمل من الاختبار!)
+- [x] روابط "متابعة التعلّم" و"الاختبار النهائي" في صفحة الدورة عند التفعيل
+
+### erp — التقارير والنسخ الورقية
+- [x] `GET /v1/erp/stats` — أرقام حية مجمّعة من DB (erp roles فقط، student = 403 مختبر): دورات بالحالة، تسجيلات بالحالة، دفعات معتمدة + المجموع، شهادات، طلبات ورقية
+- [x] `/reports` — 4 بطاقات + تفصيل الورقية والدفعات — **٦٥٬٠٠٠ ج.س إيراد معتمد معروض** (أرقام عربية)
+- [x] `/papers` — قائمة انتظار الورقية بالحالة (قيد المعالجة/معتمدة/مطبوعة) + زر تقديم لكل مرحلة (مختبر: pending→approved 204)
+- [x] البطاقات في الرئيسية: مراجعة/مستخدمون/مالية/تقارير/ورقية
+
+### Git
+- [x] **git init + أول commit: 148 ملفًا** (d5dd94b) — البنية كاملة R0→R4
+
+### إصلاحات هذه الجولة
+- payments → **payment_requests** (اسم الجدول الحقيقي) في stats
+- SUM(numeric) → float64 (كان int = scan error → 500)
+- unused type lint → نظيف
+
+---
+
+## 🔜 ما تبقى للإطلاق (Beta/Production)
+1. **تجربة كاملة لطالب جديد**: دورة ثالثة → تسجيل → دفع → تعلّم → اختبار → شهادة (dry-run القبول)
+2. Caddy reverse proxy للـsubdomains (www/learn/erp.alameedtraining.com) + HTTPS
+3. تدوير الأسرار (AUTH_SECRET، DB، Keycloak) من .env.example
+4. packages/api-client من openapi.yaml (35 paths)
+5. Sentry/CI-CD + backups Postgres المجدولة
 
 ---
 
