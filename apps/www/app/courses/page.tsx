@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { listCategories, listCourses, RequestError } from "@/lib/api";
 import { CourseCard, EmptyState, ErrorState } from "@/components/catalog";
+import { SiteHeader } from "@/components/chrome";
 
 export const metadata: Metadata = {
   title: "الدورات",
@@ -57,18 +58,29 @@ export default async function CoursesPage({
 
   return (
     <div className="flex flex-1 flex-col">
-      {/* رأس الصفحة */}
-      <header className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-6xl px-6 py-10">
-          <nav className="mb-3 text-sm text-muted" aria-label="مسار التنقل">
+      <SiteHeader />
+      <div className="h-16 md:h-20" aria-hidden="true" />
+      {/* رأس الصفحة — بأسلوب المرجع */}
+      <header className="relative overflow-hidden border-b border-primary/10 bg-gradient-to-br from-muted/20 to-background">
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-10 left-20 h-72 w-72 rounded-full bg-gradient-primary blur-3xl" />
+          <div className="absolute bottom-10 right-20 h-80 w-80 rounded-full bg-gradient-accent blur-3xl" />
+        </div>
+        <div className="mx-auto max-w-7xl px-6 py-12">
+          <div className="mb-5 inline-flex animate-fade-in items-center gap-2 rounded-full bg-gradient-primary/10 px-5 py-2.5">
+            <span className="text-sm font-semibold text-primary">
+              دوراتنا التدريبية
+            </span>
+          </div>
+          <nav className="mb-3 text-sm text-muted-foreground" aria-label="مسار التنقل">
             <Link href="/" className="hover:text-primary">
               الرئيسية
             </Link>
             <span className="mx-2">/</span>
             <span className="font-medium text-secondary">الدورات</span>
           </nav>
-          <h1 className="text-3xl font-black text-secondary">
-            الدورات التدريبية
+          <h1 className="animate-fade-in bg-gradient-primary bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
+            برامج تدريبية متميزة
           </h1>
           <p className="mt-2 max-w-2xl leading-7 text-muted">
             برامج معتمدة بقيادة مدربين محترفين — شهادة إلكترونية قابلة للتحقق

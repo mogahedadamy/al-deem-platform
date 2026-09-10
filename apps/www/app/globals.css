@@ -1,15 +1,42 @@
 @import "tailwindcss";
 
+/* ═══ Design system مركز العميد — مستخرج من الكود المرجعي (al-deem-training-hub) ═══
+   HSL tokens + gradients + shadows + animations كما في الموقع الأصلي الاحترافي */
+
 :root {
-  /* Al Deem identity — matches @al-deem/ui tokens */
-  --background: #f8f9fb;
-  --foreground: #1a202c;
-  --primary: #d4af37;
-  --primary-dark: #b8962e;
-  --secondary: #1c2a3a;
-  --muted: #64748b;
-  --border: #e2e8f0;
-  --surface: #ffffff;
+  /* الألوان الأساسية — كما في المرجع */
+  --background: hsl(220 15% 98%);
+  --foreground: hsl(220 20% 15%);
+
+  --primary: hsl(25 60% 45%); /* بني دافئ احترافي */
+  --primary-dark: hsl(25 70% 30%); /* بني غامق */
+  --primary-light: hsl(25 40% 70%);
+
+  --secondary: hsl(200 40% 30%); /* أزرق داكن هادئ */
+  --secondary-light: hsl(200 30% 80%);
+
+  --accent: hsl(35 80% 55%); /* برتقالي نابض */
+  --success: hsl(145 60% 45%);
+  --info: hsl(200 70% 50%);
+
+  --muted: hsl(220 15% 96%);
+  --muted-foreground: hsl(220 10% 45%);
+  --border: hsl(25 20% 90%);
+  --surface: hsl(0 0% 100%);
+
+  /* التدرجات — كما في المرجع حرفيًا */
+  --gradient-primary: linear-gradient(135deg, hsl(25 60% 45%), hsl(35 80% 55%));
+  --gradient-accent: linear-gradient(45deg, hsl(35 80% 55%), hsl(25 60% 45%));
+  --gradient-secondary: linear-gradient(120deg, hsl(200 40% 30%), hsl(200 30% 60%));
+  --gradient-hero: linear-gradient(135deg, hsl(25 70% 30% / 0.9), hsl(200 40% 60% / 0.1));
+  --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(220 15% 98%));
+
+  /* الظلال الناعمة */
+  --shadow-elegant: 0 20px 40px -12px hsl(25 60% 45% / 0.25);
+  --shadow-card: 0 8px 25px -8px hsl(220 10% 45% / 0.12);
+  --shadow-hover: 0 12px 35px -10px hsl(25 60% 45% / 0.35);
+  --shadow-glow: 0 0 50px hsl(35 80% 55% / 0.4);
+  --shadow-soft: 0 4px 20px -5px hsl(220 10% 45% / 0.15);
 }
 
 @theme inline {
@@ -17,15 +44,69 @@
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
   --color-primary-dark: var(--primary-dark);
+  --color-primary-light: var(--primary-light);
   --color-secondary: var(--secondary);
+  --color-secondary-light: var(--secondary-light);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-info: var(--info);
   --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-surface: var(--surface);
   --font-sans: var(--font-cairo);
+}
+
+/* ═══ Animations من المرجع ═══ */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out both;
+}
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Gradient helpers كما في المرجع */
+.bg-gradient-primary {
+  background-image: var(--gradient-primary);
+}
+.bg-gradient-accent {
+  background-image: var(--gradient-accent);
+}
+.bg-gradient-secondary {
+  background-image: var(--gradient-secondary);
+}
+.bg-gradient-card {
+  background-image: var(--gradient-card);
+}
+
+.shadow-elegant { box-shadow: var(--shadow-elegant); }
+.shadow-card { box-shadow: var(--shadow-card); }
+.shadow-hover { box-shadow: var(--shadow-hover); }
+.shadow-glow { box-shadow: var(--shadow-glow); }
+.shadow-soft { box-shadow: var(--shadow-soft); }
+
+.bg-clip-text {
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-cairo), "Segoe UI", system-ui, sans-serif;
+}
+
+/* حقول الإيميل/الروابط LTR كما في المرجع */
+input[type="email"], input[type="url"] {
+  text-align: left;
+  direction: ltr;
 }
