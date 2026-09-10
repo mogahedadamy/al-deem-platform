@@ -831,6 +831,113 @@ paths:
                   questionCount: { type: integer }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  # ===== Live Sessions (R3-B — قرار #5: Zoom مركزي اختياري) =====
+  /live-sessions:
+    post:
+      summary: جدولة حصة (مدرب الدورة — الدورة يجب has_live_sessions=true)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [courseId, title, startsAt, durationMin]
+              properties:
+                courseId: { type: string, format: uuid }
+                sectionId: { type: string, format: uuid }
+                title: { type: string }
+                startsAt: { type: string, format: date-time }
+                durationMin: { type: integer, minimum: 5, maximum: 480 }
+                joinWindowMin: { type: integer, default: 10 }
+                timezone: { type: string, default: "Africa/Khartoum" }
+                notes: { type: string }
+      responses:
+        "201": { description: جُدولت }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /live-sessions/mine:
+    get:
+      summary: حصص المدرب القادمة
+      responses:
+        "200":
+          description: القائمة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/LiveSession" }
+
+  /live-sessions/{id}/advance:
+    post:
+      summary: "تحول الحالة: scheduled→join_open→live→ended→recording_processing→archived"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [join_open, live, ended, recording_processing, archived, cancelled] }
+      responses:
+        "204": { description: حُدّثت }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /live-sessions/{id}/join:
+    post:
+      summary: انضمام الطالب (نافذة خادمية + حضور idempotent)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: انضم (joinUrl إن رُبط اجتماع)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessionId: { type: string }
+                  joined: { type: boolean }
+                  joinUrl: { type: string }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /courses/{courseId}/live-sessions:
+    get:
+      summary: حصص الدورة (طالب مسجّل نشط فقط)
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: القائمة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/LiveSession" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /webhooks/zoom:
+    post:
+      summary: استقبال أحداث Zoom (HMAC-SHA256 + idempotent)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: استُقبل }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
 components:
   responses:
     Unauthorized:
@@ -902,6 +1009,20 @@ components:
     RoleKey:
       type: string
       enum: [student, instructor, content_reviewer, finance_officer, support_agent, erp_staff, erp_manager, system_admin]
+
+    LiveSession:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        courseId: { type: string, format: uuid }
+        title: { type: string }
+        status: { type: string, enum: [scheduled, join_open, live, ended, recording_processing, archived, cancelled] }
+        startsAt: { type: string, format: date-time }
+        durationMin: { type: integer }
+        joinWindowMin: { type: integer }
+        timezone: { type: string }
+        joinUrl: { type: string }
+        recordingUrl: { type: string }
 
     Error:
       type: object

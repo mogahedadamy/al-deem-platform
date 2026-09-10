@@ -1718,6 +1718,265 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/live-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** جدولة حصة (مدرب الدورة — الدورة يجب has_live_sessions=true) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        courseId: string;
+                        /** Format: uuid */
+                        sectionId?: string;
+                        title: string;
+                        /** Format: date-time */
+                        startsAt: string;
+                        durationMin: number;
+                        /** @default 10 */
+                        joinWindowMin?: number;
+                        /** @default Africa/Khartoum */
+                        timezone?: string;
+                        notes?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description جُدولت */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                409: components["responses"]["Conflict"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/live-sessions/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** حصص المدرب القادمة */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description القائمة */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items?: components["schemas"]["LiveSession"][];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/live-sessions/{id}/advance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** تحول الحالة: scheduled→join_open→live→ended→recording_processing→archived */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "join_open" | "live" | "ended" | "recording_processing" | "archived" | "cancelled";
+                    };
+                };
+            };
+            responses: {
+                /** @description حُدّثت */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                409: components["responses"]["Conflict"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/live-sessions/{id}/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** انضمام الطالب (نافذة خادمية + حضور idempotent) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description انضم (joinUrl إن رُبط اجتماع) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            sessionId?: string;
+                            joined?: boolean;
+                            joinUrl?: string;
+                        };
+                    };
+                };
+                403: components["responses"]["Forbidden"];
+                409: components["responses"]["Conflict"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/courses/{courseId}/live-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** حصص الدورة (طالب مسجّل نشط فقط) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    courseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description القائمة */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items?: components["schemas"]["LiveSession"][];
+                        };
+                    };
+                };
+                403: components["responses"]["Forbidden"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/zoom": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** استقبال أحداث Zoom (HMAC-SHA256 + idempotent) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+            responses: {
+                /** @description استُقبل */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Unauthorized"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1750,6 +2009,22 @@ export interface components {
         };
         /** @enum {string} */
         RoleKey: "student" | "instructor" | "content_reviewer" | "finance_officer" | "support_agent" | "erp_staff" | "erp_manager" | "system_admin";
+        LiveSession: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            courseId?: string;
+            title?: string;
+            /** @enum {string} */
+            status?: "scheduled" | "join_open" | "live" | "ended" | "recording_processing" | "archived" | "cancelled";
+            /** Format: date-time */
+            startsAt?: string;
+            durationMin?: number;
+            joinWindowMin?: number;
+            timezone?: string;
+            joinUrl?: string;
+            recordingUrl?: string;
+        };
         Error: {
             error?: string;
             message?: string;

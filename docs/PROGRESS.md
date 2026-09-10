@@ -318,6 +318,36 @@ env.www / env.learn / env.erp / env.core-api (قوالب الأسرار) + READM
 
 ---
 
+## ✅ الجولة 4 — R3-B: الحصص المباشرة (قرار #5 مطبق بالكامل)
+
+### Database (migration 00005 — 4 جداول جديدة، الإجمالي 22)
+- [x] live_sessions — state machine كامل (scheduled→join_open→live→ended→recording_processing→archived|cancelled) + starts_at_utc/ends_at_utc
+- [x] **قيد عدم تعارض مواعيد المدرب**: EXCLUDE gist على tsrange(starts_at_utc, ends_at_utc) — الحصة المتداخلة تُرفض 409 (مختبر)
+- [x] live_session_attendees — UNIQUE(session, student) حضور idempotent (مختبر: انضمام مرتين = سجل واحد)
+- [x] zoom_webhook_events — UNIQUE(zoom_event_id) للأحداث idempotent
+- [x] zoom_connections — حساب مركزي واحد Server-to-Server (قرار #5)
+
+### Module كامل (domain/application/ports/infrastructure/transport)
+- [x] **Schedule**: مدرب الدورة فقط + **has_live_sessions=true إلزامي** (قرار #5: "ليس لكل الدورات" — مختبر: رفض قبل التفعيل، نجاح بعده)
+- [x] **Join**: نافذة الانضمام خادمية (تفتح قبل الموعد بـJoinWindowMin) + enrollment نشط — 409 قبل النافذة (مختبر)
+- [x] AdvanceStatus بstate machine صارم — قفزة غير صالحة 409 (مختبر)
+- [x] **Zoom Webhook**: HMAC-SHA256 (v0=hex) + idempotent — توقيع صحيح 200 / خاطئ 401 / إعادة نفس الحدث مرة واحدة (مختبر)
+- [x] meeting.ended عبر zoom_meeting_id يقدّم الحصة live→ended (مختبر)
+- [x] دورة حياة كاملة E2E: جدولة → join_open → انضمام → live → ended ✓
+
+### learn UI
+- [x] قسم "الحصص المباشرة" في صفحة التعلّم (يظهر للدورات has_live_sessions فقط)
+- [x] حالة كل حصة بالعربية (مباشرة الآن بنبض أحمر / نافذة الانضمام مفتوحة / مجدولة…) + زر انضمام + رابط الاجتماع
+- [x] proxies: حصص الدورة + الانضمام — تعمل عبر النطاق الإنتاجي (مختبر: حصتان تظهران عبر learn.alameedtraining.com)
+
+### إصلاحات الجولة
+- tsrange→tstzrange IMMUTABLE: عمودا UTC بلا منطقة (starts_at_utc/ends_at_utc) للفهرس
+- NULL scan: sql.Null[string] (Go 1.25 — .V وليس .String) لأعمدة section_id/notes/zoom_*
+- exclusion_violation (23P01) → 409 برسالة عربية واضحة
+- GetByID: `id::text = $1 OR zoom_meeting_id = $1` (type mismatch كان يسبب 500)
+
+### OpenAPI: 44 paths، 15 schemas — api-client أعيد توليده (2204 سطر)
+
 ## 🔜 ما تبقى (تحسينات ما بعد الإطلاق)
 1. تدوير الأسرار الفعلي عند الإطلاق (openssl rand) + KC_HOSTNAME=auth.alameedtraining.com
 2. DNS: A records للنطاقات أو Cloudflare proxy (SSL Full — نفس نمط v1)

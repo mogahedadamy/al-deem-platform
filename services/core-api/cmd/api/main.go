@@ -24,6 +24,9 @@ catdom "github.com/al-deem/platform/core-api/internal/catalog/domain"
 	asmapp "github.com/al-deem/platform/core-api/internal/assessment/application"
 	asmpg "github.com/al-deem/platform/core-api/internal/assessment/infrastructure/postgres"
 	asmtransport "github.com/al-deem/platform/core-api/internal/assessment/transport"
+	lsapp "github.com/al-deem/platform/core-api/internal/livesessions/application"
+	lspg "github.com/al-deem/platform/core-api/internal/livesessions/infrastructure/postgres"
+	lstransport "github.com/al-deem/platform/core-api/internal/livesessions/transport"
 	"github.com/al-deem/platform/core-api/internal/platform"
 	"github.com/al-deem/platform/core-api/internal/platform/middleware"
 )
@@ -143,7 +146,34 @@ func main() {
 		asmh := asmtransport.NewAssessmentHandler(asmSvc, resolver)
 		asmh.Register(mux)
 
-		slog.Info("modules wired", "identity", true, "catalog", true, "enrollment", true, "assessment", true,
+		// ===== livesessions module (R3-B) — الحصص المباشرة (قرار #5) =====
+		lsSessions := lspg.NewSessionStore(db)
+		lsAttendees := lspg.NewAttendeeStore(db)
+		lsWebhooks := lspg.NewWebhookStore(db)
+		lsSvc := lsapp.NewLiveSessionsService(
+			lsSessions, lsAttendees, lsWebhooks, store,
+			func(ctx context.Context, courseID string) (bool, string, error) {
+				c, err := courses.GetByID(ctx, courseID)
+				if err != nil {
+					return false, "", err
+				}
+				return c.HasLiveSessions, c.InstructorID, nil
+			},
+			func(ctx context.Context, courseID, studentID string) (bool, error) {
+				return enrollments.HasActiveByCourseAndStudent(ctx, courseID, studentID)
+			},
+			func(ctx context.Context, courseID, userID string) (bool, error) {
+				c, err := courses.GetByID(ctx, courseID)
+				if err != nil {
+					return false, err
+				}
+				return c.InstructorID == userID, nil
+			},
+		)
+		lsh := lstransport.NewLiveSessionsHandler(lsSvc, resolver)
+		lsh.Register(mux)
+
+		slog.Info("modules wired", "identity", true, "catalog", true, "enrollment", true, "assessment", true, "livesessions", true,
 			"keycloak", cfg.KeycloakURL, "realm", cfg.KeycloakRealm)
 	}
 

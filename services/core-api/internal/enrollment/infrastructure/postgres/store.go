@@ -295,6 +295,19 @@ func (s *EnrollmentStore) ListCourseProgress(ctx context.Context, enrollmentID, 
 	return out, rows.Err()
 }
 
+// HasActiveByCourseAndStudent — هل للطالب تسجيل فعّال/مكتمل في الدورة؟
+func (s *EnrollmentStore) HasActiveByCourseAndStudent(ctx context.Context, courseID, studentID string) (bool, error) {
+	var n int
+	err := s.db.QueryRowContext(ctx, `
+		SELECT count(*) FROM enrollments
+		WHERE course_id = $1 AND student_id = $2 AND status IN ('active','completed')`,
+		courseID, studentID).Scan(&n)
+	if err != nil {
+		return false, err
+	}
+	return n > 0, nil
+}
+
 // GetStats — تجميعات حية للتقارير.
 func (s *EnrollmentStore) GetStats(ctx context.Context) (map[string]any, error) {
 	out := map[string]any{}

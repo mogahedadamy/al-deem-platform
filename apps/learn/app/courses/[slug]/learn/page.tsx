@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { apiGet, type MyEnrollment, type PublicCourse } from "@/lib/api";
 import { LessonPlayer } from "./player-client";
+import { LiveSessionsList } from "./live-sessions";
 
 type Params = Promise<{ slug: string }>;
 
@@ -169,6 +170,16 @@ export default async function LearnCoursePage({ params }: { params: Params }) {
             enrollmentId={myEnrollment!.id}
             lessons={lessons}
           />
+        )}
+
+        {/* الحصص المباشرة (قرار #5 — دورات has_live_sessions فقط) */}
+        {course.hasLiveSessions && (
+          <section className="mt-12" aria-labelledby="live-sessions">
+            <h2 id="live-sessions" className="mb-4 text-xl font-bold text-secondary">
+              الحصص المباشرة
+            </h2>
+            <LiveSessionsList courseId={course.id} />
+          </section>
         )}
       </div>
     </div>
