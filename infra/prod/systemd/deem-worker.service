@@ -1,0 +1,20 @@
+# worker — معالجة أحداث Zoom (Blueprint 11.3)
+[Unit]
+Description=Al Deem worker (Zoom events)
+After=network-online.target deem-core-api.service
+Wants=deem-core-api.service
+
+[Service]
+Type=simple
+ExecStart=/opt/deem/worker
+EnvironmentFile=/opt/deem/env/core-api.env
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

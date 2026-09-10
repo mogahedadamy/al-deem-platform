@@ -551,6 +551,18 @@ env.www / env.learn / env.erp / env.core-api (قوالب الأسرار) + READM
 - [x] **ما يحتاج قرار المالك**: DNS (خياران موثقان) + أسرار + systemd
 - [x] خطوات الإطلاق الست + بيانات دخول التطوير (مع تحذير التغيير)
 
+## ✅ الجولة 16 — systemd كاملة (كانت آخر عنصر بناء متبقٍ)
+
+- [x] 7 ملفات في `infra/prod/systemd/`: core-api + worker + www/learn/erp (Next.js) + backup.timer + backup.service
+- [x] hardening: NoNewPrivileges + ProtectSystem=strict + PrivateTmp
+- [x] Restart=always (3-5 ثوانٍ) + LimitNOFILE
+- [x] **`deploy-systemd.sh`**: بناء + تثبيت binaries إلى /opt/deem + env من القوالب (600) + تثبيت وتفعيل الوحدات بأمر واحد
+- [x] backup timer: يوميًا 3 صباحًا (Persistent=true) + drill أسبوعي مدمج في السكربت
+- [x] إصلاح مسارات بمسافات: النشر إلى /opt/deem (بلا مسافات — systemd لا يقبل quotes في WorkingDirectory) — وحدات تمر systemd-analyze 0 fatal ×7
+- [x] `deploy-systemd.sh` كامل: build Go+Next → rsync إلى /opt/deem/{bin,apps,scripts,env} → تثبيت وحدات → enable --now + تقرير حالة
+- [x] node PATH = system v24 (لا nvm)، worker بعد core-api، backup timer Persistent
+- [x] ما يحتاج sudo فقط: تشغيل السكربت — **لا يوجد عنصر بناء متبقٍ إطلاقًا**
+
 ## 🔜 ما تبقى (تحسينات ما بعد الإطلاق)
 1. تدوير الأسرار الفعلي عند الإطلاق (openssl rand) + KC_HOSTNAME=auth.alameedtraining.com
 2. DNS: A records للنطاقات أو Cloudflare proxy (SSL Full — نفس نمط v1)

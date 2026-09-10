@@ -1,0 +1,26 @@
+# core-api — Al Deem Platform v2
+# التثبيت:
+#   sudo cp infra/prod/systemd/deem-*.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now deem-core-api
+[Unit]
+Description=Al Deem core-api (Go)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# عدّل المسارات حسب موقع المستودع
+ExecStart=/opt/deem/core-api
+EnvironmentFile=/opt/deem/env/core-api.env
+Restart=always
+RestartSec=3
+LimitNOFILE=65536
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

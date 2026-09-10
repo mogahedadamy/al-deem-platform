@@ -1,0 +1,7 @@
+[Unit]
+Description=Al Deem DB backup
+
+[Service]
+Type=oneshot
+User=mojahed
+ExecStart=/opt/deem/scripts/backup.sh /var/backups/deem

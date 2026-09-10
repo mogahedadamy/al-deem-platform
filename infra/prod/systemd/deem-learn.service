@@ -1,0 +1,21 @@
+# learn — منصة التعلّم (Next.js :3012) — AUTH_URL وAUTH_SECRET إلزاميان
+[Unit]
+Description=Al Deem learn (Next.js)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mojahed
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+WorkingDirectory=/opt/deem/apps/learn
+ExecStart=/usr/bin/env npx next start -p 3012
+EnvironmentFile=/opt/deem/env/learn.env
+Restart=always
+RestartSec=3
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

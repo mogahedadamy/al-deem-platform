@@ -45,8 +45,13 @@ openssl rand -base64 32   # → AUTH_SECRET في infra/prod/env.{www,learn,erp}
 # كلمة مرور bootstrap admin لـKeycloak يجب تغييرها فورًا
 ```
 
-### 3. systemd (بدل nohup اليدوي)
-وحدات مقترحة: `deem-core-api` / `deem-worker` / `deem-www` / `deem-learn` / `deem-erp` — الأوامر الحالية موثقة في `docs/OPERATIONS.md`
+### 3. systemd — **جاهزة الآن**
+وحدات مكتوبة في `infra/prod/systemd/` (core-api/worker/www/learn/erp + backup timer يومي).
+التثبيت بأمر واحد:
+```bash
+./infra/prod/scripts/deploy-systemd.sh   # يحتاج sudo
+```
+يرمّز: binaries إلى /opt/deem + env من القوالب (عدّل الأسرار قبلها!) + تفعيل تلقائي.
 
 ### 4. بعد الإطلاق
 - Sentry (أخطاء) + uptime monitoring

@@ -1,0 +1,21 @@
+# www — الموقع العام (Next.js :3011)
+[Unit]
+Description=Al Deem www (Next.js)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mojahed
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+WorkingDirectory=/opt/deem/apps/www
+ExecStart=/usr/bin/env npx next start -p 3011
+EnvironmentFile=/opt/deem/env/www.env
+Restart=always
+RestartSec=3
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

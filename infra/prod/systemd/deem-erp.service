@@ -1,0 +1,21 @@
+# erp — النظام الإداري (Next.js :3013) — MFA عبر Keycloak
+[Unit]
+Description=Al Deem erp (Next.js)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mojahed
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+WorkingDirectory=/opt/deem/apps/erp
+ExecStart=/usr/bin/env npx next start -p 3013
+EnvironmentFile=/opt/deem/env/erp.env
+Restart=always
+RestartSec=3
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
