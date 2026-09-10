@@ -1,0 +1,66 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: deem-postgres
+    environment:
+      POSTGRES_USER: deem
+      POSTGRES_PASSWORD: deem
+      POSTGRES_DB: deem
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - deem_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U deem -d deem"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: deem-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:6391:6379"
+    volumes:
+      - deem_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: deem-keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: deem-admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: deem-admin-password-change-me
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: deem
+      KC_DB_PASSWORD: deem
+      KC_HOSTNAME: http://localhost:8091
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    ports:
+      - "127.0.0.1:8091:8080"
+    volumes:
+      - ./keycloak/realms:/opt/keycloak/data/import:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: deem-mailpit
+    ports:
+      - "127.0.0.1:8092:8025"   # Web UI
+      - "127.0.0.1:8093:1025"   # SMTP
+    environment:
+      MP_SMTP_BIND: 0.0.0.0:1025
+
+volumes:
+  deem_pgdata:
+  deem_redisdata:

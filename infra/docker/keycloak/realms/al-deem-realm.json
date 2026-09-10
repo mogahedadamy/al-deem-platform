@@ -1,0 +1,71 @@
+{
+  "realm": "al-deem",
+  "enabled": true,
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "verifyEmail": false,
+  "resetPasswordAllowed": true,
+  "sslRequired": "none",
+  "roles": {
+    "realm": [
+      { "name": "student", "description": "طالب — يتعلم ويطلب دورات" },
+      { "name": "instructor", "description": "مدرب — يؤلف دورات ويديع طلابه" },
+      { "name": "content_reviewer", "description": "مشرف محتوى — يراجع وينشر الدورات" },
+      { "name": "finance_officer", "description": "موظف مالي مخصص — يراجع ويعتمد المدفوعات 24/7" },
+      { "name": "support_agent", "description": "دعم فني — يساعد الطلاب" },
+      { "name": "erp_staff", "description": "موظف إداري — عمليات ERP" },
+      { "name": "erp_manager", "description": "مدير إداري — تقارير وإدارة عليا" },
+      { "name": "system_admin", "description": "مدير النظام — إدارة كاملة" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "www",
+      "name": "Al Deem Public Website",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["http://localhost:3001/*", "https://www.alameedtraining.com/*"],
+      "webOrigins": ["http://localhost:3001", "https://www.alameedtraining.com"],
+      "attributes": { "post.logout.redirect.uris": "http://localhost:3001/*+https://www.alameedtraining.com/*" }
+    },
+    {
+      "clientId": "learn",
+      "name": "Al Deem LMS",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["http://localhost:3002/*", "https://learn.alameedtraining.com/*"],
+      "webOrigins": ["http://localhost:3002", "https://learn.alameedtraining.com"],
+      "attributes": { "post.logout.redirect.uris": "http://localhost:3002/*+https://learn.alameedtraining.com/*" }
+    },
+    {
+      "clientId": "erp",
+      "name": "Al Deem ERP (Admin)",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["http://localhost:3003/*", "https://erp.alameedtraining.com/*"],
+      "webOrigins": ["http://localhost:3003", "https://erp.alameedtraining.com"],
+      "attributes": { "post.logout.redirect.uris": "http://localhost:3003/*+https://erp.alameedtraining.com/*" }
+    },
+    {
+      "clientId": "core-api",
+      "name": "Al Deem Core API (confidential)",
+      "publicClient": false,
+      "secret": "core-api-secret-change-me",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "redirectUris": [""]
+    }
+  ],
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "no-reply@alameedtraining.com",
+    "fromDisplayName": "مركز الديم للتدريب",
+    "starttls": "false",
+    "auth": "false"
+  }
+}

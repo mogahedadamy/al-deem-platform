@@ -1,0 +1,885 @@
+openapi: 3.1.0
+info:
+  title: Al Deem Core API
+  version: 0.1.0
+  description: |
+    Core API لمنصة الديم للتدريب v2 — Go Modular Monolith.
+    كل endpoint حساس يمر: Authenticate → Authorize → Validate → Use Case → Transaction → Audit → Response.
+servers:
+  - url: http://localhost:4001/v1
+    description: Local development
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    const: ok
+
+  /me:
+    get:
+      summary: Current user profile + roles
+      responses:
+        "200":
+          description: Profile with roles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileWithRoles"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /me/profile:
+    patch:
+      summary: Update own profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileInput"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /admin/users:
+    get:
+      summary: List users (admin)
+      parameters:
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, default: 20 } }
+        - { name: query, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Paginated users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPage"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/users/{id}/roles:
+    post:
+      summary: Assign role (system_admin only, audited)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [roleKey]
+              properties:
+                roleKey:
+                  $ref: "#/components/schemas/RoleKey"
+      responses:
+        "204": { description: Assigned }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+    delete:
+      summary: Remove role (system_admin only, audited, prevents removing roles the user does not have)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: roleKey, in: query, required: true, schema: { $ref: "#/components/schemas/RoleKey" } }
+      responses:
+        "204": { description: Removed }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  # ===== Catalog: public =====
+  /public/courses:
+    get:
+      summary: الكتالوج العام (الدورات المنشورة فقط)
+      security: []
+      parameters:
+        - in: query
+          name: category
+          schema: { type: string }
+          description: slug الفئة
+        - in: query
+          name: level
+          schema: { type: string, enum: [beginner, intermediate, advanced] }
+        - in: query
+          name: q
+          schema: { type: string }
+          description: بحث في العنوان والملخص
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, minimum: 1, maximum: 50, default: 12 }
+      responses:
+        "200":
+          description: قائمة الدورات المنشورة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Course" }
+                  total: { type: integer }
+
+  /public/courses/{slug}:
+    get:
+      summary: تفاصيل دورة منشورة
+      security: []
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: الدورة
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Course" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /public/courses/{slug}/outline:
+    get:
+      summary: مسار الدورة (أقسام ودروس) — عناوين فقط بدون محتوى
+      security: []
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: الأقسام والدروس
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sections:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        title: { type: string }
+                        lessons:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id: { type: string }
+                              title: { type: string }
+                              type: { type: string, enum: [video, text, quiz, assignment] }
+                              position: { type: integer }
+                              isFreePreview: { type: boolean }
+
+  /public/categories:
+    get:
+      summary: الفئات
+      security: []
+      responses:
+        "200":
+          description: الفئات
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Category" }
+
+  # ===== Catalog: instructor authoring =====
+  /courses:
+    post:
+      summary: إنشاء مسودة دورة (instructor/system_admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateCourseInput" }
+      responses:
+        "201":
+          description: أُنشئت المسودة
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Course" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /me/courses:
+    get:
+      summary: دورات المدرب الحالي (مع ملاحظات المراجعة)
+      responses:
+        "200":
+          description: دوراتي
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Course" }
+
+  /courses/{id}:
+    patch:
+      summary: تعديل مسودة (المالك فقط)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateCourseInput" }
+      responses:
+        "200":
+          description: حُدّثت
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Course" }
+        "409": { $ref: "#/components/responses/Conflict" }
+    delete:
+      summary: حذف مسودة (draft فقط)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: حُذفت }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /courses/{id}/submit:
+    post:
+      summary: إرسال للمراجعة (draft → pending_review، يتطلب درسًا واحدًا على الأقل)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: أُرسلت }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /courses/{id}/sections:
+    post:
+      summary: إضافة قسم لمسودة دورة
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                position: { type: integer }
+      responses:
+        "201": { description: أُنشئ القسم }
+
+  /sections/{sectionId}/lessons:
+    post:
+      summary: إضافة درس لقسم (نوع فيديو يتطلب videoUrl)
+      parameters:
+        - in: path
+          name: sectionId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LessonInput" }
+      responses:
+        "201": { description: أُنشئ الدرس }
+        "400": { $ref: "#/components/responses/ValidationError" }
+
+  # ===== Catalog: content review (erp) =====
+  /review/courses:
+    get:
+      summary: الدورات بانتظار المراجعة (content_reviewer/system_admin)
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: قائمة الانتظار
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Course" }
+                  total: { type: integer }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /review/courses/{id}/publish:
+    post:
+      summary: نشر دورة (pending_review → published)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: نُشرت }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /review/courses/{id}/reject:
+    post:
+      summary: رفض دورة مع ملاحظات (pending_review → draft)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [notes]
+              properties:
+                notes: { type: string, minLength: 1 }
+      responses:
+        "204": { description: رُفضت }
+        "400": { $ref: "#/components/responses/ValidationError" }
+
+  /review/courses/{id}/archive:
+    post:
+      summary: أرشفة دورة منشورة (published → archived)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: أُرشفت }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+
+  # ===== Enrollment & Payment (R2) =====
+  /enrollments:
+    post:
+      summary: تسجيل في دورة منشورة (idempotent)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [courseId]
+              properties:
+                courseId: { type: string, format: uuid }
+      responses:
+        "201":
+          description: التسجيل (pending_payment)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Enrollment" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /me/enrollments:
+    get:
+      summary: تسجيلاتي
+      responses:
+        "200":
+          description: قائمة التسجيلات
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Enrollment" }
+
+  /me/payments:
+    get:
+      summary: دفعاتي (مع حالة المراجعة)
+      responses:
+        "200":
+          description: قائمة الدفعات
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/PaymentRequest" }
+
+  /enrollments/{id}/payment:
+    post:
+      summary: رفع إيصال التحويل البنكي (قرار الإدارة #9)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [receiptUrl]
+              properties:
+                receiptUrl: { type: string }
+                bankReference: { type: string }
+      responses:
+        "201":
+          description: أُرسل للمراجعة
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PaymentRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /finance/payments:
+    get:
+      summary: قائمة انتظار الموظف المالي (finance_officer — قرار #6)
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: الطلبات المرسلة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/PaymentRequest" }
+                  total: { type: integer }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /finance/payments/{id}/approve:
+    post:
+      summary: اعتماد الدفع — يفعّل التسجيل ذريًا في نفس المعاملة
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: اعتُمد وفعُّل }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /finance/payments/{id}/reject:
+    post:
+      summary: رفض دفعة مع سبب إلزامي يصل للطالب
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 1 }
+      responses:
+        "204": { description: رُفضت }
+        "400": { $ref: "#/components/responses/ValidationError" }
+
+
+  # ===== Assessment & Certificates (R3 — قرار #4) =====
+  /public/certificates/{serial}:
+    get:
+      summary: التحقق من شهادة (عام)
+      security: []
+      parameters:
+        - in: path
+          name: serial
+          required: true
+          schema: { type: string }
+          description: "ALD-YYYY-xxxxxxxx"
+      responses:
+        "200":
+          description: بيانات الشهادة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  serialNumber: { type: string }
+                  studentName: { type: string }
+                  courseTitle: { type: string }
+                  finalScore: { type: integer }
+                  issuedAt: { type: string, format: date-time }
+                  valid: { type: boolean }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /quizzes:
+    post:
+      summary: إنشاء اختبار (instructor) — الإجابات الصحيحة خادمية
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lessonId, courseId, title, questions]
+              properties:
+                lessonId: { type: string, format: uuid }
+                courseId: { type: string, format: uuid }
+                title: { type: string }
+                questions:
+                  type: array
+                  items:
+                    type: object
+                    required: [question, options]
+                    properties:
+                      question: { type: string }
+                      options:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key: { type: string }
+                            text: { type: string }
+                            correct: { type: boolean }
+      responses:
+        "201": { description: أُنشئ }
+        "400": { $ref: "#/components/responses/ValidationError" }
+
+  /quizzes/{id}:
+    get:
+      summary: جلب الاختبار للطالب (بدون الإجابات الصحيحة بنيويًا)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: الأسئلة الآمنة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string }
+                  title: { type: string }
+                  passScore: { type: integer }
+                  questions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        question: { type: string }
+                        options:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              key: { type: string }
+                              text: { type: string }
+
+  /quizzes/{id}/attempts:
+    post:
+      summary: تقديم محاولة — تصحيح خادمي + شهادة تلقائية عند ≥70%
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enrollmentId, answers]
+              properties:
+                enrollmentId: { type: string, format: uuid }
+                answers:
+                  type: object
+                  additionalProperties: { type: string }
+      responses:
+        "201":
+          description: النتيجة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string }
+                  score: { type: integer }
+                  passed: { type: boolean }
+                  certIssued: { type: boolean }
+
+  /me/certificates:
+    get:
+      summary: شهاداتي
+      responses:
+        "200":
+          description: قائمة الشهادات
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Certificate" }
+
+  /me/paper-requests:
+    post:
+      summary: طلب نسخة ورقية (صاحب الشهادة فقط)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [certificateId, deliveryAddress, deliveryPhone]
+              properties:
+                certificateId: { type: string, format: uuid }
+                deliveryAddress: { type: string }
+                deliveryPhone: { type: string }
+                notes: { type: string }
+      responses:
+        "201": { description: أُنشئ الطلب }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    get:
+      summary: طلباتي الورقية
+      responses:
+        "200": { description: القائمة }
+
+  /erp/paper-requests:
+    get:
+      summary: طلبات النسخ الورقية (erp_staff/manager)
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [pending, approved, printed, delivered] }
+      responses:
+        "200":
+          description: القائمة
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /erp/paper-requests/{id}/advance:
+    post:
+      summary: "تقديم الحالة: pending→approved→printed→delivered (state machine)"
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [approved, printed, delivered] }
+      responses:
+        "204": { description: حُدّثت }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /admin/users/{id}/roles:
+    get:
+      summary: أدوار مستخدم (system_admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: الأدوار
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  roles:
+                    type: array
+                    items: { type: string }
+
+components:
+  responses:
+    NotFound:
+      description: غير موجود
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: ممنوع
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Conflict:
+      description: تعارض حالة
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    ValidationError:
+      description: مدخل غير صالح
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+        message: { type: string }
+
+    Category:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        nameAr: { type: string }
+        description: { type: string, nullable: true }
+
+    Course:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        title: { type: string }
+        summary: { type: string }
+        description: { type: string }
+        categoryId: { type: string, format: uuid, nullable: true }
+        instructorId: { type: string, format: uuid }
+        status: { type: string, enum: [draft, pending_review, published, archived] }
+        level: { type: string, enum: [beginner, intermediate, advanced] }
+        language: { type: string }
+        priceAmount: { type: number }
+        currency: { type: string }
+        durationHours: { type: integer }
+        coverImageUrl: { type: string, nullable: true }
+        hasLiveSessions: { type: boolean }
+        reviewNotes: { type: string, nullable: true }
+        publishedAt: { type: string, format: date-time, nullable: true }
+
+    CreateCourseInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, minLength: 4 }
+        summary: { type: string }
+        description: { type: string }
+        slug: { type: string }
+        categoryId: { type: string, format: uuid }
+        level: { type: string, enum: [beginner, intermediate, advanced] }
+        priceAmount: { type: number, minimum: 0 }
+        currency: { type: string, default: SDG }
+        durationHours: { type: integer, minimum: 0 }
+        coverImageUrl: { type: string }
+        hasLiveSessions: { type: boolean, default: false }
+
+    UpdateCourseInput:
+      type: object
+      properties:
+        title: { type: string }
+        summary: { type: string }
+        description: { type: string }
+        level: { type: string, enum: [beginner, intermediate, advanced] }
+        priceAmount: { type: number }
+        durationHours: { type: integer }
+        coverImageUrl: { type: string, nullable: true }
+        hasLiveSessions: { type: boolean }
+
+
+    Enrollment:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        courseId: { type: string, format: uuid }
+        status: { type: string, enum: [pending_payment, active, completed, cancelled] }
+        priceAmount: { type: number }
+        currency: { type: string }
+        progressPct: { type: integer, minimum: 0, maximum: 100 }
+        startedAt: { type: string, format: date-time, nullable: true }
+        completedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    Certificate:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        serialNumber: { type: string }
+        courseTitle: { type: string }
+        finalScore: { type: integer }
+        issuedAt: { type: string, format: date-time }
+
+    PaymentRequest:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        enrollmentId: { type: string, format: uuid }
+        method: { type: string, enum: [bank_transfer] }
+        amount: { type: number }
+        currency: { type: string }
+        status: { type: string, enum: [submitted, under_review, approved, rejected] }
+        receiptUrl: { type: string }
+        bankReference: { type: string, nullable: true }
+        rejectionReason: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    LessonInput:
+      type: object
+      required: [courseId, title]
+      properties:
+        courseId: { type: string, format: uuid }
+        type: { type: string, enum: [video, text, quiz, assignment], default: video }
+        title: { type: string }
+        content: { type: string, nullable: true }
+        videoUrl: { type: string, nullable: true }
+        position: { type: integer }
+        isFreePreview: { type: boolean, default: false }

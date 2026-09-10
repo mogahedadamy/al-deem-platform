@@ -1,0 +1,9 @@
+{
+  "name": "@al-deem/config",
+  "version": "0.1.0",
+  "private": true,
+  "files": [
+    "eslint.js",
+    "tsconfig.base.json"
+  ]
+}
