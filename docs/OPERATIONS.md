@@ -45,14 +45,16 @@ DATABASE_URL=... KEYCLOAK_URL=... REDIS_URL=... nohup /tmp/core-api > /tmp/corea
 - لا خسارة بيانات: أحداث zoom تبقى في `zoom_webhook_events` بلا processed_at
 - إعادة التشغيل تلتقط كل المعلّق (poll كل 10 ثوانٍ)
 
-### 5. DB backup/restore
+### 5. DB backup/restore — آلي
 ```bash
-# backup:
-pg_dump -h 127.0.0.1 -p 5435 -U deem deem | gzip > deem-$(date +%F).sql.gz
-# restore (تدريب — على DB اختبارية فقط):
-gunzip -c deem-XXXX.sql.gz | psql -h 127.0.0.1 -p 5435 -U deem deem_test
+# النسخ اليومي (3 صباحًا في cron):
+0 3 * * * /path/to/platform/infra/prod/scripts/backup.sh
+# أو يدويًا:
+./infra/prod/scripts/backup.sh /var/backups/deem
 ```
-> Drill الشهري: restore على DB اختبارية + فحص counts.
+- السكربت: نسخة مؤرخة + gzip + فحص سلامة + تنظيف >30 يومًا + **drill أسبوعي تلقائي** (الأحد)
+- **مهم**: pg_dump 17 داخل الحاوية `deem-postgres` (عميل السيرفر 16 لا يصلح)
+- drill يدوي: استعادة لـDB اختبارية + مقارنة counts مع الأصل
 
 ## MFA لموظفي ERP
 - CONFIGURE_TOTP مفروض في Keycloak على admin@ وfinance@

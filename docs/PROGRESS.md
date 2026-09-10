@@ -526,6 +526,19 @@ env.www / env.learn / env.erp / env.core-api (قوالب الأسرار) + READM
 - [x] error.tsx (500) في www (إعادة المحاولة + تواصل) وlearn (إعادة المحاولة) — عربية بالكامل
 - [x] tsc 0 errors × 3 + builds نظيفة
 
+## ✅ الجولة 14 — Backup/Restore drill ناجح (Blueprint 19 تشغيلي) + سكربت آلي
+
+### Drill حقيقي (نُفّذ فعليًا لا ت DOCUMENTED فقط)
+- [x] **pg_dump 17 عبر الحاوية** (عميل 16 على السيرفر لا يصلح لسيرفر 17 — اكتشاف مهم)
+- [x] نسخة 15KB → استعادة إلى deem_test → **reconciliation مطابق 100%**: 6 profiles، 3 courses، 3 certificates، 4 payments
+- [x] deem_test نُظفت بعد الـdrill
+
+### infra/prod/scripts/backup.sh — آلي كامل
+- [x] نسخة يومية مؤرخة + gzip + فحص سلامة (header) + تنظيف نسخ >30 يومًا
+- [x] **restore drill أسبوعي تلقائي** (الأحد): استعادة + مقارنة counts + فشل صريح عند mismatch
+- [x] مثبت: نسخة 16K + سلامة مؤكدة + تنظيف ✓
+- [x] ملاحظة: أمر cron للإنتاج: `0 3 * * * /path/to/platform/infra/prod/scripts/backup.sh`
+
 ## 🔜 ما تبقى (تحسينات ما بعد الإطلاق)
 1. تدوير الأسرار الفعلي عند الإطلاق (openssl rand) + KC_HOSTNAME=auth.alameedtraining.com
 2. DNS: A records للنطاقات أو Cloudflare proxy (SSL Full — نفس نمط v1)
