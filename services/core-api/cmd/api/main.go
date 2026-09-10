@@ -186,7 +186,23 @@ func main() {
 			"keycloak", cfg.KeycloakURL, "realm", cfg.KeycloakRealm)
 	}
 
+	// ===== Redis rate limiting (Blueprint 6.3) =====
+	// fail-open: إن لم يتصل Redis تعمل الخدمة بلا حدود (مع سجل واضح)
+	var limiter *middleware.RateLimiter
+	if cfg.RedisURL != "" {
+		if rl, err := middleware.NewRateLimiter(cfg.RedisURL, "deem:rl"); err != nil {
+			slog.Warn("redis unavailable — rate limiting disabled (fail-open)", "err", err)
+		} else {
+			limiter = rl
+			slog.Info("redis rate limiter active", "url", cfg.RedisURL)
+		}
+	}
+
 	handler := middleware.RequestID(middleware.Logging(middleware.Recover(mux)))
+	if limiter != nil {
+		// 120 طلب/دقيقة لكل IP على كل الـAPI
+		handler = limiter.Middleware(120, time.Minute)(handler)
+	}
 
 	srv := &http.Server{
 		Addr:              addr,

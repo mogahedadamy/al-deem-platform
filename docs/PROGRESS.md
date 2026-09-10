@@ -404,6 +404,25 @@ env.www / env.learn / env.erp / env.core-api (قوالب الأسرار) + READM
 - [x] 8 بطاقات (بدل 4) + جدول ملخص الدورات والمدربين
 - [x] مثبت عبر erp domain: 66% إكمال، 64% متوسط، جدول الدورات الثلاث بالمدرب
 
+## ✅ الجولة 7 — Redis rate limiting + Worker حقيقي (Blueprint 6.3 + 11.3)
+
+### Rate limiting بRedis (كان Redis يعمل 6391 لكنه غير مستخدم!)
+- [x] `middleware/ratelimit.go`: fixed-window بgo-redis v9 — TxPipeline INCR+EXPIRE ذري
+- [x] 120 طلب/دقيقة لكل IP (X-Forwarded-For أولًا خلف Caddy)
+- [x] **429 مع Retry-After** + رسالة عربية — مثبت: 120×200 ثم 5×429، وبعد النافذة 200
+- [x] **fail-open**: انقطاع Redis = خدمة بلا حدود + سجل warn (لا يوقف المنصة)
+- [x] المُشغّل: core-api بـREDIS_URL (فعّال — سجل "redis rate limiter active")
+
+### Worker حقيقي (كان skeleton!)
+- [x] cmd/worker: حلقة poll كل 10 ثوانٍ + processBatch
+- [x] **WorkerService.ProcessPendingZoomEvents**: معالجة أحداث Zoom المعلّقة
+  - meeting.started/ended → تقدم حالة الحصة (بstate machine)
+  - **recording.completed → حفظ رابط التسجيل** (يختار MP4 من بين الملفات)
+  - participant_joined/left → مسجل للمستقبل
+- [x] Idempotent: MarkProcessed بعد كل حدث ناجح
+- [x] **مثبت E2E**: webhook recording.completed → worker → الحصة archived + رابط MP4 محفوظ + الحدث processed (عالج 4 أحداث متراكمة)
+- [x] Worker يعمل الآن كخدمة خلفية
+
 ## 🔜 ما تبقى (تحسينات ما بعد الإطلاق)
 1. تدوير الأسرار الفعلي عند الإطلاق (openssl rand) + KC_HOSTNAME=auth.alameedtraining.com
 2. DNS: A records للنطاقات أو Cloudflare proxy (SSL Full — نفس نمط v1)
