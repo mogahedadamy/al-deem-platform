@@ -468,6 +468,33 @@ env.www / env.learn / env.erp / env.core-api (قوالب الأسرار) + READM
 - [x] canonical + OG لكل صفحة دورة من DB
 - [x] tsc 0 errors + build نظيف (robots.txt وsitemap.xml يظهران في output)
 
+## ✅ الجولة 11 — IDOR/Authorization matrix (Blueprint 19 أمن) + إصلاح ثغرة دفع
+
+### إصلاح ثغرة حقيقية: الدفع على تسجيل غير معلّق
+- [x] **SubmitPayment كان يقبل الدفع على enrollment بأي حالة** — طالب مكمل الدورة كان يستطيع إرسال دفع جديد بلا معنى مالي (مكتشف بالاختبار!)
+- [x] الإصلاح: `pending_payment` فقط (Blueprint 8.4) — 409 برسالة عربية — مثبت
+- [x] الدفع على completed كان يعمل بالخطأ قبل الإصلاح (201) والآن 409 ✓
+
+### IDOR matrix — كلها مرفوضة 403 (مثبتة حية)
+| المحاولة | النتيجة |
+|---|---|
+| سارة تفتح تسجيل test.student | 403 ✓ |
+| سارة تشاهد درسًا عبر enrollment الآخر | 403 ✓ |
+| سارة تدفع على تسجيل الآخر | 403 ✓ |
+| خالد يفتح تسجيل سارة | 403 ✓ |
+| طالب يعتمد دفعة (finance) | 403 ✓ |
+| طالب يقرأ /admin/users | 403 ✓ |
+| طالب يقرأ /finance/payments | 403 ✓ |
+| سارة على تسجيلها الخاص | 200 ✓ (السماح الصحيح) |
+
+### E2E رحلة طالب جديدة كاملة (خالد إبراهيم)
+- [x] KC user → JIT profile (auto-create أول توكن) → student role
+- [x] enroll → pending_payment → دفع submitted → **الطالب مرفوض من اعتماد دفعته 403** → المالي يعتمد 204 → **payment approved + enrollment active ذريًا** → يفتح دروسه 200 (1 درس: مقدمة التواصل)
+- [x] MFA: أثناء الاختبار فُكّ مؤقتًا عن finance@ (required action يمنع direct grant) ثم **أُعيد فورًا** — سلوك صحيح للـMFA في الإنتاج
+
+### ملاحظة MFA تشغيلية
+- MFA يمنع password grant لأتمتة الاختبارات — الطريقة الصحيحة: browser flow بإعداد OTP مرة واحدة، أو service account للمراقبة
+
 ## 🔜 ما تبقى (تحسينات ما بعد الإطلاق)
 1. تدوير الأسرار الفعلي عند الإطلاق (openssl rand) + KC_HOSTNAME=auth.alameedtraining.com
 2. DNS: A records للنطاقات أو Cloudflare proxy (SSL Full — نفس نمط v1)

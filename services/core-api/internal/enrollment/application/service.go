@@ -73,7 +73,11 @@ func (s *EnrollmentService) SubmitPayment(ctx context.Context, actor *iddomain.A
 		return nil, err
 	}
 	if e.StudentID != actor.ID {
-		return nil, platform.ErrForbidden // لا تسجيل بدفع غير صاحبه
+		return nil, platform.ErrForbidden // لا تسجيل بدفع غير صاحبه (IDOR)
+	}
+	// Blueprint 8.4: الدفع فقط للتسجيل بانتظار الدفع — لا دفع على active/completed/cancelled
+	if e.Status != endom.EnrollmentPendingPayment {
+		return nil, &platform.DomainError{Code: "CONFLICT", Msg: "التسجيل ليس بانتظار الدفع"}
 	}
 	if receiptURL == "" {
 		return nil, platform.ErrValidation
