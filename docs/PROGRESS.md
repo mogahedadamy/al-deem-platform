@@ -440,6 +440,26 @@ env.www / env.learn / env.erp / env.core-api (قوالب الأسرار) + READM
 - [x] **مثبت E2E**: دخول finance عبر erp domain بعد الباسورد → "Mobile Authenticator Setup" (Microsoft/Google/FreeOTP + QR) — لا يمكن الوصول للـcallback قبل إعداد OTP
 - [x] سياسة موظف erp: أول دخول يفرض MFA — قرار #3 منفذ حرفيًا
 
+## ✅ الجولة 9 — Unit tests (Blueprint 18: كان صفر اختبارات!)
+
+### 7 حزم اختبار — كلها خضراء (`go test ./... -count=1`)
+| الحزمة | التغطية | ما تختبره |
+|---|---|---|
+| catalog/domain | **92.9%** | course state machine: draft→pending_review→published→archived، رفض بلا ملاحظات، ملكية المدرب |
+| assessment/domain | **92.3%** | **قرار #4 حرفيًا**: 60% لا نجاح، **70% بالضبط = نجاح (قاعدة ≥70)**، Grade خادمي %، serial فريد ALD-YYYY-hex8، paper state machine (قفز مرفوض) |
+| enrollment/domain | **77.8%** | entitlement: مسودة/مؤرشفة مرفوضة، active يمنع الإعادة، completed يسمح؛ RecomputeProgressPct (تقريب، حد 100) |
+| livesessions/domain | **88.2%** | نافذة الانضمام (حواف بالضبط عند الفتح/النهاية)، state machine كامل (7 صالحة + 8 مرفوضة)، IsActivePhase |
+| livesessions/transport | 7.3% | توقيع Zoom HMAC (صحيح/سر خاطئ/body محرّف/فارغ) |
+| leads/domain | **100%** | state machine كامل (7 صالحة + 5 مرفوضة، converted/lost نهائية) |
+| platform/middleware | 12.1% | CORS whitelist (suffix attack مرفوض)، clientIP (XFF أول hop) |
+
+### Makefile (CI pipeline — blueprint 14.3)
+`make check` = build → vet → lint → test في أمر واحد
+
+### ملاحظات
+- Grade تُرجع نسبة مئوية (0-100) وليس نقاطًا — أولّد الاختبار بناء على السلوك الفعلي
+- 29 test function تغطي كل قواعد العمل الحرجة (invariants خادمية)
+
 ## 🔜 ما تبقى (تحسينات ما بعد الإطلاق)
 1. تدوير الأسرار الفعلي عند الإطلاق (openssl rand) + KC_HOSTNAME=auth.alameedtraining.com
 2. DNS: A records للنطاقات أو Cloudflare proxy (SSL Full — نفس نمط v1)
