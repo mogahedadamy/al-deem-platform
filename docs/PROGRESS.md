@@ -539,6 +539,18 @@ env.www / env.learn / env.erp / env.core-api (قوالب الأسرار) + READM
 - [x] مثبت: نسخة 16K + سلامة مؤكدة + تنظيف ✓
 - [x] ملاحظة: أمر cron للإنتاج: `0 3 * * * /path/to/platform/infra/prod/scripts/backup.sh`
 
+## ✅ الجولة 15 — قياس أداء + وثيقة تسليم الإطلاق
+
+### Baseline أداء (Blueprint 15 — p95 أهداف مبدئية)
+- [x] API كتالوج عام: **9-12ms** فردي؛ 30 متزامن في 197ms إجماليًا
+- [x] SSR: www/courses 66ms، learn/courses 24ms — أهداف CDN محققة بلا CDN
+- [x] الموارد: 4 خدمات Go/Next + worker على السيرفر دون ضغط
+
+### docs/LAUNCH_STATUS.md — وثيقة تسليم المالك
+- [x] جدول الجاهزية (9 مكوّنات) + رحلات E2E الخمس + الأمان
+- [x] **ما يحتاج قرار المالك**: DNS (خياران موثقان) + أسرار + systemd
+- [x] خطوات الإطلاق الست + بيانات دخول التطوير (مع تحذير التغيير)
+
 ## 🔜 ما تبقى (تحسينات ما بعد الإطلاق)
 1. تدوير الأسرار الفعلي عند الإطلاق (openssl rand) + KC_HOSTNAME=auth.alameedtraining.com
 2. DNS: A records للنطاقات أو Cloudflare proxy (SSL Full — نفس نمط v1)
