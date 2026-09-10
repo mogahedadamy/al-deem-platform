@@ -24,6 +24,9 @@ catdom "github.com/al-deem/platform/core-api/internal/catalog/domain"
 	asmapp "github.com/al-deem/platform/core-api/internal/assessment/application"
 	asmpg "github.com/al-deem/platform/core-api/internal/assessment/infrastructure/postgres"
 	asmtransport "github.com/al-deem/platform/core-api/internal/assessment/transport"
+	ldapp "github.com/al-deem/platform/core-api/internal/leads/application"
+	ldpg "github.com/al-deem/platform/core-api/internal/leads/infrastructure/postgres"
+	ldtransport "github.com/al-deem/platform/core-api/internal/leads/transport"
 	lsapp "github.com/al-deem/platform/core-api/internal/livesessions/application"
 	lspg "github.com/al-deem/platform/core-api/internal/livesessions/infrastructure/postgres"
 	lstransport "github.com/al-deem/platform/core-api/internal/livesessions/transport"
@@ -173,7 +176,13 @@ func main() {
 		lsh := lstransport.NewLiveSessionsHandler(lsSvc, resolver)
 		lsh.Register(mux)
 
-		slog.Info("modules wired", "identity", true, "catalog", true, "enrollment", true, "assessment", true, "livesessions", true,
+		// ===== leads module (R4-B) — الاستفسارات =====
+		ldStore := ldpg.NewLeadStore(db)
+		ldSvc := ldapp.NewLeadsService(ldStore, store)
+		ldh := ldtransport.NewLeadsHandler(ldSvc, resolver)
+		ldh.Register(mux)
+
+		slog.Info("modules wired", "identity", true, "catalog", true, "enrollment", true, "assessment", true, "livesessions", true, "leads", true,
 			"keycloak", cfg.KeycloakURL, "realm", cfg.KeycloakRealm)
 	}
 

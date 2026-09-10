@@ -938,6 +938,80 @@ paths:
         "200": { description: استُقبل }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
+  # ===== Leads (R4-B — الاستفسارات) =====
+  /public/leads:
+    post:
+      summary: استقبال استفسار عام (نموذج تواصل معنا — بلا جلسة)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, message]
+              properties:
+                name: { type: string, maxLength: 200 }
+                email: { type: string, format: email }
+                phone: { type: string }
+                subject: { type: string }
+                message: { type: string, maxLength: 4000 }
+                source: { type: string, default: website }
+      responses:
+        "201":
+          description: استُلم
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+                  status: { type: string }
+
+  /erp/leads:
+    get:
+      summary: استفسارات الفريق (system_admin) — فلتر بالحالة + pagination
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [new, contacted, qualified, converted, lost] } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        "200":
+          description: القائمة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Lead" }
+                  total: { type: integer }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /erp/leads/{id}/advance:
+    post:
+      summary: "تقدم الاستفسار: new→contacted→qualified→converted|lost (state machine)"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [contacted, qualified, converted, lost] }
+                notes: { type: string }
+      responses:
+        "200":
+          description: حُدّث
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Lead" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
 components:
   responses:
     Unauthorized:
@@ -1009,6 +1083,20 @@ components:
     RoleKey:
       type: string
       enum: [student, instructor, content_reviewer, finance_officer, support_agent, erp_staff, erp_manager, system_admin]
+
+    Lead:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+        subject: { type: string }
+        message: { type: string }
+        source: { type: string }
+        status: { type: string, enum: [new, contacted, qualified, converted, lost] }
+        notes: { type: string }
+        createdAt: { type: string, format: date-time }
 
     LiveSession:
       type: object

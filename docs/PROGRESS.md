@@ -363,6 +363,30 @@ env.www / env.learn / env.erp / env.core-api (قوالب الأسرار) + READM
 - [x] لوحة سارة: بطاقات دوراتي=1 مكتملة=1 شهاداتي=1 + "مهارات التواصل المهني" مكتملة 100% + أزرار متابعة التعلّم/الاختبار
 - [x] tsc 0 errors + next build نظيف + golangci-lint 0 issues
 
+## ✅ الجولة 5 — www: about/contact + Leads module (R4-B)
+
+### اكتشافات وإصلاحات UX
+- [x] **قسم الطالب في لوحة التحكم كان placeholder "قريبًا"** والوظائف كلها مبنية! أُعيد بناؤه كاملًا: بطاقات (دوراتي/مكتملة/شهاداتي) + قائمة بالـprogress bar وأزرار متابعة/اختبار + CTA استكمال الدفع
+- [x] `GET /v1/me/enrollments` أصبح يعيد courseTitle + courseSlug (JOIN) — مثبت عبر النطاق: لوحة سارة تعرض "مهارات التواصل المهني" مكتملة 100%
+
+### www — صفحات Blueprint 7.5 الناقصة
+- [x] `/about` — رسالة/رؤية/قيم/رحلة الشهادة الأربع خطوات
+- [x] `/contact` — بيانات تواصل + تدريب مؤسسي + **نموذج استفسار حقيقي** (client component مع شاشة نجاح/خطأ وbusy state)
+- [x] SiteHeader/SiteFooter مشتركة في components/chrome.tsx
+
+### Leads module كامل (R4-B: leads & inquiries)
+- [x] migration 00006: جدول leads (23 جدولًا) + state machine `new→contacted→qualified→converted|lost` في DB CHECK
+- [x] Module كامل: Submit (تحقق بريد/طول/تنظيف — بلا جلسة)، List (system_admin + pagination + فلتر)، Advance (state machine صارم 409 + ملاحظات + audit)
+- [x] **إصلاح bug في itoa(0) كان يرجع "20"** → OFFSET خاطئ → items فارغة رغم total=2
+- [x] ERP `/leads`: قائمة الاستفسارات بتوزيع الحالات + أزرار تقدم (تأكيد بملاحظة للlost/converted) + proxy
+
+### التحقق (كل المسارات عبر النطاقات الإنتاجية)
+- [x] www: / /courses /about /contact /verify كلها 200 عبر alameedtraining.com
+- [x] نموذج التواصل: apex→core-api→DB (محمد عثمان — التدريب المؤسسي) ✓
+- [x] leads API: submit 201 / بريد سيء 400 / قفزة غير صالحة 409 / طالب 403 / advance بملاحظة ✓
+- [x] ERP /leads عبر erp domain: الاستفساران يظهران + advance new→contacted→qualified بملاحظات محفوظة ✓
+- [x] Go: build+vet+lint 0 issues | TS: tsc نظيف × 3 | builds نظيفة
+
 ## 🔜 ما تبقى (تحسينات ما بعد الإطلاق)
 1. تدوير الأسرار الفعلي عند الإطلاق (openssl rand) + KC_HOSTNAME=auth.alameedtraining.com
 2. DNS: A records للنطاقات أو Cloudflare proxy (SSL Full — نفس نمط v1)

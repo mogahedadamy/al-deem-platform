@@ -89,6 +89,15 @@ export default async function ErpHome() {
               طلبات الشهادات الورقية: اعتماد، طباعة، تسليم.
             </p>
           </Link>
+          <Link
+            href="/leads"
+            className="rounded-xl border border-border bg-surface p-5 transition-colors hover:border-primary"
+          >
+            <h2 className="font-bold text-secondary">الاستفسارات</h2>
+            <p className="mt-1 text-sm text-muted">
+              رسائل «تواصل معنا»: متابعة، تأهيل، تحويل لتسجيل.
+            </p>
+          </Link>
         </div>
       </div>
     </div>
