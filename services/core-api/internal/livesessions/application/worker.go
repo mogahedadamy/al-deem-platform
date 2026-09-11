@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	lsdom "github.com/al-deem/platform/core-api/internal/livesessions/domain"
 	"github.com/al-deem/platform/core-api/internal/livesessions/ports"
@@ -68,10 +67,38 @@ func (s *WorkerService) advanceByMeeting(ctx context.Context, zoomMeetingID stri
 		// لا حصة مرتبطة — ليس خطأ
 		return nil
 	}
-	if lsdom.ValidTransition(ses.Status, to) {
-		return s.sessions.UpdateStatus(ctx, ses.ID, to)
+	// Zoom قد يصل متأخراً أو يفوّت webhook فتح نافذة الانضمام. لا نتجاوز
+	// state machine مباشرة؛ نمر بكل transition قانوني للوصول إلى الحالة
+	// التي أكدها Zoom.
+	for ses.Status != to {
+		next, ok := zoomTransitionStep(ses.Status, to)
+		if !ok {
+			return nil
+		}
+		if err := s.sessions.UpdateStatus(ctx, ses.ID, next); err != nil {
+			return err
+		}
+		ses.Status = next
 	}
-	return nil // تحول غير مسموح — نتجاهل
+	return nil
+}
+
+func zoomTransitionStep(from, target lsdom.Status) (lsdom.Status, bool) {
+	switch from {
+	case lsdom.StatusScheduled:
+		if target == lsdom.StatusLive || target == lsdom.StatusEnded {
+			return lsdom.StatusJoinOpen, true
+		}
+	case lsdom.StatusJoinOpen:
+		if target == lsdom.StatusLive || target == lsdom.StatusEnded {
+			return lsdom.StatusLive, true
+		}
+	case lsdom.StatusLive:
+		if target == lsdom.StatusEnded {
+			return lsdom.StatusEnded, true
+		}
+	}
+	return "", false
 }
 
 // saveRecording — يستخرج download_url من payload ويحفظه في الحصة.
@@ -80,8 +107,8 @@ func (s *WorkerService) saveRecording(ctx context.Context, e lsdom.WebhookEvent)
 	var p struct {
 		Payload struct {
 			Object struct {
-				ID              string `json:"id"`
-				RecordingFiles  []struct {
+				ID             string `json:"id"`
+				RecordingFiles []struct {
 					DownloadURL string `json:"download_url"`
 					FileType    string `json:"file_type"`
 				} `json:"recording_files"`
@@ -119,13 +146,16 @@ func (s *WorkerService) saveRecording(ctx context.Context, e lsdom.WebhookEvent)
 	if err := s.sessions.SetRecording(ctx, ses.ID, url); err != nil {
 		return err
 	}
-	// بعد التسجيل: recording_processing → archived
-	if lsdom.ValidTransition(ses.Status, lsdom.StatusArchived) {
-		// فقط إن كانت recording_processing — وإلا تبقى ended
-		if ses.Status == lsdom.StatusRecordingProcessing {
-			return s.sessions.UpdateStatus(ctx, ses.ID, lsdom.StatusArchived)
+	// recording.completed قد يصل مباشرة بعد meeting.ended؛ نطبّق المرحلتين
+	// القانونيتين بدلاً من ترك الحصة في ended رغم توفر التسجيل.
+	if ses.Status == lsdom.StatusEnded {
+		if err := s.sessions.UpdateStatus(ctx, ses.ID, lsdom.StatusRecordingProcessing); err != nil {
+			return err
 		}
+		ses.Status = lsdom.StatusRecordingProcessing
 	}
-	_ = time.Now()
+	if ses.Status == lsdom.StatusRecordingProcessing {
+		return s.sessions.UpdateStatus(ctx, ses.ID, lsdom.StatusArchived)
+	}
 	return nil
 }
