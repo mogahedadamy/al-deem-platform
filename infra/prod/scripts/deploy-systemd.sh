@@ -33,7 +33,9 @@ for ENV in core-api www learn erp backup; do
     exit 1
   fi
 done
-if sudo grep -R -E -q 'CHANGE_ME|replace-with-random|^AUTH_SECRET=$|^AUTH_KEYCLOAK_SECRET=$|^ZOOM_WEBHOOK_SECRET=$' "$APP_DIR/env"; then
+# learn/erp are public OIDC clients, therefore AUTH_KEYCLOAK_SECRET is
+# intentionally empty. AUTH_SECRET and Zoom's webhook secret must not be.
+if sudo grep -R -E -q 'CHANGE_ME|replace-with-random|^AUTH_SECRET=$|^ZOOM_WEBHOOK_SECRET=$' "$APP_DIR/env"; then
   echo "✗ production environment contains placeholder or blank critical secret" >&2
   exit 1
 fi
