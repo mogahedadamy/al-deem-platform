@@ -22,7 +22,7 @@
    ```bash
    KC_ADMIN_USER='...' KC_ADMIN_PASSWORD='...' ./infra/prod/scripts/configure-keycloak.sh
    ```
-   ينشئ السكربت scope `core-api-audience` ويربطه بعملاء `learn` و`erp` و`www`، ويقوي realm وTOTP. بعدها تحقق من access token أن `aud` يحوي `core-api` ومن وجود مسار استعادة إداري موثق.
+   ينشئ السكربت scope `core-api-audience` ويربطه بعملاء `learn` و`erp` و`www`، ويقوي realm وTOTP. لتفعيل email verification وreset password أضف `KC_ENABLE_EMAIL_VERIFICATION=true` فقط بعد إعداد SMTP إنتاجي. بعدها تحقق من access token أن `aud` يحوي `core-api` ومن وجود مسار استعادة إداري موثق.
 5. نفّذ `pnpm lint && pnpm test && pnpm build && (cd services/core-api && go test ./...)`.
 
 ## النشر الذري

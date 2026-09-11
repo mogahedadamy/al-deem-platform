@@ -8,6 +8,8 @@ set -euo pipefail
 : "${KC_ADMIN_PASSWORD:?set KC_ADMIN_PASSWORD}"
 KC_ADMIN_URL="${KC_ADMIN_URL:-http://127.0.0.1:8091}"
 KC_REALM="${KC_REALM:-al-deem}"
+# لا تفرض verify-email/reset-password قبل إعداد SMTP إنتاجي قابل للوصول.
+KC_ENABLE_EMAIL_VERIFICATION="${KC_ENABLE_EMAIL_VERIFICATION:-false}"
 
 for dependency in curl jq; do
   command -v "$dependency" >/dev/null || { echo "missing dependency: $dependency" >&2; exit 1; }
@@ -81,10 +83,15 @@ for client_name in www learn erp; do
 done
 
 # Realm fields are updated from the live representation to preserve every
-# unrelated setting. TOTP is default-required; staff account recovery must be
-# documented by the operator before rolling this to production.
+# unrelated setting. TOTP is default-required. Email verification and password
+# reset are enabled only after a real SMTP provider is configured (not Mailpit).
 realm=$(api GET '')
-realm_update=$(jq '.registrationAllowed = false | .verifyEmail = true | .resetPasswordAllowed = true | .sslRequired = "external"' <<<"$realm")
+realm_update=$(jq '.registrationAllowed = false | .sslRequired = "external"' <<<"$realm")
+if [[ "$KC_ENABLE_EMAIL_VERIFICATION" == "true" ]]; then
+  realm_update=$(jq '.verifyEmail = true | .resetPasswordAllowed = true' <<<"$realm_update")
+else
+  echo "email verification/reset left unchanged; set KC_ENABLE_EMAIL_VERIFICATION=true after SMTP production setup"
+fi
 printf '%s' "$realm_update" | api PUT '' --data-binary @- -o /dev/null
 
 totp=$(api GET 'authentication/required-actions/CONFIGURE_TOTP')
