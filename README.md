@@ -55,7 +55,7 @@ pnpm --filter erp dev   # :3003
 |---|---|---|
 | PostgreSQL 17 | 5435 | user: deem / pass: deem / db: deem |
 | Redis 7 | 6391 | — |
-| Keycloak 26 | 8091 | console: deem-admin / deem-admin-password-change-me — realm: `al-deem` |
+| Keycloak 26 | 8091 | realm: `al-deem` — بيانات الإدارة محفوظة خارج المستودع |
 | Mailpit Web UI | 8092 (SMTP 8093) | — |
 | core-api | 4001 | — |
 

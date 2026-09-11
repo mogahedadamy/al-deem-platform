@@ -19,7 +19,8 @@ async function fetchCourse(slug: string): Promise<PublicCourse | null> {
 
 export async function generateMetadata({ params }: { params: Params }) {
   const { slug } = await params;
-  return { title: "اختبار الدورة" };
+  const course = await fetchCourse(slug);
+  return { title: course ? `اختبار ${course.title}` : "اختبار الدورة" };
 }
 
 export default async function QuizPage({ params }: { params: Params }) {
@@ -34,8 +35,7 @@ export default async function QuizPage({ params }: { params: Params }) {
   const myEnrollment = (enrollments?.items ?? []).find(
     (e) => e.courseId === course.id,
   );
-  const entitled =
-    myEnrollment?.status === "active" || myEnrollment?.status === "completed";
+  const entitled = myEnrollment?.status === "completed";
 
   return (
     <div className="flex flex-1 flex-col">
@@ -68,7 +68,7 @@ export default async function QuizPage({ params }: { params: Params }) {
         ) : !entitled ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-6 py-8 text-center">
             <p className="font-bold text-amber-900">
-              الاختبار متاح للطلاب المسجّلين في الدورة فقط
+              الاختبار متاح بعد إكمال جميع دروس الدورة
             </p>
             <Link
               href={`/courses/${slug}`}

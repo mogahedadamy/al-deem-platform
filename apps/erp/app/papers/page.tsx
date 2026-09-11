@@ -49,13 +49,22 @@ export default async function PapersPage() {
         `${API_BASE}/erp/paper-requests?status=${st}&pageSize=50`,
         { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" },
       );
-      if (!res.ok) return { st, items: [] as PaperRequest[], total: 0 };
+      if (!res.ok) return { st, items: [] as PaperRequest[], total: 0, status: res.status };
       const d = (await res.json()) as { items: PaperRequest[]; total: number };
-      return { st, items: d.items, total: d.total };
+      return { st, items: d.items, total: d.total, status: res.status };
     }),
   );
 
-  const failed = groups.length > 0 && groups[0].items.length === 0 && groups[0].total === 0 && !groups[0].items;
+  const failed = groups.find((group) => group.status >= 400);
+  if (failed) {
+    return (
+      <div className="mx-auto max-w-3xl px-6 py-16 text-center">
+        <h1 className="text-2xl font-black text-secondary">تعذر تحميل طلبات الشهادات</h1>
+        <p className="mt-3 text-muted">{failed.status === 403 ? "لا تملك صلاحية إدارة الطلبات الورقية." : "حدث خطأ في الاتصال بالخدمة. حاول لاحقًا."}</p>
+        <Link href="/" className="mt-6 inline-block font-bold text-primary-dark">العودة للرئيسية</Link>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col">

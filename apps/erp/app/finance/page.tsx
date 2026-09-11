@@ -22,6 +22,12 @@ type Payment = {
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4001/v1";
 
+function receiptHref(reference: string) {
+  return reference.startsWith("receipt://")
+    ? `/api/finance/receipts/${encodeURIComponent(reference.slice("receipt://".length))}`
+    : reference;
+}
+
 async function fetchPayments(token: string) {
   const res = await fetch(`${API_BASE}/finance/payments?pageSize=50`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -104,7 +110,7 @@ export default async function FinancePage() {
                     </span>
                   </div>
                   <a
-                    href={p.receiptUrl}
+                    href={receiptHref(p.receiptUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-2 inline-block text-sm font-medium text-primary-dark hover:text-primary"

@@ -3,10 +3,17 @@ package transport
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
+	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 
 	enapp "github.com/al-deem/platform/core-api/internal/enrollment/application"
 	endom "github.com/al-deem/platform/core-api/internal/enrollment/domain"
@@ -36,6 +43,7 @@ func (h *EnrollmentHandler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /v1/me/enrollments", h.auth(h.myEnrollments))
 	mux.HandleFunc("GET /v1/me/payments", h.auth(h.myPayments))
 	mux.HandleFunc("POST /v1/enrollments/{id}/payment", h.auth(h.submitPayment))
+	mux.HandleFunc("POST /v1/me/receipts", h.auth(h.uploadReceipt))
 
 	// erp stats (التقارير الأولية)
 	mux.HandleFunc("GET /v1/erp/stats", h.auth(h.stats))
@@ -43,9 +51,11 @@ func (h *EnrollmentHandler) Register(mux *http.ServeMux) {
 	// lesson viewing (entitlement)
 	mux.HandleFunc("GET /v1/me/enrollments/{id}/lessons", h.auth(h.courseLessons))
 	mux.HandleFunc("GET /v1/me/enrollments/{id}/lessons/{lessonId}", h.auth(h.viewLesson))
+	mux.HandleFunc("POST /v1/me/enrollments/{id}/lessons/{lessonId}/complete", h.auth(h.completeLesson))
 
 	// finance officer (قرار #6)
 	mux.HandleFunc("GET /v1/finance/payments", h.auth(h.listForReview))
+	mux.HandleFunc("GET /v1/finance/receipts/{id}", h.auth(h.downloadReceipt))
 	mux.HandleFunc("POST /v1/finance/payments/{id}/approve", h.auth(h.approve))
 	mux.HandleFunc("POST /v1/finance/payments/{id}/reject", h.auth(h.reject))
 }
@@ -126,8 +136,8 @@ func paymentOut(p endom.PaymentRequest) map[string]any {
 
 func (h *EnrollmentHandler) submitPayment(w http.ResponseWriter, r *http.Request, actor *iddomain.Actor) {
 	var in struct {
-		ReceiptURL  string `json:"receiptUrl"`
-		BankRef     string `json:"bankReference"`
+		ReceiptURL string `json:"receiptUrl"`
+		BankRef    string `json:"bankReference"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&in); err != nil {
 		enWriteError(w, platform.ErrValidation, http.StatusBadRequest)
@@ -139,6 +149,80 @@ func (h *EnrollmentHandler) submitPayment(w http.ResponseWriter, r *http.Request
 		return
 	}
 	writeEn(w, http.StatusCreated, paymentOut(*p))
+}
+
+const maxReceiptSize = 5 << 20
+
+func receiptStorageDir() string {
+	if dir := os.Getenv("PRIVATE_STORAGE_DIR"); dir != "" {
+		return filepath.Join(dir, "receipts")
+	}
+	return "/var/lib/deem/private/receipts"
+}
+
+func (h *EnrollmentHandler) uploadReceipt(w http.ResponseWriter, r *http.Request, actor *iddomain.Actor) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxReceiptSize+(1<<20))
+	file, _, err := r.FormFile("receipt")
+	if err != nil {
+		enWriteError(w, &platform.DomainError{Code: "VALIDATION", Msg: "ملف الإيصال مطلوب"}, http.StatusBadRequest)
+		return
+	}
+	defer func() { _ = file.Close() }()
+	data, err := io.ReadAll(io.LimitReader(file, maxReceiptSize+1))
+	if err != nil || len(data) == 0 || len(data) > maxReceiptSize {
+		enWriteError(w, &platform.DomainError{Code: "VALIDATION", Msg: "حجم الإيصال يجب ألا يتجاوز 5MB"}, http.StatusBadRequest)
+		return
+	}
+	mimeType := http.DetectContentType(data)
+	extensions := map[string]string{"image/png": ".png", "image/jpeg": ".jpg", "application/pdf": ".pdf"}
+	extension, allowed := extensions[mimeType]
+	if !allowed {
+		enWriteError(w, &platform.DomainError{Code: "VALIDATION", Msg: "الصيغ المسموحة PNG وJPG وPDF"}, http.StatusBadRequest)
+		return
+	}
+	random := make([]byte, 24)
+	if _, err := rand.Read(random); err != nil {
+		enWriteDomain(w, err)
+		return
+	}
+	id := hex.EncodeToString(random) + extension
+	dir := receiptStorageDir()
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		enWriteDomain(w, err)
+		return
+	}
+	if err := os.WriteFile(filepath.Join(dir, id), data, 0600); err != nil {
+		enWriteDomain(w, err)
+		return
+	}
+	_ = h.svc.AuditReceiptUploaded(r.Context(), actor, id, len(data), mimeType)
+	writeEn(w, http.StatusCreated, map[string]any{"receiptRef": "receipt://" + id})
+}
+
+func (h *EnrollmentHandler) downloadReceipt(w http.ResponseWriter, r *http.Request, actor *iddomain.Actor) {
+	if !actor.Can(iddomain.PermReviewPayment) && !actor.Can(iddomain.PermApprovePayment) && !actor.Can(iddomain.PermViewErpFinance) {
+		enWriteError(w, platform.ErrForbidden, http.StatusForbidden)
+		return
+	}
+	id := r.PathValue("id")
+	if id == "" || id != filepath.Base(id) || strings.ContainsAny(id, `/\\`) {
+		enWriteError(w, platform.ErrValidation, http.StatusBadRequest)
+		return
+	}
+	path := filepath.Join(receiptStorageDir(), id)
+	file, err := os.Open(path)
+	if os.IsNotExist(err) {
+		enWriteError(w, platform.ErrNotFound, http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		enWriteDomain(w, err)
+		return
+	}
+	defer func() { _ = file.Close() }()
+	w.Header().Set("Content-Disposition", `inline; filename="receipt"`)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	http.ServeContent(w, r, "receipt", time.Time{}, file)
 }
 
 // ===== finance officer =====
@@ -181,7 +265,6 @@ func (h *EnrollmentHandler) reject(w http.ResponseWriter, r *http.Request, actor
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
-
 
 // stats — أرقام حية للإدارة (erp_staff/manager + system_admin).
 func (h *EnrollmentHandler) stats(w http.ResponseWriter, r *http.Request, actor *iddomain.Actor) {
@@ -233,6 +316,16 @@ func (h *EnrollmentHandler) viewLesson(w http.ResponseWriter, r *http.Request, a
 		"lessonId": lp.LessonID, "title": lp.LessonTitle, "type": lp.LessonType,
 		"content": content, "videoUrl": videoURL,
 	})
+}
+
+func (h *EnrollmentHandler) completeLesson(w http.ResponseWriter, r *http.Request, actor *iddomain.Actor) {
+	pct, err := h.svc.CompleteLesson(
+		r.Context(), actor, r.PathValue("id"), r.PathValue("lessonId"), h.lessonLookup)
+	if err != nil {
+		enWriteDomain(w, err)
+		return
+	}
+	writeEn(w, http.StatusOK, map[string]any{"progressPct": pct})
 }
 
 // ===== helpers =====

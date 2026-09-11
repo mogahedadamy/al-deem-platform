@@ -3,6 +3,7 @@ package ports
 
 import (
 	"context"
+	"time"
 
 	asmdom "github.com/al-deem/platform/core-api/internal/assessment/domain"
 )
@@ -19,6 +20,7 @@ type QuizRepository interface {
 type AttemptRepository interface {
 	Create(ctx context.Context, a *asmdom.Attempt, score int, passed bool) error
 	BestScore(ctx context.Context, quizID, studentID string) (int, error)
+	CountSince(ctx context.Context, quizID, studentID string, since time.Time) (int, error)
 	ListByStudent(ctx context.Context, studentID string) ([]asmdom.Attempt, error)
 }
 

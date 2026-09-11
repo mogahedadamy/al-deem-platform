@@ -8,8 +8,8 @@ Wants=network-online.target
 Type=simple
 User=mojahed
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
-WorkingDirectory=/opt/deem/apps/erp
-ExecStart=/usr/bin/env npx next start -p 3013
+WorkingDirectory=/opt/deem/current/apps/erp
+ExecStart=/opt/deem/current/apps/erp/node_modules/.bin/next start -p 3013
 EnvironmentFile=/opt/deem/env/erp.env
 Restart=always
 RestartSec=3

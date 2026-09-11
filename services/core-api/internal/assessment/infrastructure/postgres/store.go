@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	asmdom "github.com/al-deem/platform/core-api/internal/assessment/domain"
 	"github.com/al-deem/platform/core-api/internal/assessment/ports"
@@ -130,6 +131,15 @@ func (s *AttemptStore) BestScore(ctx context.Context, quizID, studentID string) 
 		SELECT COALESCE(MAX(score), 0) FROM quiz_attempts
 		WHERE quiz_id = $1 AND student_id = $2`, quizID, studentID).Scan(&best)
 	return best, err
+}
+
+func (s *AttemptStore) CountSince(ctx context.Context, quizID, studentID string, since time.Time) (int, error) {
+	var count int
+	err := s.db.QueryRowContext(ctx, `
+		SELECT count(*) FROM quiz_attempts
+		WHERE quiz_id = $1 AND student_id = $2 AND finished_at >= $3`,
+		quizID, studentID, since).Scan(&count)
+	return count, err
 }
 
 func (s *AttemptStore) ListByStudent(ctx context.Context, studentID string) ([]asmdom.Attempt, error) {
@@ -299,8 +309,8 @@ func scanPapers(rows *sql.Rows) []asmdom.PaperRequest {
 
 // compile-time conformance
 var (
-	_ ports.QuizRepository          = (*QuizStore)(nil)
-	_ ports.AttemptRepository       = (*AttemptStore)(nil)
-	_ ports.CertificateRepository   = (*CertificateStore)(nil)
-	_ ports.PaperRequestRepository  = (*PaperRequestStore)(nil)
+	_ ports.QuizRepository         = (*QuizStore)(nil)
+	_ ports.AttemptRepository      = (*AttemptStore)(nil)
+	_ ports.CertificateRepository  = (*CertificateStore)(nil)
+	_ ports.PaperRequestRepository = (*PaperRequestStore)(nil)
 )

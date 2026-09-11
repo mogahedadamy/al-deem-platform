@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5/pgconn"
+
 	endom "github.com/al-deem/platform/core-api/internal/enrollment/domain"
 	"github.com/al-deem/platform/core-api/internal/enrollment/ports"
 	"github.com/al-deem/platform/core-api/internal/platform"
@@ -21,8 +23,8 @@ func NewEnrollmentStore(db *sql.DB) *EnrollmentStore { return &EnrollmentStore{d
 
 func (s *EnrollmentStore) Create(ctx context.Context, e *endom.Enrollment) error {
 	err := s.db.QueryRowContext(ctx, `
-		INSERT INTO enrollments (student_id, course_id, status, price_amount, currency)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO enrollments (student_id, course_id, status, price_amount, currency, started_at)
+		VALUES ($1, $2, $3, $4, $5, CASE WHEN $3 = 'active' THEN now() ELSE NULL END)
 		RETURNING id, created_at, updated_at`,
 		e.StudentID, e.CourseID, string(e.Status), e.PriceAmount, e.Currency,
 	).Scan(&e.ID, &e.CreatedAt, &e.UpdatedAt)
@@ -114,6 +116,12 @@ func (s *PaymentStore) Create(ctx context.Context, p *endom.PaymentRequest) erro
 		p.EnrollmentID, p.StudentID, p.Method, p.Amount, p.Currency, string(p.Status), p.ReceiptURL, p.BankReference,
 	).Scan(&p.ID, &p.CreatedAt, &p.CreatedAt)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			// uq_payment_requests_open_enrollment: الطلب المتزامن فاز به
+			// طلب آخر؛ تلتقطه application layer وتعيده idempotently.
+			return platform.ErrConflict
+		}
 		return fmt.Errorf("insert payment: %w", err)
 	}
 	return nil
@@ -461,9 +469,9 @@ func (s *EnrollmentStore) GetStats(ctx context.Context) (map[string]any, error) 
 	}
 	defer func() { _ = srows.Close() }()
 	type courseRow struct {
-		Course    string `json:"course"`
+		Course     string `json:"course"`
 		Instructor string `json:"instructor"`
-		Students  int    `json:"students"`
+		Students   int    `json:"students"`
 	}
 	var courses []courseRow
 	for srows.Next() {

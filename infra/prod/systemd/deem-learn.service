@@ -8,8 +8,8 @@ Wants=network-online.target
 Type=simple
 User=mojahed
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
-WorkingDirectory=/opt/deem/apps/learn
-ExecStart=/usr/bin/env npx next start -p 3012
+WorkingDirectory=/opt/deem/current/apps/learn
+ExecStart=/opt/deem/current/apps/learn/node_modules/.bin/next start -p 3012
 EnvironmentFile=/opt/deem/env/learn.env
 Restart=always
 RestartSec=3

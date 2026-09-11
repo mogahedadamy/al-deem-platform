@@ -1,11 +1,31 @@
 {
   "realm": "al-deem",
   "enabled": true,
-  "registrationAllowed": true,
+  "registrationAllowed": false,
   "loginWithEmailAllowed": true,
-  "verifyEmail": false,
+  "verifyEmail": true,
   "resetPasswordAllowed": true,
-  "sslRequired": "none",
+  "sslRequired": "external",
+  "bruteForceProtected": true,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "maxDeltaTimeSeconds": 43200,
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyDigits": 6,
+  "otpPolicyPeriod": 30,
+  "otpPolicyLookAheadWindow": 1,
+  "requiredActions": [
+    {
+      "alias": "CONFIGURE_TOTP",
+      "name": "Configure OTP",
+      "providerId": "CONFIGURE_TOTP",
+      "enabled": true,
+      "defaultAction": true,
+      "priority": 10
+    }
+  ],
   "roles": {
     "realm": [
       { "name": "student", "description": "طالب — يتعلم ويطلب دورات" },
@@ -24,9 +44,10 @@
       "name": "Al Deem Public Website",
       "publicClient": true,
       "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": true,
+      "directAccessGrantsEnabled": false,
       "redirectUris": ["http://localhost:3001/*", "https://www.alameedtraining.com/*"],
       "webOrigins": ["http://localhost:3001", "https://www.alameedtraining.com"],
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "email", "core-api-audience"],
       "attributes": { "post.logout.redirect.uris": "http://localhost:3001/*+https://www.alameedtraining.com/*" }
     },
     {
@@ -34,9 +55,10 @@
       "name": "Al Deem LMS",
       "publicClient": true,
       "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": true,
+      "directAccessGrantsEnabled": false,
       "redirectUris": ["http://localhost:3002/*", "https://learn.alameedtraining.com/*"],
       "webOrigins": ["http://localhost:3002", "https://learn.alameedtraining.com"],
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "email", "core-api-audience"],
       "attributes": { "post.logout.redirect.uris": "http://localhost:3002/*+https://learn.alameedtraining.com/*" }
     },
     {
@@ -44,20 +66,45 @@
       "name": "Al Deem ERP (Admin)",
       "publicClient": true,
       "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": true,
+      "directAccessGrantsEnabled": false,
       "redirectUris": ["http://localhost:3003/*", "https://erp.alameedtraining.com/*"],
       "webOrigins": ["http://localhost:3003", "https://erp.alameedtraining.com"],
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "email", "core-api-audience"],
       "attributes": { "post.logout.redirect.uris": "http://localhost:3003/*+https://erp.alameedtraining.com/*" }
     },
     {
       "clientId": "core-api",
       "name": "Al Deem Core API (confidential)",
       "publicClient": false,
-      "secret": "core-api-secret-change-me",
       "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": true,
+      "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": true,
       "redirectUris": [""]
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "core-api-audience",
+      "description": "Adds core-api as the access-token audience for server-side API verification.",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "core-api audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "core-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
     }
   ],
   "smtpServer": {

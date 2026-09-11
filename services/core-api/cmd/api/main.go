@@ -2,37 +2,74 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
-	app "github.com/al-deem/platform/core-api/internal/identity/application"
-	"github.com/al-deem/platform/core-api/internal/identity/infrastructure/auth"
-	"github.com/al-deem/platform/core-api/internal/identity/infrastructure/postgres"
-	"github.com/al-deem/platform/core-api/internal/identity/transport"
+	asmapp "github.com/al-deem/platform/core-api/internal/assessment/application"
+	asmpg "github.com/al-deem/platform/core-api/internal/assessment/infrastructure/postgres"
+	asmtransport "github.com/al-deem/platform/core-api/internal/assessment/transport"
 	catapp "github.com/al-deem/platform/core-api/internal/catalog/application"
-catdom "github.com/al-deem/platform/core-api/internal/catalog/domain"
+	catdom "github.com/al-deem/platform/core-api/internal/catalog/domain"
 	catpg "github.com/al-deem/platform/core-api/internal/catalog/infrastructure/postgres"
 	cattransport "github.com/al-deem/platform/core-api/internal/catalog/transport"
 	enapp "github.com/al-deem/platform/core-api/internal/enrollment/application"
 	enpg "github.com/al-deem/platform/core-api/internal/enrollment/infrastructure/postgres"
 	entransport "github.com/al-deem/platform/core-api/internal/enrollment/transport"
-	asmapp "github.com/al-deem/platform/core-api/internal/assessment/application"
-	asmpg "github.com/al-deem/platform/core-api/internal/assessment/infrastructure/postgres"
-	asmtransport "github.com/al-deem/platform/core-api/internal/assessment/transport"
+	app "github.com/al-deem/platform/core-api/internal/identity/application"
+	"github.com/al-deem/platform/core-api/internal/identity/infrastructure/auth"
+	"github.com/al-deem/platform/core-api/internal/identity/infrastructure/postgres"
+	"github.com/al-deem/platform/core-api/internal/identity/transport"
 	ldapp "github.com/al-deem/platform/core-api/internal/leads/application"
 	ldpg "github.com/al-deem/platform/core-api/internal/leads/infrastructure/postgres"
 	ldtransport "github.com/al-deem/platform/core-api/internal/leads/transport"
 	lsapp "github.com/al-deem/platform/core-api/internal/livesessions/application"
 	lspg "github.com/al-deem/platform/core-api/internal/livesessions/infrastructure/postgres"
+	lszoom "github.com/al-deem/platform/core-api/internal/livesessions/infrastructure/zoom"
 	lstransport "github.com/al-deem/platform/core-api/internal/livesessions/transport"
 	"github.com/al-deem/platform/core-api/internal/platform"
 	"github.com/al-deem/platform/core-api/internal/platform/middleware"
+	"github.com/redis/go-redis/v9"
 )
+
+func checkRedis(ctx context.Context, redisURL string) error {
+	if redisURL == "" {
+		return errors.New("redis URL is not configured")
+	}
+	opt, err := redis.ParseURL(redisURL)
+	if err != nil {
+		return err
+	}
+	client := redis.NewClient(opt)
+	defer func() { _ = client.Close() }()
+	return client.Ping(ctx).Err()
+}
+
+func checkKeycloak(ctx context.Context, baseURL, realm string) error {
+	if baseURL == "" || realm == "" {
+		return errors.New("keycloak URL or realm is not configured")
+	}
+	url := strings.TrimRight(baseURL, "/") + "/realms/" + realm + "/.well-known/openid-configuration"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := (&http.Client{Timeout: 2 * time.Second}).Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("keycloak discovery is unavailable")
+	}
+	return nil
+}
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
@@ -56,6 +93,39 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	})
+	mux.HandleFunc("GET /v1/ready", func(w http.ResponseWriter, r *http.Request) {
+		// Readiness لا تعني أن العملية حية فقط؛ كل تبعيات رحلة المستخدم
+		// (PostgreSQL، Redis، وKeycloak/JWKS) يجب أن تكون قابلة للوصول.
+		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+		defer cancel()
+		deps := map[string]string{}
+		ready := true
+		if store == nil || store.DB().PingContext(ctx) != nil {
+			deps["database"] = "unavailable"
+			ready = false
+		} else {
+			deps["database"] = "ok"
+		}
+		if err := checkRedis(ctx, cfg.RedisURL); err != nil {
+			deps["redis"] = "unavailable"
+			ready = false
+		} else {
+			deps["redis"] = "ok"
+		}
+		if err := checkKeycloak(ctx, cfg.KeycloakURL, cfg.KeycloakRealm); err != nil {
+			deps["keycloak"] = "unavailable"
+			ready = false
+		} else {
+			deps["keycloak"] = "ok"
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		if !ready {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_ = json.NewEncoder(w).Encode(map[string]any{"status": "not_ready", "dependencies": deps})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"status": "ready", "dependencies": deps})
+	})
 
 	if store != nil {
 		// ===== identity module (R0) =====
@@ -78,14 +148,18 @@ func main() {
 		enrollments := enpg.NewEnrollmentStore(db)
 		payments := enpg.NewPaymentStore(db)
 		enSvc := enapp.NewEnrollmentService(
-			enrollments, payments, store /* AuditLogger */,
+			enrollments, payments, store, /* AuditLogger */
 			// coursePublished closure — يقرأ حالة الدورة دون استيراد catalog service كامل
-			func(ctx context.Context, courseID string) (bool, float64, string, error) {
+			func(ctx context.Context, courseID string) (bool, bool, float64, string, error) {
 				c, err := courses.GetByID(ctx, courseID)
 				if err != nil {
-					return false, 0, "", err
+					return false, false, 0, "", err
 				}
-				return c.Status == catdom.CoursePublished, c.PriceAmount, c.Currency, nil
+				var ready bool
+				if err := db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM lessons WHERE course_id = $1)`, courseID).Scan(&ready); err != nil {
+					return false, false, 0, "", err
+				}
+				return c.Status == catdom.CoursePublished, ready, c.PriceAmount, c.Currency, nil
 			},
 		)
 		enh := entransport.NewEnrollmentHandler(enSvc, resolver,
@@ -118,10 +192,9 @@ func main() {
 				if err != nil {
 					return false, "", err
 				}
-				// قرار #4: الاختبار متاح للطالب الفعّال والمكتمل
-				// (اكتمال الدروس → completed — ثم يختبر لإصدار الشهادة)
+				// الاختبار النهائي وإصدار الشهادة لا يتاحان إلا بعد إكمال الدروس.
 				owned := e.StudentID == studentID
-				ok := owned && (e.Status == "active" || e.Status == "completed")
+				ok := owned && e.Status == "completed"
 				return ok, e.CourseID, nil
 			},
 			func(ctx context.Context, studentID string) (string, error) {
@@ -154,7 +227,7 @@ func main() {
 		lsAttendees := lspg.NewAttendeeStore(db)
 		lsWebhooks := lspg.NewWebhookStore(db)
 		lsSvc := lsapp.NewLiveSessionsService(
-			lsSessions, lsAttendees, lsWebhooks, store,
+			lsSessions, lsAttendees, lsWebhooks, lszoom.NewFromEnv(), store,
 			func(ctx context.Context, courseID string) (bool, string, error) {
 				c, err := courses.GetByID(ctx, courseID)
 				if err != nil {

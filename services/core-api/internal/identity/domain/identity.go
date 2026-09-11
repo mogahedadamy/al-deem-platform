@@ -71,7 +71,7 @@ var rolePermissions = map[RoleKey][]Permission{
 	RoleSupportAgent:    {},
 	RoleErpStaff:        {PermViewErpFinance},
 	RoleErpManager:      {PermViewErpFinance},
-	RoleSystemAdmin:     {PermManageRoles, PermPublishCourse, PermIssueCert, PermViewErpFinance, PermManageSettings},
+	RoleSystemAdmin:     {PermManageRoles, PermReviewPayment, PermApprovePayment, PermPublishCourse, PermIssueCert, PermViewErpFinance, PermManageSettings},
 }
 
 // Actor — المستخدم المصادق عليه مع أدواره (يُبنى من JWT + DB).

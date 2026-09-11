@@ -1,330 +1,280 @@
-import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowLeft,
+  ArrowUpLeft,
+  BadgeCheck,
   BookOpen,
-  Users,
-  Award,
-  Star,
-  Zap,
-  TrendingUp,
-  Shield,
-  CheckSquare,
-  Settings,
-  Heart,
-  Phone,
-  Mail,
-  MapPin,
-  Clock,
-  GraduationCap,
-  FileCheck,
+  Check,
+  ChevronLeft,
+  CirclePlay,
+  Headphones,
+  MessageCircle,
+  Quote,
+  Sparkles,
 } from "lucide-react";
+import { CourseCard } from "@/components/catalog";
+import { ButtonLink, Container, Eyebrow, SectionHeading } from "@/components/ui";
+import { listCourses } from "@/lib/api";
+import {
+  CREDENTIALS,
+  FAQS,
+  JOURNEY,
+  PARTNERS,
+  PILLARS,
+  SITE,
+  STATS,
+  TEAM,
+  TRAINING_AREAS,
+  TRAINING_PROGRAMS,
+  TRUST_ITEMS,
+  VALUE_PROPS,
+} from "@/lib/site-content";
 
-const STATS = [
-  {
-    icon: Users,
-    value: "26000",
-    label: "متدرب تخرجوا من المركز",
-    desc: "خريجون متميزون في مختلف المجالات التدريبية والمهنية",
-    gradient: "from-primary to-accent",
-  },
-  {
-    icon: BookOpen,
-    value: "120+",
-    label: "دورة تدريبية",
-    desc: "أكثر من ١٢٠ دورة تدريبية في مختلف التخصصات",
-    gradient: "from-secondary to-info",
-  },
-  {
-    icon: Award,
-    value: "10",
-    label: "سنوات خبرة",
-    desc: "خبرة عريقة في مجال التدريب والتطوير المهني",
-    gradient: "from-success to-accent",
-  },
-];
+export const revalidate = 60;
 
-const FEATURES = [
-  {
-    icon: Shield,
-    title: "شهادات معتمدة",
-    desc: "شهادات حضور وإنجاز معتمدة محلياً ودولياً",
-  },
-  {
-    icon: Users,
-    title: "فئات متنوعة",
-    desc: "تدريب كادر المركز والأفراد والمؤسسات",
-  },
-  {
-    icon: GraduationCap,
-    title: "خطة سنوية شاملة",
-    desc: "برامج تدريبية مجدولة بمعدل 4 برامج شهرياً",
-  },
-];
+export default async function HomePage() {
+  let featuredCourses: Awaited<ReturnType<typeof listCourses>>["items"] = [];
+  try {
+    featuredCourses = (await listCourses({ page: 1, pageSize: 6 })).items.slice(0, 6);
+  } catch {
+    // الصفحة التسويقية تبقى متاحة حتى عند تعطل خدمة الكتالوج.
+  }
 
-const PARTNERS = [
-  {
-    name: "جامعة السودان للعلوم والتكنولوجيا",
-    desc: "شراكة أكاديمية لمنح شهادات معتمدة في التخصصات التقنية والإدارية",
-  },
-  {
-    name: "الأكاديمية الدولية البريطانية (BIA)",
-    desc: "شراكة دولية لتقديم برامج تدريبية معتمدة عالمياً حسب المعايير البريطانية",
-  },
-  {
-    name: "مركز الابتكار - ماليزيا (GITC)",
-    desc: "شراكة تقنية متقدمة في مجال الابتكار والتكنولوجيا الحديثة",
-  },
-];
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "EducationalOrganization",
+    name: SITE.nameAr,
+    alternateName: SITE.nameEn,
+    url: "https://alameedtraining.com",
+    logo: "https://alameedtraining.com/brand/logo.webp",
+    email: SITE.email,
+    address: { "@type": "PostalAddress", addressLocality: "الخرطوم", addressCountry: "SD" },
+  };
 
-export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1">
-      {/* ═══ Hero — خلفية حقيقية + عناصر عائمة + أزرار تدرجية (أسلوب المرجع) ═══ */}
-      <section className="relative flex min-h-screen items-center justify-center overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url(/brand/hero-bg.jpg)" }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/80" />
-        </div>
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
 
-        {/* عناصر عائمة زجاجية */}
-        <div className="absolute top-20 right-10 animate-float opacity-70 max-lg:hidden">
-          <div className="rounded-3xl border border-white/40 bg-white/30 p-6 shadow-2xl backdrop-blur-lg">
-            <BookOpen className="h-12 w-12 text-primary drop-shadow-lg" />
-          </div>
-        </div>
-        <div className="absolute top-40 left-16 animate-float opacity-70 max-lg:hidden" style={{ animationDelay: "1s" }}>
-          <div className="rounded-3xl border border-white/40 bg-white/30 p-5 shadow-2xl backdrop-blur-lg">
-            <Users className="h-10 w-10 text-accent drop-shadow-lg" />
-          </div>
-        </div>
-        <div className="absolute bottom-40 left-40 animate-float opacity-70 max-xl:hidden" style={{ animationDelay: "2s" }}>
-          <div className="rounded-3xl border border-white/40 bg-white/30 p-7 shadow-2xl backdrop-blur-lg">
-            <Award className="h-11 w-11 text-primary drop-shadow-lg" />
-          </div>
-        </div>
-        <div className="absolute bottom-60 left-10 animate-float opacity-60 max-lg:hidden" style={{ animationDelay: "1.5s" }}>
-          <div className="rounded-full bg-gradient-primary p-4 shadow-xl">
-            <Zap className="h-6 w-6 text-white" />
-          </div>
-        </div>
+      <section className="relative isolate overflow-hidden bg-secondary text-white">
+        <Image src="/brand/hero-bg.jpg" alt="" fill priority sizes="100vw" className="-z-20 object-cover object-center" />
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(100deg,rgba(11,35,45,.97)_0%,rgba(11,35,45,.90)_46%,rgba(11,35,45,.52)_100%)]" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(235,132,43,.25),transparent_34%)]" />
 
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pt-20 text-center">
-          {/* شارة التصنيف */}
-          <div className="mb-8 animate-fade-in">
-            <div className="inline-flex items-center gap-3 rounded-full border border-white/30 bg-white/15 px-8 py-3 shadow-2xl backdrop-blur-lg">
-              <TrendingUp className="h-6 w-6 text-primary drop-shadow-sm" />
-              <span className="text-base font-medium text-white md:text-lg">
-                المركز الإلكترونى الأول فى السودان
-              </span>
+        <Container className="grid min-h-[calc(100svh-4.5rem)] items-center gap-10 py-12 lg:min-h-[44rem] lg:grid-cols-[1.2fr_.8fr] lg:py-20">
+          <div className="max-w-3xl animate-fade-in">
+            <Eyebrow icon={Sparkles}>تعليم مهني مصمم لواقع العمل</Eyebrow>
+            <h1 className="mt-6 text-[2.35rem] font-black leading-[1.25] tracking-[-.045em] text-white sm:text-5xl lg:text-[4.6rem]">
+              المعرفة التي تبدأ بها،
+              <span className="mt-1 block bg-gradient-to-l from-accent via-orange-300 to-primary-light bg-clip-text text-transparent">والأثر الذي تصنعه.</span>
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-8 text-white/75 sm:text-lg lg:text-xl lg:leading-9">
+              برامج تدريبية عملية يقودها خبراء، ومنصة تعلم واضحة ترافقك من اختيار الدورة حتى شهادة قابلة للتحقق.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <ButtonLink href="/courses" className="sm:min-w-44">
+                استكشف الدورات <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+              </ButtonLink>
+              <ButtonLink href="/about" variant="light" className="sm:min-w-40">
+                تعرّف على المركز
+              </ButtonLink>
             </div>
-          </div>
-
-          <h1
-            className="mb-8 animate-fade-in text-3xl font-bold leading-tight text-white drop-shadow-2xl md:text-6xl lg:text-7xl"
-            style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8)" }}
-          >
-            مركز{" "}
-            <span className="bg-gradient-accent bg-clip-text text-transparent drop-shadow-2xl">
-              العميد
-            </span>{" "}
-            للتدريب المتقدم
-          </h1>
-
-          <p
-            className="mx-auto mb-12 max-w-4xl animate-fade-in text-lg font-light leading-relaxed text-white drop-shadow-lg md:text-2xl"
-            style={{ animationDelay: "0.2s", textShadow: "1px 1px 3px rgba(0,0,0,0.8)" }}
-          >
-            نقدم دورات تدريبية متخصصة في التطوير الإداري والقيادي والتثقيفي مع فريق
-            من الخبراء المعتمدين
-          </p>
-
-          <div
-            className="flex animate-fade-in flex-col items-center justify-center gap-6 sm:flex-row"
-            style={{ animationDelay: "0.4s" }}
-          >
-            <Link
-              href="/courses"
-              className="flex h-14 items-center justify-center rounded-2xl bg-gradient-primary px-12 text-lg font-semibold text-white shadow-elegant transition-all duration-300 hover:scale-105 hover:shadow-glow"
-            >
-              <ArrowLeft className="ml-3 h-6 w-6" />
-              استكشف دوراتنا
-            </Link>
-            <Link
-              href="/contact"
-              className="flex h-14 items-center justify-center rounded-2xl border-2 border-white/40 bg-white/15 px-12 text-lg font-semibold text-white shadow-xl backdrop-blur-lg transition-all duration-300 hover:bg-white hover:text-secondary"
-            >
-              تواصل معنا
-            </Link>
-          </div>
-
-          {/* بطاقات الإحصائيات الزجاجية */}
-          <div className="mt-24 animate-fade-in" style={{ animationDelay: "0.6s" }}>
-            <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 md:grid-cols-3 lg:gap-12">
-              {STATS.map((s) => (
-                <div key={s.label} className="group relative overflow-hidden">
-                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/30 to-white/10" />
-                  <div className="relative rounded-3xl border border-white/40 bg-white/20 p-8 backdrop-blur-xl transition-all duration-500 hover:-translate-y-3 hover:border-white/60 hover:bg-white/25 hover:shadow-2xl hover:shadow-white/30 lg:p-10">
-                    <div className="mb-8 flex items-center justify-between">
-                      <div
-                        className={`flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br ${s.gradient} shadow-2xl`}
-                      >
-                        <s.icon className="h-11 w-11 text-white" />
-                      </div>
-                      <div className="text-left">
-                        <div className="mb-1 text-5xl font-bold text-white lg:text-6xl">
-                          {s.value}
-                        </div>
-                        <div className="ml-auto h-1.5 w-16 rounded-full bg-gradient-to-r from-primary to-accent" />
-                      </div>
-                    </div>
-                    <h3 className="mb-3 text-xl font-bold text-white lg:text-2xl">
-                      {s.label}
-                    </h3>
-                    <p className="text-sm leading-relaxed text-white/80 lg:text-base">
-                      {s.desc}
-                    </p>
-                  </div>
-                </div>
+            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-white/70">
+              {TRUST_ITEMS.map((item) => (
+                <span key={item.label} className="inline-flex items-center gap-2">
+                  <item.icon className="h-4 w-4 text-accent" aria-hidden="true" /> {item.label}
+                </span>
               ))}
             </div>
           </div>
-        </div>
+
+          <div className="relative hidden min-h-[32rem] lg:block" aria-hidden="true">
+            <div className="absolute left-2 top-5 w-[20rem] rounded-[2rem] border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur-xl">
+              <div className="flex items-center justify-between">
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-accent text-secondary"><CirclePlay className="h-6 w-6" /></span>
+                <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/70">تعلّم مرن</span>
+              </div>
+              <p className="mt-12 text-sm text-white/60">رحلتك التعليمية</p>
+              <p className="mt-2 text-2xl font-black">مسار واضح، خطوة بخطوة</p>
+              <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full w-4/5 rounded-full bg-gradient-to-l from-accent to-primary" /></div>
+              <div className="mt-3 flex justify-between text-xs text-white/55"><span>تعلم</span><span>اختبار</span><span>شهادة</span></div>
+            </div>
+            <div className="absolute bottom-8 right-0 w-64 rounded-[1.75rem] border border-white/15 bg-secondary/70 p-5 shadow-2xl backdrop-blur-xl">
+              <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-xl bg-emerald-400/15 text-emerald-300"><BadgeCheck className="h-6 w-6" /></span><div><p className="text-xs text-white/55">الشهادة</p><p className="font-black">موثقة وقابلة للتحقق</p></div></div>
+            </div>
+            <div className="absolute bottom-28 left-0 grid h-24 w-24 animate-float place-items-center rounded-[1.75rem] border border-white/15 bg-white/10 backdrop-blur-xl"><BookOpen className="h-10 w-10 text-accent" /></div>
+          </div>
+        </Container>
       </section>
 
-      {/* ═══ المزايا — كما في خطة التدريب المرجعية ═══ */}
-      <section className="relative overflow-hidden border-b border-primary/10 py-16 md:py-24">
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-40 left-32 h-80 w-80 rounded-full bg-gradient-primary blur-3xl" />
-          <div className="absolute bottom-40 right-32 h-96 w-96 rounded-full bg-gradient-accent blur-3xl" />
-        </div>
-
-        <div className="relative z-10 mx-auto max-w-6xl px-6">
-          <div className="mb-12 text-center">
-            <div className="mb-5 inline-flex animate-fade-in items-center gap-2 rounded-full bg-gradient-primary/10 px-6 py-3">
-              <CheckSquare className="h-5 w-5 text-primary" />
-              <span className="text-base font-semibold text-primary">
-                لماذا مركز العميد
-              </span>
+      <section aria-label="أرقام المركز" className="relative z-10 -mt-px border-b border-border bg-white">
+        <Container className="grid grid-cols-2 divide-x-reverse divide-y divide-border sm:grid-cols-4 sm:divide-y-0">
+          {STATS.map((stat) => (
+            <div key={stat.label} className="px-3 py-6 text-center sm:px-5 lg:py-8">
+              <strong className="block text-2xl font-black text-secondary lg:text-3xl">{stat.value}</strong>
+              <span className="mt-1 block text-sm font-bold text-foreground">{stat.label}</span>
+              <span className="mt-1 hidden text-xs text-muted-foreground lg:block">{stat.detail}</span>
             </div>
-            <h2 className="animate-fade-in bg-gradient-primary bg-clip-text text-3xl font-bold text-transparent md:text-5xl">
-              برامج تدريبية متميزة
-            </h2>
-          </div>
+          ))}
+        </Container>
+      </section>
 
-          <div className="grid gap-6 md:grid-cols-3 lg:gap-8">
-            {FEATURES.map((f, i) => (
-              <div
-                key={f.title}
-                className="animate-fade-in rounded-3xl bg-gradient-card p-8 shadow-card transition-all duration-500 hover:scale-105 hover:shadow-elegant"
-                style={{ animationDelay: `${0.1 * i}s` }}
-              >
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-primary shadow-hover">
-                  <f.icon className="h-7 w-7 text-white" />
+      <section className="section-shell">
+        <Container>
+          <SectionHeading eyebrow="لماذا مركز العميد؟" title="تجربة تدريبية موثوقة من التسجيل إلى الإنجاز" description="صممنا التجربة حول ما يحتاجه المتدرب فعلاً: محتوى واضح، متابعة سهلة، وإثبات إنجاز موثوق." />
+          <div className="grid gap-4 md:grid-cols-3 md:gap-6">
+            {VALUE_PROPS.map((item) => (
+              <article key={item.title} className="card card-interactive p-6 lg:p-8">
+                <div className="icon-box"><item.icon className="h-6 w-6" /></div>
+                <h3 className="mt-6 text-xl font-black text-secondary">{item.title}</h3>
+                <p className="mt-3 text-sm leading-7 text-muted-foreground">{item.description}</p>
+              </article>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      <section className="section-shell section-soft overflow-hidden">
+        <Container className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+          <div className="relative">
+            <div className="absolute -inset-5 -z-10 rounded-[2.5rem] bg-primary-light/45 blur-2xl" />
+            <div className="relative aspect-[4/3] overflow-hidden rounded-[1.75rem] shadow-elegant">
+              <Image src="/brand/training-activity.png" alt="جانب من أنشطة مركز العميد التدريبية" fill sizes="(max-width: 1024px) 100vw, 50vw" className="scale-[1.25] object-cover object-bottom" />
+              <div className="absolute inset-0 bg-gradient-to-t from-secondary/60 via-transparent to-transparent" />
+              <div className="absolute bottom-5 right-5 left-5 rounded-2xl border border-white/20 bg-secondary/70 p-4 text-white backdrop-blur-md">
+                <p className="text-sm font-black">تدريب يصنع فرقاً في الأداء</p>
+                <p className="mt-1 text-xs text-white/65">معرفة قابلة للتطبيق في الدراسة والعمل والمؤسسات</p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <SectionHeading align="start" eyebrow="عن المركز" title="نبني المهارة، لا نكتفي بتقديم المعلومة" description="مؤسسة تدريبية سودانية تقدم برامج في التطوير الإداري والقيادي والمهني، بمنهج يربط المعرفة بالتطبيق ويمنح المتدرب مساراً واضحاً للتقدم." />
+            <div className="space-y-4">
+              {PILLARS.map((pillar) => (
+                <div key={pillar.title} className="flex gap-4 rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary-light/55 text-primary-dark"><pillar.icon className="h-5 w-5" /></span>
+                  <div><h3 className="font-black text-secondary">{pillar.title}</h3><p className="mt-1 text-sm leading-7 text-muted-foreground">{pillar.description}</p></div>
                 </div>
-                <h3 className="mb-2 text-xl font-bold text-secondary transition-colors group-hover:text-primary">
-                  {f.title}
-                </h3>
-                <p className="leading-relaxed text-muted-foreground">{f.desc}</p>
+              ))}
+            </div>
+            <ButtonLink href="/about" variant="ghost" className="mt-6">اكتشف قصة المركز <ArrowLeft className="h-4 w-4" /></ButtonLink>
+          </div>
+        </Container>
+      </section>
+
+      <section className="section-shell" id="courses">
+        <Container>
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <SectionHeading align="start" eyebrow="دورات مختارة" title="ابدأ بما يناسب هدفك اليوم" description="برامج متنوعة بمستويات واضحة وأسعار معلنة، مع إمكانية التعلم والمتابعة من حساب واحد." />
+            <ButtonLink href="/courses" variant="ghost" className="mb-12 shrink-0">عرض كل الدورات <ArrowLeft className="h-4 w-4" /></ButtonLink>
+          </div>
+          {featuredCourses.length > 0 ? (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {featuredCourses.map((course, index) => <CourseCard key={course.id} course={course} priority={index < 3} />)}
+            </div>
+          ) : (
+            <div className="card border-dashed p-8 text-center text-muted-foreground">يجري تحديث قائمة الدورات. يمكنك فتح الكتالوج للاطلاع على المتاح.</div>
+          )}
+        </Container>
+      </section>
+
+      <section className="section-shell section-dark" id="training-plan">
+        <Container>
+          <SectionHeading eyebrow="مجالات التدريب" title={<span className="text-white">برامج تلائم الأفراد والمؤسسات</span>} description={<span className="text-white/65">خطة تدريبية مرنة تغطي احتياجات التطوير الإداري والمهني والتقني.</span>} />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {TRAINING_AREAS.map((area) => (
+              <div key={area.title} className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[.06] p-5 transition-colors hover:bg-white/[.1]">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-accent/15 text-accent"><area.icon className="h-6 w-6" /></span>
+                <div><h3 className="font-black text-white">{area.title}</h3><p className="mt-1 text-xs text-white/50">{area.count}</p></div>
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ═══ الشراكات — بيانات حقيقية ═══ */}
-      <section className="relative overflow-hidden border-b border-primary/10 bg-gradient-to-br from-muted/20 to-background py-16 md:py-24">
-        <div className="relative z-10 mx-auto max-w-6xl px-6">
-          <div className="mb-12 text-center">
-            <div className="mb-5 inline-flex animate-fade-in items-center gap-2 rounded-full bg-gradient-primary/10 px-6 py-3">
-              <Star className="h-5 w-5 text-primary" />
-              <span className="text-base font-semibold text-primary">
-                شراكاتنا واعتماداتنا
-              </span>
-            </div>
-            <h2 className="animate-fade-in bg-gradient-primary bg-clip-text text-3xl font-bold text-transparent md:text-5xl">
-              اعتمادات محلية ودولية
-            </h2>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3 lg:gap-8">
-            {PARTNERS.map((p, i) => (
-              <div
-                key={p.name}
-                className="animate-fade-in rounded-3xl bg-gradient-card p-8 text-center shadow-card transition-all duration-500 hover:scale-105 hover:shadow-elegant"
-                style={{ animationDelay: `${0.1 * i}s` }}
-              >
-                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-secondary shadow-hover">
-                  <FileCheck className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="mb-3 text-lg font-bold text-secondary">{p.name}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {p.desc}
-                </p>
-              </div>
+          <div className="mt-10 grid gap-x-8 gap-y-3 rounded-[1.5rem] border border-white/10 bg-white/[.04] p-6 sm:grid-cols-2 lg:grid-cols-3 lg:p-8">
+            {TRAINING_PROGRAMS.map((program) => (
+              <div key={program} className="flex items-start gap-2.5 text-sm leading-6 text-white/70"><Check className="mt-1 h-4 w-4 shrink-0 text-accent" /><span>{program}</span></div>
             ))}
           </div>
+          <div className="mt-8 text-center"><ButtonLink href="/contact" variant="light">اطلب برنامجاً لمؤسستك <ArrowUpLeft className="h-4 w-4" /></ButtonLink></div>
+        </Container>
+      </section>
 
-          {/* صور الاعتمادات الرسمية */}
-          <div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {[
-              { src: "/brand/registration-cert.webp", title: "شهادة تسجيل المركز", desc: "من وزارة العدل السودانية" },
-              { src: "/brand/training-license.webp", title: "ترخيص مركز التدريب", desc: "من وزارة التنمية البشرية" },
-              { src: "/brand/cert-sample.webp", title: "نموذج شهادة الدورات", desc: "شهادات معتمدة لجميع الدورات" },
-              { src: "/brand/university-cert.webp", title: "شهادة جامعية معتمدة", desc: "شراكة مع جامعة السودان" },
-            ].map((c) => (
-              <figure
-                key={c.title}
-                className="group animate-fade-in overflow-hidden rounded-2xl bg-gradient-card shadow-card transition-all duration-500 hover:scale-105 hover:shadow-elegant"
-              >
-                <div className="aspect-[3/4] overflow-hidden bg-muted">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={c.src}
-                    alt={c.title}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                </div>
-                <figcaption className="p-4 text-center">
-                  <div className="font-bold text-secondary">{c.title}</div>
-                  <div className="text-xs text-muted-foreground">{c.desc}</div>
-                </figcaption>
+      <section className="section-shell">
+        <Container>
+          <SectionHeading eyebrow="كيف تبدأ؟" title="رحلة واضحة بلا تعقيد" description="أربع خطوات تربط قرارك بالتعلم والإنجاز في تجربة رقمية واحدة." />
+          <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {JOURNEY.map((item) => (
+              <li key={item.step} className="relative rounded-2xl border border-border bg-white p-6">
+                <span className="absolute left-5 top-4 text-3xl font-black text-primary-light">{item.step}</span>
+                <span className="icon-box"><item.icon className="h-6 w-6" /></span>
+                <h3 className="mt-6 text-lg font-black text-secondary">{item.title}</h3>
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">{item.description}</p>
+              </li>
+            ))}
+          </ol>
+        </Container>
+      </section>
+
+      <section className="section-shell section-soft" id="experts">
+        <Container>
+          <SectionHeading eyebrow="فريق الخبراء" title="خبرات أكاديمية ومهنية تقود التعلّم" description="نخبة من المدربين المتخصصين في الإدارة والهندسة والتطوير المهني." />
+          <div className="grid gap-5 md:grid-cols-3">
+            {TEAM.map((member) => (
+              <article key={member.name} className="card card-interactive p-6 text-center lg:p-8">
+                <div className="relative mx-auto h-28 w-28 overflow-hidden rounded-full border-4 border-primary-light bg-secondary-light shadow-md"><Image src={member.image} alt={`المدرب ${member.name}`} fill sizes="112px" className="object-cover object-top" /></div>
+                <span className="mt-5 block text-xs font-bold text-primary-dark">{member.experience}</span><h3 className="mt-2 text-xl font-black text-secondary">{member.name}</h3><p className="mt-1 font-bold text-foreground">{member.role}</p><p className="mt-2 text-sm text-muted-foreground">{member.specialty}</p>
+              </article>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      <section className="section-shell">
+        <Container>
+          <SectionHeading eyebrow="شراكات واعتمادات" title="ثقة مبنية على توثيق وشراكات حقيقية" description="نعرض وثائق المركز وشراكاته بوضوح لتتمكن من اتخاذ قرارك بثقة." />
+          <div className="grid gap-4 md:grid-cols-3">
+            {PARTNERS.map((partner) => (
+              <article key={partner.name} className="card flex min-h-40 items-center gap-5 p-5">
+                <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-xl bg-white"><Image src={partner.image} alt={`شعار ${partner.name}`} fill sizes="96px" className="object-contain p-2" /></div>
+                <div><span className="text-xs font-bold text-primary-dark">{partner.label}</span><h3 className="mt-2 text-sm font-black leading-6 text-secondary">{partner.name}</h3></div>
+              </article>
+            ))}
+          </div>
+          <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {CREDENTIALS.map((credential) => (
+              <figure key={credential.title} className="card overflow-hidden">
+                <div className="relative aspect-[4/5] overflow-hidden bg-muted"><Image src={credential.src} alt={credential.title} fill sizes="(max-width: 640px) 50vw, 25vw" className="object-cover" /></div>
+                <figcaption className="p-4"><span className="text-[.68rem] font-bold text-primary-dark">{credential.label}</span><p className="mt-1 text-sm font-black text-secondary">{credential.title}</p></figcaption>
               </figure>
             ))}
           </div>
-        </div>
+        </Container>
       </section>
 
-      {/* ═══ دعوة أخيرة ═══ */}
-      <section className="relative overflow-hidden py-16 md:py-24">
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/80" style={{ backgroundImage: "url(/brand/hero-bg.jpg)", backgroundSize: "cover", backgroundPosition: "center" }} />
-        </div>
-        <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
-          <h2 className="mb-4 animate-fade-in text-3xl font-bold text-white md:text-5xl">
-            ابدأ رحلتك التدريبية اليوم
-          </h2>
-          <p className="mb-10 animate-fade-in text-lg text-white/80 md:text-xl">
-            انضم إلى آلاف المتدربين الذين طوّروا مهاراتهم معنا
-          </p>
-          <div className="flex animate-fade-in flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link
-              href="/courses"
-              className="flex h-14 items-center justify-center rounded-2xl bg-gradient-primary px-10 text-lg font-semibold text-white shadow-elegant transition-all duration-300 hover:scale-105 hover:shadow-glow"
-            >
-              <Heart className="ml-2 h-5 w-5" />
-              تصفّح الدورات
-            </Link>
-            <Link
-              href="/contact"
-              className="flex h-14 items-center justify-center rounded-2xl border-2 border-white/40 bg-white/15 px-10 text-lg font-semibold text-white backdrop-blur-lg transition-all duration-300 hover:bg-white hover:text-secondary"
-            >
-              تواصل معنا
-            </Link>
+      <section className="section-shell section-soft">
+        <Container className="grid gap-10 lg:grid-cols-[.8fr_1.2fr] lg:items-start">
+          <div>
+            <Eyebrow icon={Headphones}>إجابات سريعة</Eyebrow>
+            <h2 className="mt-5 text-3xl font-black leading-tight text-secondary lg:text-4xl">كل ما تحتاج معرفته قبل أن تبدأ</h2>
+            <p className="mt-4 leading-8 text-muted-foreground">إذا لم تجد إجابتك، فريقنا جاهز لمساعدتك واختيار المسار الأنسب لك.</p>
+            <ButtonLink href="/contact" variant="ghost" className="mt-6"><MessageCircle className="h-4 w-4" /> تواصل مع الفريق</ButtonLink>
           </div>
-        </div>
+          <div className="space-y-3">
+            {FAQS.map((item, index) => (
+              <details key={item.question} className="group card px-5 py-4" open={index === 0}>
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-black text-secondary"><span>{item.question}</span><ChevronLeft className="h-5 w-5 shrink-0 text-primary transition-transform group-open:-rotate-90" /></summary>
+                <p className="mt-3 border-t border-border pt-3 text-sm leading-7 text-muted-foreground">{item.answer}</p>
+              </details>
+            ))}
+          </div>
+        </Container>
       </section>
-    </div>
+
+      <section className="relative overflow-hidden bg-primary py-14 text-white lg:py-20">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,.2),transparent_30%)]" />
+        <Container className="relative z-10 flex flex-col items-start justify-between gap-7 lg:flex-row lg:items-center">
+          <div className="max-w-2xl"><Quote className="h-8 w-8 text-white/35" /><h2 className="mt-4 text-3xl font-black leading-tight lg:text-4xl">خطوتك التالية أقرب مما تتوقع</h2><p className="mt-3 leading-8 text-white/75">اختر دورتك، أو تحدث مع فريقنا لنساعدك في بناء مسار يناسب هدفك المهني.</p></div>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row"><ButtonLink href="/courses" variant="light">تصفح الدورات <ArrowLeft className="h-4 w-4" /></ButtonLink><ButtonLink href="/contact" variant="ghost" className="border-white/25 text-white hover:bg-white/10">تحدث معنا</ButtonLink></div>
+        </Container>
+      </section>
+    </>
   );
 }

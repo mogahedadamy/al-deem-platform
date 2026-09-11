@@ -9,12 +9,13 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
-	lsapp "github.com/al-deem/platform/core-api/internal/livesessions/application"
-	lsdom "github.com/al-deem/platform/core-api/internal/livesessions/domain"
 	iddomain "github.com/al-deem/platform/core-api/internal/identity/domain"
 	idports "github.com/al-deem/platform/core-api/internal/identity/ports"
+	lsapp "github.com/al-deem/platform/core-api/internal/livesessions/application"
+	lsdom "github.com/al-deem/platform/core-api/internal/livesessions/domain"
 	"github.com/al-deem/platform/core-api/internal/platform"
 )
 
@@ -134,24 +135,28 @@ func (h *LiveSessionsHandler) join(w http.ResponseWriter, r *http.Request, actor
 // idempotent بـevent id (يُخزن قبل المعالجة).
 func (h *LiveSessionsHandler) zoomWebhook(w http.ResponseWriter, r *http.Request) {
 	secret := os.Getenv("ZOOM_WEBHOOK_SECRET")
+	if secret == "" {
+		// Fail closed: an unconfigured webhook must never accept unsigned events.
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
 	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 1<<20))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if secret != "" {
-		sig := r.Header.Get("x-zm-signature")
-		ts := r.Header.Get("x-zm-request-timestamp")
-		if !verifyZoomSignature(secret, sig, ts, body) {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
+	sig := r.Header.Get("x-zm-signature")
+	ts := r.Header.Get("x-zm-request-timestamp")
+	if !zoomTimestampFresh(ts, time.Now()) || !verifyZoomSignature(secret, sig, ts, body) {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
 	}
 	var ev struct {
-		Event string `json:"event"`
+		Event   string `json:"event"`
 		Payload struct {
-			MeetingID string `json:"id"`
-			Object    struct {
+			PlainToken string `json:"plainToken"`
+			MeetingID  string `json:"id"`
+			Object     struct {
 				ID string `json:"id"`
 			} `json:"object"`
 		} `json:"payload"`
@@ -161,14 +166,24 @@ func (h *LiveSessionsHandler) zoomWebhook(w http.ResponseWriter, r *http.Request
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	// Zoom sends this challenge when registering the webhook endpoint. It is
+	// signed like every other request, then answered without persisting an event.
+	if ev.Event == "endpoint.url_validation" {
+		if ev.Payload.PlainToken == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		lsJSON(w, http.StatusOK, map[string]string{
+			"plainToken":     ev.Payload.PlainToken,
+			"encryptedToken": zoomValidationToken(secret, ev.Payload.PlainToken),
+		})
+		return
+	}
 	meetingID := ev.Payload.MeetingID
 	if meetingID == "" {
 		meetingID = ev.Payload.Object.ID
 	}
-	eventID := ev.UID
-	if eventID == "" {
-		eventID = ev.Event + "-" + meetingID + "-" + time.Now().Format("150405")
-	}
+	eventID := zoomEventID(ev.Event, ev.UID, body)
 	e := &lsdom.WebhookEvent{
 		ZoomEventID: eventID,
 		EventType:   ev.Event,
@@ -183,8 +198,17 @@ func (h *LiveSessionsHandler) zoomWebhook(w http.ResponseWriter, r *http.Request
 }
 
 // verifyZoomSignature — HMAC v2: hex(hmac_sha256(secret, timestamp + "." + body))
+func zoomTimestampFresh(timestamp string, now time.Time) bool {
+	seconds, err := strconv.ParseInt(timestamp, 10, 64)
+	if err != nil {
+		return false
+	}
+	delta := now.Sub(time.Unix(seconds, 0))
+	return delta >= -5*time.Minute && delta <= 5*time.Minute
+}
+
 func verifyZoomSignature(secret, signature, timestamp string, body []byte) bool {
-	if signature == "" || timestamp == "" {
+	if secret == "" || signature == "" || timestamp == "" {
 		return false
 	}
 	mac := hmac.New(sha256.New, []byte(secret))
@@ -193,6 +217,24 @@ func verifyZoomSignature(secret, signature, timestamp string, body []byte) bool 
 	mac.Write(body)
 	expected := "v0=" + hex.EncodeToString(mac.Sum(nil))
 	return hmac.Equal([]byte(expected), []byte(signature))
+}
+
+// zoomValidationToken implements Zoom's endpoint.url_validation challenge.
+func zoomValidationToken(secret, plainToken string) string {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(plainToken))
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
+// zoomEventID relies on Zoom's UUID when supplied. Older/replayed payloads
+// without it are deduplicated by a stable full-payload hash, never a timestamp
+// bucket that could collapse distinct events occurring in the same second.
+func zoomEventID(event, provided string, body []byte) string {
+	if provided != "" {
+		return provided
+	}
+	digest := sha256.Sum256(body)
+	return event + "-" + hex.EncodeToString(digest[:])
 }
 
 // ===== helpers =====
@@ -206,9 +248,8 @@ func sessionList(items []lsdom.LiveSession) []map[string]any {
 			"durationMin": s.DurationMin, "timezone": s.Timezone,
 			"joinWindowMin": s.JoinWindowMin,
 		}
-		if s.ZoomJoinURL != "" {
-			m["joinUrl"] = s.ZoomJoinURL
-		}
+		// لا يُعاد رابط Zoom في قائمة الحصص. يُفصح عنه فقط من endpoint
+		// الانضمام بعد التحقق من التسجيل النشط ونافذة الانضمام.
 		if s.RecordingURL != "" {
 			m["recordingUrl"] = s.RecordingURL
 		}
@@ -241,6 +282,8 @@ func lsDomain(w http.ResponseWriter, err error) {
 			status = http.StatusBadRequest
 		case "CONFLICT":
 			status = http.StatusConflict
+		case "UNAVAILABLE":
+			status = http.StatusServiceUnavailable
 		}
 		lsErr(w, de, status)
 		return

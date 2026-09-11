@@ -48,3 +48,18 @@ func TestClientIP_Direct(t *testing.T) {
 		t.Fatalf("direct clientIP = %q, want 192.168.1.10", got)
 	}
 }
+
+func TestClientRateKeyUsesTokenForAuthenticatedRequests(t *testing.T) {
+	r1, _ := http.NewRequest("GET", "/", nil)
+	r1.RemoteAddr = "127.0.0.1:1000"
+	r1.Header.Set("Authorization", "Bearer token-a")
+	r2, _ := http.NewRequest("GET", "/", nil)
+	r2.RemoteAddr = "127.0.0.1:1000"
+	r2.Header.Set("Authorization", "Bearer token-b")
+	if clientRateKey(r1) == clientRateKey(r2) {
+		t.Fatal("different authenticated users must not share a rate-limit bucket")
+	}
+	if got := clientRateKey(r1); len(got) != len("auth:")+16 {
+		t.Fatalf("token key must be a short hash, got %q", got)
+	}
+}

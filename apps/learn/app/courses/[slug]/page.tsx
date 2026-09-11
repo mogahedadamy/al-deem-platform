@@ -16,7 +16,8 @@ type Params = Promise<{ slug: string }>;
 
 export async function generateMetadata({ params }: { params: Params }) {
   const { slug } = await params;
-  return { title: "دورة" };
+  const course = await fetchCourse(slug);
+  return { title: course?.title ?? "دورة" };
 }
 
 const API_PUB = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4001/v1";
@@ -165,7 +166,13 @@ export default async function CoursePage({ params }: { params: Params }) {
                     سجّل الدخول للتسجيل
                   </Link>
                 ) : !myEnrollment ? (
-                  <EnrollButton courseId={course.id} />
+                  lessonCount > 0 ? (
+                    <EnrollButton courseId={course.id} />
+                  ) : (
+                    <p className="rounded-lg bg-amber-50 px-4 py-3 text-center text-sm font-semibold text-amber-900">
+                      يفتح التسجيل بعد اكتمال مراجعة المنهج.
+                    </p>
+                  )
                 ) : myEnrollment.status === "pending_payment" ? (
                   <div className="space-y-3">
                     <p className="rounded-lg bg-amber-50 px-4 py-2 text-center text-sm font-medium text-amber-800">
@@ -196,12 +203,14 @@ export default async function CoursePage({ params }: { params: Params }) {
                     >
                       متابعة التعلّم ←
                     </Link>
-                    <Link
-                      href={`/courses/${slug}/quiz`}
-                      className="flex h-12 items-center justify-center rounded-full border-2 border-secondary px-8 font-semibold text-secondary hover:bg-secondary hover:text-secondary-foreground"
-                    >
-                      الاختبار النهائي
-                    </Link>
+                    {myEnrollment.status === "completed" && (
+                      <Link
+                        href={`/courses/${slug}/quiz`}
+                        className="flex h-12 items-center justify-center rounded-full border-2 border-secondary px-8 font-semibold text-secondary hover:bg-secondary hover:text-secondary-foreground"
+                      >
+                        الاختبار النهائي
+                      </Link>
+                    )}
                   </div>
                 ) : (
                   <p className="text-center text-sm text-muted">

@@ -15,11 +15,11 @@ import (
 )
 
 type AssessmentService struct {
-	quizzes       ports.QuizRepository
-	attempts      ports.AttemptRepository
-	certificates  ports.CertificateRepository
-	papers        ports.PaperRequestRepository
-	audit         idports.AuditLogger
+	quizzes      ports.QuizRepository
+	attempts     ports.AttemptRepository
+	certificates ports.CertificateRepository
+	papers       ports.PaperRequestRepository
+	audit        idports.AuditLogger
 	// lookups عبر modules أخرى (بدون استيراد دوّار)
 	enrollmentActive func(ctx context.Context, enrollmentID, studentID string) (active bool, courseID string, err error)
 	studentName      func(ctx context.Context, studentID string) (string, error)
@@ -141,6 +141,13 @@ func (s *AssessmentService) SubmitAttempt(ctx context.Context, actor *iddomain.A
 	}
 	if quiz.CourseID != courseID {
 		return nil, platform.ErrConflict // الاختبار لدورة أخرى
+	}
+	attemptCount, err := s.attempts.CountSince(ctx, quizID, actor.ID, time.Now().Add(-24*time.Hour))
+	if err != nil {
+		return nil, err
+	}
+	if attemptCount >= 3 {
+		return nil, &platform.DomainError{Code: "CONFLICT", Msg: "بلغت الحد اليومي للمحاولات؛ حاول بعد 24 ساعة"}
 	}
 	questions, err := s.quizzes.ListQuestions(ctx, quizID)
 	if err != nil {

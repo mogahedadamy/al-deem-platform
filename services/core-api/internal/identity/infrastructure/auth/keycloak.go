@@ -14,6 +14,7 @@ import (
 	"log/slog"
 	"math/big"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -59,13 +60,14 @@ type jwksKey struct {
 }
 
 type tokenClaims struct {
-	Sub               string `json:"sub"`
-	Email             string `json:"email"`
-	Name              string `json:"name"`
-	PreferredUsername string `json:"preferred_username"`
-	Exp               int64  `json:"exp"`
-	Iss               string `json:"iss"`
-	Azp               string `json:"azp"`
+	Sub               string          `json:"sub"`
+	Email             string          `json:"email"`
+	Name              string          `json:"name"`
+	PreferredUsername string          `json:"preferred_username"`
+	Exp               int64           `json:"exp"`
+	Iss               string          `json:"iss"`
+	Azp               string          `json:"azp"`
+	Aud               json.RawMessage `json:"aud"`
 	RealmAccess       struct {
 		Roles []string `json:"roles"`
 	} `json:"realm_access"`
@@ -123,6 +125,9 @@ func (a *keycloakAuth) Resolve(ctx context.Context, bearerToken string) (*domain
 	if full, err := a.profiles.GetByID(ctx, claims.Sub); err == nil {
 		p = *full
 	}
+	if p.Status != domain.ProfileActive {
+		return nil, platform.ErrForbidden
+	}
 	return &domain.Actor{Profile: p, Roles: dbRoles}, nil
 }
 
@@ -140,12 +145,34 @@ func (a *keycloakAuth) verifyToken(ctx context.Context, token string) (*tokenCla
 	if err := json.Unmarshal(payload, &claims); err != nil {
 		return nil, err
 	}
-	// expiry + issuer
-	if claims.Exp > 0 && time.Now().Unix() >= claims.Exp {
-		return nil, fmt.Errorf("token expired")
+	// Claims critical to authentication are mandatory. The public issuer can differ
+	// from the internal JWKS endpoint used by the API process.
+	expectedIssuer := strings.TrimRight(os.Getenv("KEYCLOAK_ISSUER"), "/")
+	if expectedIssuer == "" {
+		expectedIssuer = a.issuer()
 	}
-	if claims.Iss != "" && claims.Iss != a.issuer() {
+	if claims.Sub == "" || claims.Exp == 0 || time.Now().Unix() >= claims.Exp {
+		return nil, fmt.Errorf("token missing subject/expiry or expired")
+	}
+	if claims.Iss != expectedIssuer {
 		return nil, fmt.Errorf("issuer mismatch")
+	}
+	allowedClients := strings.Split(envOrDefault("KEYCLOAK_ALLOWED_CLIENTS", "learn,erp,www,core-api"), ",")
+	clientAllowed := false
+	for _, client := range allowedClients {
+		if strings.TrimSpace(client) == claims.Azp {
+			clientAllowed = true
+			break
+		}
+	}
+	if !clientAllowed {
+		return nil, fmt.Errorf("authorized party %q is not allowed", claims.Azp)
+	}
+	// لا يكفي azp وحده: يجب أن يكون الـAPI جمهوره المقصود صراحةً.
+	// KEYCLOAK_REQUIRED_AUDIENCE يسمح باسم جمهور مستقل إذا تغيّر client ID.
+	requiredAudience := envOrDefault("KEYCLOAK_REQUIRED_AUDIENCE", a.clientID)
+	if !hasAudience(claims.Aud, requiredAudience) {
+		return nil, fmt.Errorf("required audience %q is missing", requiredAudience)
 	}
 	// signature (RS256)
 	header, err := decodeSegment(parts[0])
@@ -250,9 +277,38 @@ func rsaKey(k *jwksKey) (*rsa.PublicKey, error) {
 	return &rsa.PublicKey{N: new(big.Int).SetBytes(nb), E: int(new(big.Int).SetBytes(eb).Int64())}, nil
 }
 
+// hasAudience accepts both JWT representations permitted by RFC 7519: a
+// single string or an array of strings. Malformed/missing `aud` always fails.
+func hasAudience(raw json.RawMessage, expected string) bool {
+	if expected == "" || len(raw) == 0 {
+		return false
+	}
+	var single string
+	if err := json.Unmarshal(raw, &single); err == nil {
+		return single == expected
+	}
+	var many []string
+	if err := json.Unmarshal(raw, &many); err != nil {
+		return false
+	}
+	for _, audience := range many {
+		if audience == expected {
+			return true
+		}
+	}
+	return false
+}
+
 func orDefault(s, fallback string) string {
 	if s == "" {
 		return fallback
 	}
 	return s
+}
+
+func envOrDefault(key, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return fallback
 }

@@ -4,6 +4,8 @@ package middleware
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"net"
 	"net/http"
@@ -53,6 +55,14 @@ func clientIP(r *http.Request) string {
 	return ip
 }
 
+func clientRateKey(r *http.Request) string {
+	if authorization := r.Header.Get("Authorization"); authorization != "" {
+		digest := sha256.Sum256([]byte(authorization))
+		return "auth:" + hex.EncodeToString(digest[:8])
+	}
+	return "ip:" + clientIP(r)
+}
+
 // Allow — هل يسمح بالطلب؟ يرجع (allowed, retryAfter).
 func (rl *RateLimiter) Allow(ctx context.Context, key string, limit int, window time.Duration) (bool, time.Duration) {
 	if rl == nil || rl.rdb == nil {
@@ -85,7 +95,7 @@ func (rl *RateLimiter) Middleware(limit int, window time.Duration) func(http.Han
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if rl != nil && rl.rdb != nil {
-				key := clientIP(r)
+				key := clientRateKey(r)
 				allowed, retry := rl.Allow(r.Context(), key, limit, window)
 				if !allowed {
 					w.Header().Set("Retry-After", strconv.Itoa(int(retry.Seconds())+1))

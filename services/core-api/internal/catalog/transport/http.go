@@ -35,6 +35,7 @@ func (h *CatalogHandler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("PATCH /v1/courses/{id}", h.auth(h.updateCourse))
 	mux.HandleFunc("DELETE /v1/courses/{id}", h.auth(h.deleteCourse))
 	mux.HandleFunc("GET /v1/me/courses", h.auth(h.myCourses))
+	mux.HandleFunc("GET /v1/courses/{id}/outline", h.auth(h.authoringOutline))
 	mux.HandleFunc("POST /v1/courses/{id}/submit", h.auth(h.submit))
 	mux.HandleFunc("POST /v1/courses/{id}/sections", h.auth(h.addSection))
 	mux.HandleFunc("POST /v1/sections/{sectionId}/lessons", h.auth(h.addLesson))
@@ -66,7 +67,8 @@ func (h *CatalogHandler) auth(next func(w http.ResponseWriter, r *http.Request, 
 func courseOut(c catdom.Course) map[string]any {
 	return map[string]any{
 		"id": c.ID, "slug": c.Slug, "title": c.Title, "summary": c.Summary,
-		"categoryId": c.CategoryID, "instructorId": c.InstructorID,
+		"description": c.Description,
+		"categoryId":  c.CategoryID, "instructorId": c.InstructorID,
 		"status": c.Status, "level": c.Level, "language": c.Language,
 		"priceAmount": c.PriceAmount, "currency": c.Currency,
 		"durationHours": c.DurationHours, "coverImageUrl": c.CoverImageURL,
@@ -106,8 +108,8 @@ func (h *CatalogHandler) getOutline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	type secOut struct {
-		ID    string           `json:"id"`
-		Title string           `json:"title"`
+		ID      string           `json:"id"`
+		Title   string           `json:"title"`
 		Lessons []map[string]any `json:"lessons"`
 	}
 	out := make([]secOut, 0, len(secs))
@@ -192,6 +194,26 @@ func (h *CatalogHandler) myCourses(w http.ResponseWriter, r *http.Request, actor
 		out = append(out, m)
 	}
 	writeCatJSON(w, http.StatusOK, map[string]any{"items": out})
+}
+
+func (h *CatalogHandler) authoringOutline(w http.ResponseWriter, r *http.Request, actor *iddomain.Actor) {
+	sections, lessons, err := h.svc.GetAuthoringOutline(r.Context(), actor, r.PathValue("id"))
+	if err != nil {
+		writeCatDomain(w, err)
+		return
+	}
+	out := make([]map[string]any, 0, len(sections))
+	for _, section := range sections {
+		lessonItems := make([]map[string]any, 0, len(lessons[section.ID]))
+		for _, lesson := range lessons[section.ID] {
+			lessonItems = append(lessonItems, map[string]any{
+				"id": lesson.ID, "title": lesson.Title, "type": lesson.Type,
+				"position": lesson.Position, "isFreePreview": lesson.IsFreePreview,
+			})
+		}
+		out = append(out, map[string]any{"id": section.ID, "title": section.Title, "position": section.Position, "lessons": lessonItems})
+	}
+	writeCatJSON(w, http.StatusOK, map[string]any{"sections": out})
 }
 
 func (h *CatalogHandler) submit(w http.ResponseWriter, r *http.Request, actor *iddomain.Actor) {

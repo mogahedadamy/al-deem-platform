@@ -51,14 +51,15 @@ export function ContactForm() {
 
   return (
     <form
+      id="contact-form"
       onSubmit={onSubmit}
-      className="rounded-2xl border border-border bg-surface p-6 md:p-8"
+      className="card p-6 shadow-md md:p-8"
       aria-labelledby="form-title"
     >
       <h2 id="form-title" className="text-lg font-black text-secondary">
         أرسل استفسارك
       </h2>
-      <p className="mt-1 text-sm text-muted">نرد عادة خلال يوم عمل واحد.</p>
+      <p className="mt-1 text-sm text-muted-foreground">نرد عادة خلال يوم عمل واحد.</p>
 
       <div className="mt-6 space-y-5">
         <div>
@@ -71,7 +72,7 @@ export function ContactForm() {
             required
             maxLength={200}
             autoComplete="name"
-            className="h-12 w-full rounded-xl border border-border bg-background px-4 text-secondary outline-none focus:border-primary"
+            className="form-control"
           />
         </div>
         <div>
@@ -85,7 +86,7 @@ export function ContactForm() {
             required
             autoComplete="email"
             dir="ltr"
-            className="h-12 w-full rounded-xl border border-border bg-background px-4 text-secondary outline-none focus:border-primary"
+            className="form-control"
           />
         </div>
         <div>
@@ -98,7 +99,7 @@ export function ContactForm() {
             type="tel"
             autoComplete="tel"
             dir="ltr"
-            className="h-12 w-full rounded-xl border border-border bg-background px-4 text-secondary outline-none focus:border-primary"
+            className="form-control"
           />
         </div>
         <div>
@@ -108,7 +109,7 @@ export function ContactForm() {
           <select
             id="subject"
             name="subject"
-            className="h-12 w-full rounded-xl border border-border bg-background px-4 text-secondary outline-none focus:border-primary"
+            className="form-control"
           >
             <option>التسجيل في دورة</option>
             <option>محتوى الدورات والشهادات</option>
@@ -126,7 +127,7 @@ export function ContactForm() {
             required
             maxLength={4000}
             rows={5}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-secondary outline-none focus:border-primary"
+            className="form-control resize-none"
           />
         </div>
       </div>
@@ -140,7 +141,7 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={busy}
-        className="mt-8 h-12 w-full rounded-full bg-secondary font-semibold text-secondary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
+        className="button button-primary mt-8 w-full disabled:cursor-not-allowed disabled:opacity-60"
       >
         {busy ? "جارٍ الإرسال…" : "إرسال الاستفسار"}
       </button>

@@ -1,0 +1,7 @@
+[Unit]
+Description=Alameed platform health check
+After=deem-core-api.service deem-www.service deem-learn.service deem-erp.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/deem/current/infra/prod/scripts/healthcheck.sh

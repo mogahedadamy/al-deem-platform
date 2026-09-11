@@ -28,6 +28,14 @@ paths:
                     type: string
                     const: ok
 
+  /ready:
+    get:
+      summary: Readiness check (database dependency)
+      security: []
+      responses:
+        "200": { description: Ready }
+        "503": { description: Dependency unavailable }
+
   /me:
     get:
       summary: Current user profile + roles
@@ -288,6 +296,18 @@ paths:
         "204": { description: حُذفت }
         "409": { $ref: "#/components/responses/Conflict" }
 
+  /courses/{id}/outline:
+    get:
+      summary: منهج الدورة للمدرب المالك أو مدير النظام
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: الأقسام والدروس }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
   /courses/{id}/submit:
     post:
       summary: إرسال للمراجعة (draft → pending_review، يتطلب درسًا واحدًا على الأقل)
@@ -486,6 +506,32 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/PaymentRequest" }
         "403": { $ref: "#/components/responses/Forbidden" }
+
+  /me/receipts:
+    post:
+      summary: رفع إيصال دفع خاص (PNG/JPG/PDF حتى 5MB)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [receipt]
+              properties:
+                receipt: { type: string, format: binary }
+      responses:
+        "201": { description: مرجع إيصال خاص }
+        "400": { $ref: "#/components/responses/ValidationError" }
+
+  /finance/receipts/{id}:
+    get:
+      summary: فتح إيصال خاص لموظف المالية
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: ملف الإيصال }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /finance/payments:
     get:
@@ -772,7 +818,7 @@ paths:
 
   /me/enrollments/{id}/lessons/{lessonId}:
     get:
-      summary: محتوى درس + تسجيل مشاهدة + تحديث التقدم (idempotent، إكمال تلقائي 100%)
+      summary: محتوى درس بعد فحص الاستحقاق (لا يسجل الإكمال بمجرد الفتح)
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
         - { name: lessonId, in: path, required: true, schema: { type: string, format: uuid } }
@@ -789,6 +835,23 @@ paths:
                   type: { type: string }
                   content: { type: string }
                   videoUrl: { type: string }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /me/enrollments/{id}/lessons/{lessonId}/complete:
+    post:
+      summary: تسجيل إكمال الدرس وتحديث التقدم (idempotent)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: lessonId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: نسبة التقدم المحدثة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  progressPct: { type: integer, minimum: 0, maximum: 100 }
         "403": { $ref: "#/components/responses/Forbidden" }
 
   /erp/stats:

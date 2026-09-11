@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import "./globals.css";
+import { ErpFooter, ErpHeader } from "./shell";
 
 const cairo = Cairo({
   variable: "--font-cairo",
@@ -10,19 +11,23 @@ const cairo = Cairo({
 
 export const metadata: Metadata = {
   title: {
-    default: "النظام الإداري | مركز الديم للتدريب",
-    template: "%s | النظام الإداري — مركز الديم",
+    default: "النظام الإداري | مركز العميد للتدريب",
+    template: "%s | النظام الإداري — مركز العميد",
   },
   description:
-    "النظام الإداري المتخصص لمركز الديم: مراجعة المحتوى، المدفوعات، المستخدمون، التقارير، والتشغيل.",
+    "النظام الإداري لمركز العميد: مراجعة المحتوى، المدفوعات، المستخدمون، التقارير والتشغيل.",
   robots: { index: false, follow: false },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ar" dir="rtl" className={`${cairo.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
+      <body className="min-h-full bg-background text-foreground">
+        <div className="flex min-h-screen flex-col">
+          <ErpHeader />
+          <main className="flex flex-1 flex-col">{children}</main>
+          <ErpFooter />
+        </div>
       </body>
     </html>
   );

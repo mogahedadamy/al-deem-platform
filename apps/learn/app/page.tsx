@@ -1,35 +1,25 @@
-export default function Home() {
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+
+export default async function Home() {
+  if (await auth()) redirect("/dashboard");
   return (
-    <div className="flex flex-col flex-1">
-      <main className="flex flex-1 flex-col items-center justify-center px-6 py-24 text-center">
-        <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dark text-3xl font-black text-white shadow-lg">
-          دي
+    <div className="relative flex flex-1 flex-col overflow-hidden bg-gradient-to-br from-background via-white to-primary/10">
+      <div className="pointer-events-none absolute -right-24 top-16 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
+      <div className="pointer-events-none absolute -left-24 bottom-10 h-72 w-72 rounded-full bg-secondary/10 blur-3xl" />
+      <section className="relative mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-6 py-20 text-center">
+        <span className="rounded-full border border-primary/30 bg-white px-4 py-2 text-xs font-black text-primary-dark shadow-sm">منصة تعلم موحدة وآمنة</span>
+        <h1 className="mt-7 max-w-3xl text-4xl font-black leading-tight text-secondary md:text-6xl">تعلّم بوضوح، وتابع تقدمك حتى الشهادة</h1>
+        <p className="mt-5 max-w-2xl text-base leading-8 text-muted md:text-lg">دوراتك ودروسك واختباراتك وشهاداتك في مساحة واحدة، مع حساب موحد وتجربة مصممة للهاتف وسطح المكتب.</p>
+        <div className="mt-9 flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
+          <Link href="/login?callbackUrl=/dashboard" className="flex min-h-12 flex-1 items-center justify-center rounded-xl bg-secondary px-8 font-bold text-white shadow-md transition-transform hover:-translate-y-0.5">تسجيل الدخول</Link>
+          <a href="https://alameedtraining.com/courses" className="flex min-h-12 flex-1 items-center justify-center rounded-xl border border-border bg-white px-8 font-bold text-secondary hover:border-primary">تصفح الدورات</a>
         </div>
-        <h1 className="max-w-2xl text-4xl font-black leading-tight text-secondary md:text-5xl">
-          منصة التعلم — مركز الديم للتدريب
-        </h1>
-        <p className="mt-4 max-w-xl text-lg leading-8 text-muted">
-          مساحة الطالب والمدرب: دوراتي، دروسي، تقدمي، الاختبارات، والشهادات.
-          تسجيل الدخول عبر الحساب الموحد للمركز.
-        </p>
-        <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-          <a
-            href="/login"
-            className="flex h-12 items-center justify-center rounded-full bg-gradient-to-l from-primary to-primary-dark px-8 font-semibold text-white shadow-md transition-transform hover:scale-105"
-          >
-            تسجيل الدخول
-          </a>
-          <a
-            href="https://www.alameedtraining.com/courses"
-            className="flex h-12 items-center justify-center rounded-full border border-border px-8 font-semibold text-secondary transition-colors hover:border-primary hover:text-primary"
-          >
-            تصفح الدورات
-          </a>
+        <div className="mt-12 grid w-full max-w-3xl gap-3 text-right sm:grid-cols-3">
+          {[['01','تعلّم منظم','دروس ومسار تقدم واضح'],['02','اختبارات موثوقة','تصحيح خادمي ونتيجة فورية'],['03','شهادة رقمية','قابلة للتحقق من الموقع العام']].map(([n,title,text])=><div key={n} className="rounded-2xl border border-border bg-white/80 p-5 shadow-sm"><span className="text-xs font-black text-primary-dark">{n}</span><h2 className="mt-2 font-black text-secondary">{title}</h2><p className="mt-1 text-sm leading-6 text-muted">{text}</p></div>)}
         </div>
-        <p className="mt-16 text-sm text-muted">
-          R0 Foundation — ربط SSO والتطبيقات قيد التأسيس
-        </p>
-      </main>
+      </section>
     </div>
   );
 }

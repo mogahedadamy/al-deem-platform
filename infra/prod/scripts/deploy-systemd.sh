@@ -1,53 +1,105 @@
 #!/usr/bin/env bash
-# النشر الكامل: بناء → /opt/deem (بلا مسافات) → systemd
-# يحتاج sudo. يشغل من جذر المستودع platform/.
+# إصدار ذري قابل للاسترجاع: يبني release immutable ثم يبدّل /opt/deem/current بعد health gate.
+# يشغل من جذر المستودع platform/ ويتطلب: sudo, rsync, git, pnpm, Go.
 set -euo pipefail
-cd "$(dirname "$0")/../.."
+
+cd "$(dirname "$0")/../../.."
 ROOT="$(pwd)"
 APP_DIR=/opt/deem
+RETAIN_RELEASES="${DEEM_RETAIN_RELEASES:-5}"
+SERVICES=(deem-core-api deem-worker deem-www deem-learn deem-erp)
 
-echo "── 1. بناء Go (core-api + worker):"
-(cd services/core-api && CGO_ENABLED=0 go build -o /tmp/deem-core-api ./cmd/api && CGO_ENABLED=0 go build -o /tmp/deem-worker ./cmd/worker)
+require() { command -v "$1" >/dev/null || { echo "✗ missing dependency: $1" >&2; exit 1; }; }
+for dependency in git rsync pnpm go sudo; do require "$dependency"; done
 
-echo "── 2. بناء Next.js (www + learn + erp):"
-for APP in www learn erp; do
-  (cd apps/$APP && npx next build) | tail -1
-done
+# لا يجوز نشر شجرة غير قابلة لإعادة الإنتاج أو بلا commit موثق.
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "✗ working tree is not clean; commit or stash every change before production release" >&2
+  exit 1
+fi
+COMMIT=$(git rev-parse --verify HEAD)
+SHORT_COMMIT=$(git rev-parse --short=12 HEAD)
+STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+RELEASE_ID="$STAMP-$SHORT_COMMIT"
+RELEASE="$APP_DIR/releases/$RELEASE_ID"
 
-echo "── 3. التثبيت إلى $APP_DIR:"
-sudo mkdir -p $APP_DIR/{env,apps,scripts}
-sudo install -m 755 /tmp/deem-core-api $APP_DIR/core-api
-sudo install -m 755 /tmp/deem-worker $APP_DIR/worker
-sudo install -m 755 infra/prod/scripts/backup.sh $APP_DIR/scripts/backup.sh
-
-for APP in www learn erp; do
-  sudo mkdir -p $APP_DIR/apps/$APP
-  sudo rsync -a --delete apps/$APP/.next $APP_DIR/apps/$APP/
-  sudo rsync -a apps/$APP/{package.json,next.config.ts,node_modules,public} $APP_DIR/apps/$APP/ 2>/dev/null || sudo rsync -a apps/$APP/package.json apps/$APP/next.config.ts apps/$APP/node_modules apps/$APP/public $APP_DIR/apps/$APP/
-  echo "  ✓ $APP"
-done
-
-echo "── 4. ملفات env (600 — عدّل الأسرار قبل التفعيل!):"
-for S in core-api www learn erp; do
-  DST="$APP_DIR/env/$S.env"
-  if [ ! -f "$DST" ]; then
-    sudo install -m 600 "infra/prod/env.$S" "$DST"
-    echo "  ✓ $DST (نسخة أولية)"
-  else
-    echo "  · $DST موجود (لم يُمسّ)"
+# الأسرار خارج الشجرة ولا تقبل القوالب/القيم الفارغة الحساسة.
+sudo mkdir -p "$APP_DIR"/{env,releases} /var/lib/deem/private/receipts /var/backups/deem /etc/deem
+for ENV in core-api www learn erp backup; do
+  target="$APP_DIR/env/$ENV.env"
+  if [[ ! -f "$target" ]]; then
+    sudo install -m 600 "infra/prod/env.$ENV" "$target"
+    echo "✗ created $target; populate production secrets and rerun" >&2
+    exit 1
   fi
 done
+if sudo grep -R -E -q 'CHANGE_ME|replace-with-random|^AUTH_SECRET=$|^AUTH_KEYCLOAK_SECRET=$|^ZOOM_WEBHOOK_SECRET=$' "$APP_DIR/env"; then
+  echo "✗ production environment contains placeholder or blank critical secret" >&2
+  exit 1
+fi
+if [[ ! -f /etc/deem/backup.key ]]; then
+  echo "✗ create /etc/deem/backup.key (random, chmod 600, outside Git) before deployment" >&2
+  exit 1
+fi
+sudo chown mojahed:mojahed /etc/deem/backup.key /var/backups/deem
+sudo chmod 600 /etc/deem/backup.key
+sudo chmod 700 /var/lib/deem/private /var/lib/deem/private/receipts /etc/deem
 
-echo "── 5. وحدات systemd:"
+# Build before touching the current release.
+echo "── Building release $RELEASE_ID from $COMMIT"
+pnpm --filter www build
+pnpm --filter learn build
+pnpm --filter erp build
+(
+  cd services/core-api
+  CGO_ENABLED=0 go build -o /tmp/deem-core-api ./cmd/api
+  CGO_ENABLED=0 go build -o /tmp/deem-worker ./cmd/worker
+)
+
+# Populate an immutable, versioned source tree. node_modules is included so the
+# running release never depends on a mutable checkout or package install.
+sudo mkdir -p "$RELEASE/bin"
+sudo rsync -a --delete \
+  --exclude=.git --exclude=.env --exclude=.env.local --exclude=test-results \
+  "$ROOT/" "$RELEASE/"
+sudo install -m 755 /tmp/deem-core-api "$RELEASE/bin/core-api"
+sudo install -m 755 /tmp/deem-worker "$RELEASE/bin/worker"
+printf '%s\n' "$COMMIT" | sudo tee "$RELEASE/REVISION" >/dev/null
+sudo chmod -R a-w "$RELEASE"
+sudo chmod a+rx "$RELEASE" "$RELEASE/bin" "$RELEASE/bin/core-api" "$RELEASE/bin/worker"
+
+# Install reproducible unit definitions, then atomically select the release.
 sudo install -m 644 infra/prod/systemd/deem-*.service infra/prod/systemd/deem-*.timer /etc/systemd/system/
 sudo systemctl daemon-reload
-for S in deem-core-api deem-worker deem-www deem-learn deem-erp; do
-  sudo systemctl enable --now "$S"
-  echo "  ✓ $S: $(systemctl is-active $S)"
-done
-sudo systemctl enable --now deem-backup.timer
-echo "  ✓ deem-backup.timer: $(systemctl is-active deem-backup.timer)"
+PREVIOUS=""
+if [[ -L "$APP_DIR/current" ]]; then PREVIOUS=$(readlink -f "$APP_DIR/current"); fi
+sudo ln -s "$RELEASE" "$APP_DIR/current.next"
+sudo mv -Tf "$APP_DIR/current.next" "$APP_DIR/current"
 
-echo ""
-echo "═══ الحالة:"
-systemctl list-units 'deem-*' --no-pager --plain
+rollback() {
+  echo "✗ health gate failed; restoring previous release" >&2
+  if [[ -n "$PREVIOUS" ]]; then
+    sudo ln -s "$PREVIOUS" "$APP_DIR/current.next"
+    sudo mv -Tf "$APP_DIR/current.next" "$APP_DIR/current"
+    sudo systemctl restart "${SERVICES[@]}" || true
+  fi
+  exit 1
+}
+
+for service in "${SERVICES[@]}"; do
+  sudo systemctl enable "$service"
+  sudo systemctl restart "$service" || rollback
+done
+sudo systemctl enable --now deem-backup.timer deem-healthcheck.timer
+sleep 3
+sudo "$APP_DIR/current/infra/prod/scripts/healthcheck.sh" || rollback
+
+# احتفظ بآخر الإصدارات فقط؛ لا تحذف current أو الإصدار السابق للاسترجاع السريع.
+mapfile -t old_releases < <(sudo find "$APP_DIR/releases" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' | sort -nr | tail -n +$((RETAIN_RELEASES + 1)) | cut -d' ' -f2-)
+for old in "${old_releases[@]:-}"; do
+  [[ "$old" == "$RELEASE" || "$old" == "$PREVIOUS" ]] && continue
+  sudo rm -rf -- "$old"
+done
+
+echo "✓ deployed $RELEASE_ID ($COMMIT)"
+echo "✓ current -> $(readlink -f "$APP_DIR/current")"

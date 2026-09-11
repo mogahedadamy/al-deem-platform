@@ -28,6 +28,7 @@ export function QuizRunner({
 }) {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [noQuiz, setNoQuiz] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<AttemptResult | null>(null);
@@ -42,8 +43,13 @@ export function QuizRunner({
         setNoQuiz(true);
         return;
       }
-      if (res.ok) setQuiz(await res.json());
-    })();
+      if (res.ok) {
+        setQuiz(await res.json());
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setLoadError(body.message ?? "تعذر تحميل الاختبار");
+      }
+    })().catch(() => setLoadError("تعذر تحميل الاختبار"));
   }, [courseSlug]);
 
   // كل الأسئلة مُجابة؟
@@ -102,7 +108,7 @@ export function QuizRunner({
               لم تجتز هذه المرة — النجاح من 70%
             </p>
             <p className="mt-2 text-sm text-amber-800">
-              راجع الدروس وأعد المحاولة، لا حدّ للمحاولات.
+              راجع الدروس ثم أعد المحاولة. الحد الأقصى 3 محاولات خلال 24 ساعة.
             </p>
             <button
               onClick={() => {
@@ -117,6 +123,10 @@ export function QuizRunner({
         )}
       </div>
     );
+  }
+
+  if (loadError) {
+    return <p className="rounded-xl border border-red-200 bg-red-50 px-6 py-8 text-center text-red-800" role="alert">{loadError}</p>;
   }
 
   if (noQuiz) {

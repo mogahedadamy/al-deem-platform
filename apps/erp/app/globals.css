@@ -7,6 +7,7 @@
   --primary: #d4af37;
   --primary-dark: #b8962e;
   --secondary: #1c2a3a;
+  --secondary-foreground: #ffffff;
   --muted: #64748b;
   --border: #e2e8f0;
   --surface: #ffffff;
@@ -18,6 +19,7 @@
   --color-primary: var(--primary);
   --color-primary-dark: var(--primary-dark);
   --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-surface: var(--surface);

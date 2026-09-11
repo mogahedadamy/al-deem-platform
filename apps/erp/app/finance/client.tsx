@@ -12,6 +12,7 @@ export function ReviewActions({ paymentId }: { paymentId: string }) {
   const [error, setError] = useState<string | null>(null);
 
   async function approve() {
+    if (!window.confirm("سيتم اعتماد الدفعة وتفعيل تسجيل الطالب فورًا. هل أنت متأكد؟")) return;
     setBusy(true);
     setError(null);
     const res = await fetch("/api/finance/approve", {

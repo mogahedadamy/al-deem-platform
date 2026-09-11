@@ -184,6 +184,11 @@ export default async function DashboardPage() {
                       <span className="text-sm font-bold text-secondary">
                         {c.priceAmount > 0 ? `${c.priceAmount} ${c.currency === "SDG" ? "ج.س" : c.currency}` : "مجانًا"}
                       </span>
+                      {c.status === "draft" && (
+                        <Link href={`/instructor/courses/${c.id}/edit`} className="rounded-full border border-secondary px-4 py-1.5 text-xs font-bold text-secondary">
+                          تحرير
+                        </Link>
+                      )}
                     </div>
                   </li>
                 ))}
@@ -223,7 +228,7 @@ export default async function DashboardPage() {
                   دوراتي ({myEnrollments.length})
                 </h2>
                 <Link
-                  href="/"
+                  href="https://alameedtraining.com/courses"
                   className="text-sm font-semibold text-primary-dark hover:text-primary"
                 >
                   تصفّح الكتالوج ←
@@ -236,7 +241,7 @@ export default async function DashboardPage() {
                     تصفّح الكتالوج واختر دورتك الأولى.
                   </p>
                   <Link
-                    href="/"
+                    href="https://alameedtraining.com/courses"
                     className="mt-4 inline-block rounded-full bg-secondary px-6 py-2.5 text-sm font-semibold text-secondary-foreground"
                   >
                     تصفّح الدورات
@@ -294,12 +299,14 @@ export default async function DashboardPage() {
                             >
                               متابعة التعلّم ←
                             </Link>
-                            <Link
-                              href={`/courses/${e.courseSlug}/quiz`}
-                              className="rounded-full border-2 border-secondary px-5 py-2 text-sm font-semibold text-secondary hover:bg-secondary hover:text-secondary-foreground"
-                            >
-                              الاختبار
-                            </Link>
+                            {e.status === "completed" && (
+                              <Link
+                                href={`/courses/${e.courseSlug}/quiz`}
+                                className="rounded-full border-2 border-secondary px-5 py-2 text-sm font-semibold text-secondary hover:bg-secondary hover:text-secondary-foreground"
+                              >
+                                الاختبار
+                              </Link>
+                            )}
                           </div>
                         ) : (
                           <Link

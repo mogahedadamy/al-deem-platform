@@ -96,8 +96,8 @@ export default async function UsersPage() {
       </header>
 
       <div className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
-        <div className="overflow-hidden rounded-xl border border-border bg-surface">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+          <table className="min-w-[760px] w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/[.03] text-right">
                 <th className="px-4 py-3 font-semibold text-secondary">الاسم</th>

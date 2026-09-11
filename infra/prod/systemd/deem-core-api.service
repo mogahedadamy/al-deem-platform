@@ -10,7 +10,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 # عدّل المسارات حسب موقع المستودع
-ExecStart=/opt/deem/core-api
+ExecStart=/opt/deem/current/bin/core-api
 EnvironmentFile=/opt/deem/env/core-api.env
 Restart=always
 RestartSec=3
@@ -21,6 +21,7 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
 PrivateTmp=true
+ReadWritePaths=/var/lib/deem/private
 
 [Install]
 WantedBy=multi-user.target

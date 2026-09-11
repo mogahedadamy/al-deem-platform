@@ -3,9 +3,26 @@ package ports
 
 import (
 	"context"
+	"time"
 
 	lsdom "github.com/al-deem/platform/core-api/internal/livesessions/domain"
 )
+
+type MeetingRequest struct {
+	Topic       string
+	StartsAt    time.Time
+	DurationMin int
+	Timezone    string
+}
+
+type Meeting struct {
+	ID      string
+	JoinURL string
+}
+
+type MeetingProvider interface {
+	CreateMeeting(ctx context.Context, request MeetingRequest) (*Meeting, error)
+}
 
 type SessionRepository interface {
 	// Create — حصة جديدة (يدرس قيد عدم التعارض خادميًا في DB)

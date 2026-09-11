@@ -1,0 +1,30 @@
+# Production override. Run with:
+# docker compose -f compose.yaml -f compose.prod.yaml --env-file .env.production up -d
+# Do not store .env.production in Git.
+services:
+  postgres:
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${DEEM_POSTGRES_PASSWORD:?set DEEM_POSTGRES_PASSWORD}
+
+  redis:
+    restart: unless-stopped
+
+  keycloak:
+    # Pin the tested release; never use the moving `latest` tag in production.
+    image: quay.io/keycloak/keycloak:26.7.3
+    restart: unless-stopped
+    command: ["start", "--import-realm", "--http-enabled=true"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:?set KC_BOOTSTRAP_ADMIN_PASSWORD}
+      KC_DB_PASSWORD: ${DEEM_POSTGRES_PASSWORD:?set DEEM_POSTGRES_PASSWORD}
+      KC_HOSTNAME: https://auth.alameedtraining.com
+      KC_HOSTNAME_STRICT: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+
+  # Mailpit is useful only for local testing. Production must use an SMTP provider.
+  mailpit:
+    profiles: ["development"]

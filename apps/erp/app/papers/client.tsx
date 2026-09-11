@@ -18,6 +18,7 @@ export function PaperAdvance({
   const [error, setError] = useState<string | null>(null);
 
   async function advance() {
+    if (!window.confirm(`تأكيد الإجراء: ${nextLabel}؟`)) return;
     setBusy(true);
     setError(null);
     const res = await fetch("/api/papers/advance", {

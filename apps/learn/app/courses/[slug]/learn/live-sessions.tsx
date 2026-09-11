@@ -95,7 +95,7 @@ export function LiveSessionsList({ courseId }: { courseId: string }) {
         const canJoin =
           (s.status === "join_open" || s.status === "scheduled") &&
           joinWindowOpen(s);
-        const active = s.status === "join_open" || s.status === "live";
+        const active = s.status === "live" || canJoin;
         return (
           <div
             key={s.id}

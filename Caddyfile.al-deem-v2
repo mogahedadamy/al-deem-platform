@@ -11,15 +11,16 @@
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
 		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), geolocation=(), microphone=(self), payment=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.alameedtraining.com https://auth.alameedtraining.com; media-src 'self' https: blob:; frame-src https://auth.alameedtraining.com https://*.zoom.us; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https:"
 		-Server
 	}
 }
 
+# الموقع الرسمي الجديد للمركز على النطاق الرئيسي.
 alameedtraining.com {
 	encode zstd gzip
-	tls internal
 	import security
-	# أصول ثابتة — cache طويل (يخفف الحمل ويسرّع CF + المستخدم)
 	@static {
 		path /_next/static/* /brand/* /courses/* /favicon.ico
 	}
@@ -27,16 +28,14 @@ alameedtraining.com {
 	reverse_proxy 127.0.0.1:3011
 }
 
-# Canonical: www → apex
+# النطاق www موحد إلى النطاق الرسمي الرئيسي.
 www.alameedtraining.com {
-	tls internal
 	redir https://alameedtraining.com{uri} permanent
 }
 
 # learn — منصة التعلّم للطلاب والمدربين
 learn.alameedtraining.com {
 	encode zstd gzip
-	tls internal
 	import security
 	reverse_proxy 127.0.0.1:3012
 }
@@ -44,7 +43,6 @@ learn.alameedtraining.com {
 # erp — النظام الإداري (المالية، المحتوى، المستخدمون، التقارير)
 erp.alameedtraining.com {
 	encode zstd gzip
-	tls internal
 	import security
 	reverse_proxy 127.0.0.1:3013
 }
@@ -52,7 +50,6 @@ erp.alameedtraining.com {
 # api — Go core-api
 api.alameedtraining.com {
 	encode zstd gzip
-	tls internal
 	import security
 	reverse_proxy 127.0.0.1:4001
 }
@@ -60,7 +57,6 @@ api.alameedtraining.com {
 # auth — Keycloak SSO
 auth.alameedtraining.com {
 	encode zstd gzip
-	tls internal
 	import security
 	reverse_proxy 127.0.0.1:8091
 }

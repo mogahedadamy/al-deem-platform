@@ -69,10 +69,16 @@ openssl rand -base64 32   # → AUTH_SECRET في infra/prod/env.{www,learn,erp}
 ## 📞 بيانات الدخول الحالية (بيئة التطوير)
 | الحساب | كلمة المرور | الدور |
 |---|---|---|
-| admin@alameedtraining.com | Admin#12345 | system_admin (MFA مفروض) |
-| finance@alameedtraining.com | Finance#12345 | finance_officer (MFA مفروض) |
-| sara.student@example.com | Sara#12345 | student |
-| khalid.student@example.com | Khalid#12345 | student |
-| test.student@example.com | Test#12345 | student+instructor+reviewer |
+| admin@alameedtraining.com | تم التدوير — راجع مخزن الأسرار المحلي | system_admin (MFA مفروض) |
+| finance@alameedtraining.com | تم التدوير — راجع مخزن الأسرار المحلي | finance_officer (MFA مفروض) |
+| sara.student@example.com | تم التدوير — راجع مخزن الأسرار المحلي | student |
+| khalid.student@example.com | تم التدوير — راجع مخزن الأسرار المحلي | student |
+| test.student@example.com | تم التدوير — راجع مخزن الأسرار المحلي | student+instructor+reviewer |
 
 > **غير هذه الكلمات في الإنتاج** — هذه للتطوير والاختبار فقط.
+
+---
+
+## تحديث تدقيق الإطلاق — 2026-09-12
+
+لا تكفي الادعاءات التاريخية أعلاه كدليل إطلاق للإصدار الحالي. تم تحويل التشغيل إلى مسار إصدار ذري قابل للاسترجاع، وأصبح التحقق من JWT يفرض issuer و`azp` و`aud=core-api`، كما أصبحت webhook Zoom تفشل مغلقاً عند غياب السر. لكن لا يزال الإطلاق الفعلي مشروطاً بتوفير أسرار Zoom/Keycloak ووجهة نسخ احتياطي مشفرة خارج الخادم، وتطبيق scope الجمهور وMFA على Keycloak الحي، وإثبات رحلة authenticated كاملة بعد النشر. راجع `infra/prod/RELEASE_RUNBOOK_AR.md` قبل أي تشغيل إنتاجي.

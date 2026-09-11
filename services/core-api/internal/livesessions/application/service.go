@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	lsdom "github.com/al-deem/platform/core-api/internal/livesessions/domain"
-	"github.com/al-deem/platform/core-api/internal/livesessions/ports"
 	iddomain "github.com/al-deem/platform/core-api/internal/identity/domain"
 	idports "github.com/al-deem/platform/core-api/internal/identity/ports"
+	lsdom "github.com/al-deem/platform/core-api/internal/livesessions/domain"
+	"github.com/al-deem/platform/core-api/internal/livesessions/ports"
 	"github.com/al-deem/platform/core-api/internal/platform"
 )
 
@@ -17,24 +17,26 @@ type LiveSessionsService struct {
 	sessions  ports.SessionRepository
 	attendees ports.AttendeeRepository
 	webhooks  ports.WebhookRepository
+	meetings  ports.MeetingProvider
 	audit     idports.AuditLogger
 
 	// lookups عبر modules أخرى (closures — لا استيراد دوّار)
-	courseHasLive   func(ctx context.Context, courseID string) (bool, string, error) // has_live, instructorID
-	studentActive   func(ctx context.Context, courseID, studentID string) (bool, error)
-	isInstructor    func(ctx context.Context, courseID, userID string) (bool, error)
+	courseHasLive func(ctx context.Context, courseID string) (bool, string, error) // has_live, instructorID
+	studentActive func(ctx context.Context, courseID, studentID string) (bool, error)
+	isInstructor  func(ctx context.Context, courseID, userID string) (bool, error)
 }
 
 func NewLiveSessionsService(
 	s ports.SessionRepository,
 	a ports.AttendeeRepository,
 	w ports.WebhookRepository,
+	meetings ports.MeetingProvider,
 	audit idports.AuditLogger,
 	courseHasLive func(ctx context.Context, courseID string) (bool, string, error),
 	studentActive func(ctx context.Context, courseID, studentID string) (bool, error),
 	isInstructor func(ctx context.Context, courseID, userID string) (bool, error),
 ) *LiveSessionsService {
-	return &LiveSessionsService{sessions: s, attendees: a, webhooks: w, audit: audit,
+	return &LiveSessionsService{sessions: s, attendees: a, webhooks: w, meetings: meetings, audit: audit,
 		courseHasLive: courseHasLive, studentActive: studentActive, isInstructor: isInstructor}
 }
 
@@ -67,23 +69,38 @@ func (s *LiveSessionsService) Schedule(ctx context.Context, actor *iddomain.Acto
 	if in.JoinWindowMin == 0 {
 		in.JoinWindowMin = 10
 	}
+	if s.meetings == nil {
+		return nil, &platform.DomainError{Code: "UNAVAILABLE", Msg: "خدمة الاجتماعات المباشرة غير مهيأة"}
+	}
 	ses := &lsdom.LiveSession{
-		CourseID:       in.CourseID,
-		SectionID:      in.SectionID,
-		InstructorID:   actor.ID,
-		Title:          in.Title,
-		Status:         lsdom.StatusScheduled,
-		StartsAt:       in.StartsAt,
-		JoinWindowMin:  in.JoinWindowMin,
-		DurationMin:    in.DurationMin,
-		Timezone:       in.Timezone,
-		Notes:          in.Notes,
+		CourseID:      in.CourseID,
+		SectionID:     in.SectionID,
+		InstructorID:  actor.ID,
+		Title:         in.Title,
+		Status:        lsdom.StatusScheduled,
+		StartsAt:      in.StartsAt,
+		JoinWindowMin: in.JoinWindowMin,
+		DurationMin:   in.DurationMin,
+		Timezone:      in.Timezone,
+		Notes:         in.Notes,
 	}
 	if err := s.sessions.Create(ctx, ses); err != nil {
 		return nil, err // قيد التعارض يرفض تداخل مواعيد المدرب
 	}
+	meeting, err := s.meetings.CreateMeeting(ctx, ports.MeetingRequest{
+		Topic: in.Title, StartsAt: in.StartsAt, DurationMin: in.DurationMin, Timezone: in.Timezone,
+	})
+	if err != nil {
+		_ = s.sessions.UpdateStatus(ctx, ses.ID, lsdom.StatusCancelled)
+		return nil, &platform.DomainError{Code: "UNAVAILABLE", Msg: "تعذر إنشاء اجتماع Zoom"}
+	}
+	if err := s.sessions.SetZoomMeeting(ctx, ses.ID, meeting.ID, meeting.JoinURL); err != nil {
+		_ = s.sessions.UpdateStatus(ctx, ses.ID, lsdom.StatusCancelled)
+		return nil, err
+	}
+	ses.ZoomMeetingID, ses.ZoomJoinURL = meeting.ID, meeting.JoinURL
 	_ = s.audit.Log(ctx, actor.ID, "live_session.scheduled", "live_session", ses.ID, nil,
-		map[string]any{"courseId": in.CourseID, "startsAt": in.StartsAt})
+		map[string]any{"courseId": in.CourseID, "startsAt": in.StartsAt, "zoomMeetingId": meeting.ID})
 	return ses, nil
 }
 

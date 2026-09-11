@@ -12,9 +12,10 @@ export function ReviewActions({ courseId }: { courseId: string }) {
   const [error, setError] = useState<string | null>(null);
 
   async function publish() {
+    if (!window.confirm("نشر الدورة سيجعلها متاحة للجمهور فورًا. هل أنت متأكد؟")) return;
     setBusy(true);
     setError(null);
-    const res = await fetch("/api/review/publish", {
+    const res = await fetch("/api/review", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ courseId }),
@@ -32,7 +33,7 @@ export function ReviewActions({ courseId }: { courseId: string }) {
     }
     setBusy(true);
     setError(null);
-    const res = await fetch("/api/review/reject", {
+    const res = await fetch("/api/review", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ courseId, notes }),

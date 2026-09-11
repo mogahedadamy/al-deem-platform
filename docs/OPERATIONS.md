@@ -1,64 +1,60 @@
-# دليل التشغيل — Al Deem Platform v2
+# دليل التشغيل — منصة العميد
 
-> Runbook للحوادث اليومية. البنية الكاملة في `infra/prod/README.md`.
+> تعتمد الإنتاجية على `systemd` وإصدارات immutable تحت `/opt/deem/releases`؛ لا تستخدم `nohup` أو `/tmp` أو أوامر `kill` لتشغيل المنصة.
 
-## الخدمات ومنافذها
-| الخدمة | المنفذ | العملية |
-|---|---|---|
-| core-api (Go) | 4001 | `/tmp/core-api` + env (DATABASE_URL, KEYCLOAK_URL, REDIS_URL) |
-| worker (Go) | — | `/tmp/worker` + env (DATABASE_URL) |
-| www (Next.js) | 3011 | `next start` |
-| learn (Next.js) | 3012 | `next start` + AUTH_SECRET + AUTH_URL |
-| erp (Next.js) | 3013 | `next start` + AUTH_SECRET + AUTH_URL |
-| PostgreSQL | 5435 | deem/deem — DB: deem |
-| Redis | 6391 | rate limiting |
-| Keycloak | 8091 | realm al-deem |
-| Caddy | 443 | النطاقات الأربعة + security headers |
+## الخدمات والمنافذ
 
-## فحص الصحة السريع
+| الخدمة | المنفذ | وحدة systemd |
+|---|---:|---|
+| core-api | 4001 | `deem-core-api.service` |
+| worker | — | `deem-worker.service` |
+| www | 3011 | `deem-www.service` |
+| learn | 3012 | `deem-learn.service` |
+| erp | 3013 | `deem-erp.service` |
+| النسخ الاحتياطي | — | `deem-backup.timer` |
+| فحص الصحة | — | `deem-healthcheck.timer` |
+
+## فحص الصحة والسجلات
+
 ```bash
-curl -k --resolve api.alameedtraining.com:443:127.0.0.1 https://api.alameedtraining.com/v1/health
-ss -lntp | grep -E ":(4001|3011|3012|3013) "   # 4 خدمات
-pgrep -f worker | wc -l                          # worker يعمل
+systemctl is-active deem-core-api deem-worker deem-www deem-learn deem-erp deem-backup.timer
+auth_token='...' # access token حديث صادر من Keycloak
+curl -fsS http://127.0.0.1:4001/v1/ready
+curl -fsS -H "Authorization: Bearer $auth_token" http://127.0.0.1:4001/v1/me
+journalctl -u deem-core-api -u deem-worker -n 100 --no-pager
+systemctl list-timers 'deem-*' --all --no-pager
 ```
 
-## حوادث شائعة
+`/v1/ready` يفحص قاعدة البيانات؛ يجب متابعة Redis وKeycloak وworker ونسخة النسخ الاحتياطي عبر مراقبة خارجية أيضاً.
 
-### 1. سيرفر لا يستجيب
+## معالجة الحوادث
+
+- **خدمة لا تستجيب:** افحص `journalctl -u deem-<service>` ثم استخدم `sudo systemctl restart deem-<service>` فقط بعد تحديد السبب.
+- **SSO أو API يعيدان 401:** تحقق أن token يضم `iss` العام الصحيح، و`azp` من العملاء المسموحين، و`aud=core-api`؛ ثم راجع `KEYCLOAK_ISSUER` وscope `core-api-audience` في Keycloak الحي.
+- **Worker متوقف:** الأحداث تبقى معلقة في `zoom_webhook_events` وتلتقطها الوحدة عند عودتها؛ افحص backlog وقم بإعادة تشغيل `deem-worker`.
+- **Webhook Zoom:** لا تقبل الخدمة أي request إن غاب `ZOOM_WEBHOOK_SECRET`، وتتحقق من HMAC وtimestamp. لا تعطل هذه الحماية للتجربة.
+
+## النسخ الاحتياطي والاستعادة
+
+تعمل `deem-backup.timer` يومياً 03:00. السكربت ينتج نسخة `sql.gz.enc` فقط، ويفشل إن غاب مفتاح التشفير أو النسخ خارج الخادم عبر rclone. ينفذ restore drill كل أحد على `deem_restore_drill` ويخرج non-zero عند الفشل.
+
 ```bash
-# السجلات:
-tail -20 /tmp/{coreapi,learn,erp,www,worker}.log
-# إعادة تشغيل core-api (انظر infra/prod/env.core-api):
-kill $(ss -lntp | grep :4001 | grep -oE 'pid=[0-9]+' | cut -d= -f2)
-DATABASE_URL=... KEYCLOAK_URL=... REDIS_URL=... nohup /tmp/core-api > /tmp/coreapi.log 2>&1 &
+journalctl -u deem-backup.service -n 100 --no-pager
+sudo systemctl start deem-backup.service  # فقط في نافذة تغيير مصرح بها
 ```
 
-### 2. سلسلة SSO مقطوعة
-- تحقق من AUTH_URL في env التطبيق (إلزامي خلف proxy — انظر infra/prod/README)
-- دوران مفاتيح Keycloak بعد إعادة تشغيله: سجل `jwks cache miss` طبيعي — الجلسات القديمة تنتهي، المستخدم يعيد الدخول
+لا تستعد إلى قاعدة الإنتاج مباشرة. استخدم drill/هدف منفصل واحتفظ بمفتاح `/etc/deem/backup.key` خارج Git وفي مخزن أسرار معتمد.
 
-### 3. rate limit يمنع زائرًا حقيقيًا
-- Redis key: `deem:rl:<ip>` مع TTL — ينتهي تلقائيًا خلال الدقيقة
-- رفع الحد: `middleware/ratelimit.go` (120/دقيقة) ثم rebuild
+## MFA والأسرار
 
-### 4. worker توقف
-- لا خسارة بيانات: أحداث zoom تبقى في `zoom_webhook_events` بلا processed_at
-- إعادة التشغيل تلتقط كل المعلّق (poll كل 10 ثوانٍ)
+- TOTP مطلوب في realm configuration؛ تحقّق من إكمال إعداد الحسابات الإدارية ومسار الاستعادة قبل الإطلاق.
+- لا توجد كلمات مرور أو tokens في المستودع. دوّر أي حساب/سر ظهر في logs أو وثائق قديمة.
+- قوالب `infra/prod/env.*` ليست ملفات تشغيل؛ القيم الحية تحفظ في `/opt/deem/env` بصلاحية 0600.
 
-### 5. DB backup/restore — آلي
-```bash
-# النسخ اليومي (3 صباحًا في cron):
-0 3 * * * /path/to/platform/infra/prod/scripts/backup.sh
-# أو يدويًا:
-./infra/prod/scripts/backup.sh /var/backups/deem
-```
-- السكربت: نسخة مؤرخة + gzip + فحص سلامة + تنظيف >30 يومًا + **drill أسبوعي تلقائي** (الأحد)
-- **مهم**: pg_dump 17 داخل الحاوية `deem-postgres` (عميل السيرفر 16 لا يصلح)
-- drill يدوي: استعادة لـDB اختبارية + مقارنة counts مع الأصل
+## النشر والاسترجاع
 
-## MFA لموظفي ERP
-- CONFIGURE_TOTP مفروض في Keycloak على admin@ وfinance@
-- أول دخول: إعداد تطبيق مصادقة (Microsoft/Google/FreeOTP) إلزامي قبل الوصول
+اتبع فقط [`infra/prod/RELEASE_RUNBOOK_AR.md`](../infra/prod/RELEASE_RUNBOOK_AR.md). السكربت يرفض الشجرة غير النظيفة ويبدّل `/opt/deem/current` ذرياً، مع rollback تلقائي عند فشل health gate.
 
-## قاعدة "لا تلمس"
-ticketty، deepseek-harness، remote.suda-technologies.com (Caddy الرئيسي يخدمه)، PM2، PostgreSQL القديم (5432/5433/5434)، منافذ 8081/8026/:3000.
+## قاعدة «لا تلمس»
+
+ticketty، deepseek-harness، `remote.suda-technologies.com` (Caddy الرئيسي يخدمه)، PM2، PostgreSQL القديم (5432/5433/5434)، منافذ 8081/8026/:3000.

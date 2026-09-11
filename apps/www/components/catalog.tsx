@@ -1,9 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Clock, Users, Star, Video, Heart } from "lucide-react";
+import { ArrowLeft, Clock3, Radio, Sparkles } from "lucide-react";
 import type { Course, CourseLevel } from "@/lib/api";
 
-// ===== عرض مستوى الدورة =====
 const LEVEL_LABEL: Record<CourseLevel, string> = {
   beginner: "مبتدئ",
   intermediate: "متوسط",
@@ -11,115 +11,95 @@ const LEVEL_LABEL: Record<CourseLevel, string> = {
 };
 
 export function LevelBadge({ level }: { level: CourseLevel }) {
-  return (
-    <span className="rounded-full bg-gradient-primary/10 px-3 py-1 text-xs font-medium text-primary">
-      {LEVEL_LABEL[level] ?? level}
-    </span>
-  );
+  return <span className="rounded-full bg-primary-light/55 px-3 py-1 text-xs font-extrabold text-primary-dark">{LEVEL_LABEL[level] ?? level}</span>;
 }
 
-// ===== تنسيق السعر =====
 export function formatPrice(amount: number, currency: string): string {
-  if (amount === 0) return "مجانًا";
-  const formatted = new Intl.NumberFormat("ar-EG", {
-    maximumFractionDigits: 0,
-  }).format(amount);
+  if (amount === 0) return "مجاناً";
+  const formatted = new Intl.NumberFormat("ar-EG", { maximumFractionDigits: 0 }).format(amount);
   return `${formatted} ${currency === "SDG" ? "ج.س" : currency}`;
 }
 
-// ===== بطاقة دورة — بأسلوب المرجع (تدرج + ظلال + hover) =====
-export function CourseCard({ course }: { course: Course }) {
+function localImage(url: string | null): string | null {
+  if (!url) return null;
+  if (url.startsWith("/")) return url;
+  try {
+    const parsed = new URL(url);
+    if (["alameedtraining.com", "www.alameedtraining.com"].includes(parsed.hostname)) return parsed.pathname;
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+export function CourseCard({ course, priority = false }: { course: Course; priority?: boolean }) {
+  const image = localImage(course.coverImageUrl);
   return (
-    <Link
-      href={`/courses/${course.slug}`}
-      className="group relative flex animate-fade-in flex-col overflow-hidden rounded-3xl border-0 bg-gradient-card shadow-card transition-all duration-500 hover:scale-105 hover:shadow-elegant"
-    >
-      {/* الغلاف — صورة الدورة أو تدرج الهوية */}
-      <div className="relative h-48 overflow-hidden md:h-52">
-        {course.coverImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- صور خارجية من مصادر متعددة
-          <img
-            src={course.coverImageUrl}
-            alt={course.title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+    <article className="card card-interactive group flex h-full flex-col overflow-hidden">
+      <Link href={`/courses/${course.slug}`} className="relative block aspect-[16/10] overflow-hidden bg-secondary" aria-label={`عرض دورة ${course.title}`}>
+        {image ? (
+          <Image
+            src={image}
+            alt={`غلاف دورة ${course.title}`}
+            fill
+            priority={priority}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-primary">
-            <span className="text-4xl font-black text-white drop-shadow-lg">
-              {course.title.slice(0, 2)}
+          <div className="absolute inset-0 grid place-items-center bg-gradient-secondary">
+            <Sparkles className="h-10 w-10 text-white/70" aria-hidden="true" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-secondary/65 via-transparent to-transparent" />
+        <div className="absolute inset-x-4 bottom-4 flex items-center justify-between gap-2">
+          <LevelBadge level={course.level} />
+          {course.hasLiveSessions && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
+              <Radio className="h-3.5 w-3.5" aria-hidden="true" /> بث مباشر
             </span>
-          </div>
-        )}
-        {/* شارة بث مباشر */}
-        {course.hasLiveSessions && (
-          <span className="absolute top-3 right-3 z-10 flex items-center gap-1 rounded-full bg-gradient-primary px-3 py-1 text-xs font-bold text-white shadow-hover">
-            <Video className="h-3 w-3" />
-            بث مباشر
-          </span>
-        )}
-        {/* شارة المجانية */}
-        {course.priceAmount === 0 && (
-          <span className="absolute top-3 left-3 z-10 rounded-full bg-gradient-accent px-3 py-1 text-xs font-bold text-white shadow-hover">
-            مجاني
-          </span>
-        )}
-        <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/30 to-transparent" />
-      </div>
-
-      <div className="flex flex-1 flex-col gap-2.5 p-5 md:p-6">
-        <h3 className="text-lg font-bold leading-8 text-secondary transition-colors duration-300 group-hover:text-primary">
-          {course.title}
-        </h3>
-        <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
-          {course.summary}
-        </p>
-
-        <div className="mt-auto flex items-center justify-between pt-4">
-          <div className="flex items-center gap-2">
-            <LevelBadge level={course.level} />
-          </div>
-          <span className="bg-gradient-primary bg-clip-text text-base font-bold text-transparent">
-            {formatPrice(course.priceAmount, course.currency)}
-          </span>
+          )}
         </div>
+      </Link>
 
-        {/* زر التسجيل */}
-        <div className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-gradient-primary py-2.5 text-sm font-semibold text-white opacity-95 shadow-hover transition-all duration-300 group-hover:opacity-100 group-hover:shadow-glow">
-          <Heart className="h-4 w-4" />
-          سجّل الآن
+      <div className="flex flex-1 flex-col p-5 sm:p-6">
+        <Link href={`/courses/${course.slug}`}>
+          <h3 className="text-lg font-black leading-8 text-secondary transition-colors group-hover:text-primary-dark">{course.title}</h3>
+        </Link>
+        <p className="mt-2 line-clamp-2 text-sm leading-7 text-muted-foreground">{course.summary}</p>
+        <div className="mt-5 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+          <Clock3 className="h-4 w-4 text-primary" aria-hidden="true" />
+          <span>{course.durationHours} ساعة تدريبية</span>
+        </div>
+        <div className="mt-auto flex items-end justify-between gap-4 border-t border-border pt-5">
+          <div>
+            <span className="block text-[.68rem] font-bold text-muted-foreground">رسوم البرنامج</span>
+            <span className="mt-1 block text-lg font-black text-secondary">{formatPrice(course.priceAmount, course.currency)}</span>
+          </div>
+          <Link href={`/courses/${course.slug}`} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-secondary text-white transition-colors hover:bg-primary" aria-label={`تفاصيل ${course.title}`}>
+            <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+          </Link>
         </div>
       </div>
-    </Link>
+    </article>
   );
 }
 
-// ===== حالة فارغة =====
-export function EmptyState({
-  title,
-  hint,
-}: {
-  title: string;
-  hint?: ReactNode;
-}) {
+export function EmptyState({ title, hint }: { title: string; hint?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border bg-gradient-card px-6 py-16 text-center shadow-card">
-      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-primary/10 text-2xl text-primary">
-        ✦
-      </span>
-      <p className="font-bold text-secondary">{title}</p>
-      {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
+    <div className="card flex flex-col items-center gap-3 border-dashed px-6 py-14 text-center">
+      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-primary-light/50 text-2xl text-primary">✦</span>
+      <p className="font-black text-secondary">{title}</p>
+      {hint && <p className="max-w-lg text-sm leading-7 text-muted-foreground">{hint}</p>}
     </div>
   );
 }
 
-// ===== حالة خطأ =====
 export function ErrorState({ message }: { message: string }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-3xl border border-red-200 bg-red-50 px-6 py-16 text-center">
-      <p className="font-bold text-red-800">{message}</p>
-      <p className="text-sm text-red-600">
-        حاول تحديث الصفحة — إن استمرت المشكلة تواصل معنا.
-      </p>
+    <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-12 text-center" role="alert">
+      <p className="font-black text-red-800">{message}</p>
+      <p className="mt-2 text-sm text-red-700">حاول تحديث الصفحة، وإن استمرت المشكلة تواصل معنا.</p>
     </div>
   );
 }

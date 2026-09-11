@@ -16,11 +16,11 @@ import (
 )
 
 type CatalogService struct {
-	courses   ports.CourseRepository
-	sections  ports.SectionRepository
-	lessons   ports.LessonRepository
+	courses    ports.CourseRepository
+	sections   ports.SectionRepository
+	lessons    ports.LessonRepository
 	categories ports.CategoryRepository
-	audit     idports.AuditLogger
+	audit      idports.AuditLogger
 }
 
 func NewCatalogService(c ports.CourseRepository, s ports.SectionRepository, l ports.LessonRepository, cat ports.CategoryRepository, a idports.AuditLogger) *CatalogService {
@@ -243,6 +243,9 @@ func (s *CatalogService) PublishCourse(ctx context.Context, actor *iddomain.Acto
 	if err != nil {
 		return err
 	}
+	if c.InstructorID == actor.ID && !actor.HasRole(iddomain.RoleSystemAdmin) {
+		return &platform.DomainError{Code: "FORBIDDEN", Msg: "لا يمكن للمدرب مراجعة دورته بنفسه"}
+	}
 	now := time.Now()
 	if err := c.Publish(actor.ID, now); err != nil {
 		return err
@@ -265,6 +268,9 @@ func (s *CatalogService) RejectCourse(ctx context.Context, actor *iddomain.Actor
 	c, err := s.courses.GetByID(ctx, courseID)
 	if err != nil {
 		return err
+	}
+	if c.InstructorID == actor.ID && !actor.HasRole(iddomain.RoleSystemAdmin) {
+		return &platform.DomainError{Code: "FORBIDDEN", Msg: "لا يمكن للمدرب مراجعة دورته بنفسه"}
 	}
 	now := time.Now()
 	if err := c.Reject(actor.ID, notes, now); err != nil {
@@ -305,6 +311,31 @@ func (s *CatalogService) MyCourses(ctx context.Context, actor *iddomain.Actor) (
 	return s.courses.ListByInstructor(ctx, actor.ID)
 }
 
+// GetAuthoringOutline — منهج المسودة للمالك أو مدير النظام.
+func (s *CatalogService) GetAuthoringOutline(ctx context.Context, actor *iddomain.Actor, courseID string) ([]catalogdom.Section, map[string][]catalogdom.Lesson, error) {
+	course, err := s.courses.GetByID(ctx, courseID)
+	if err != nil {
+		return nil, nil, err
+	}
+	canRead := course.InstructorID == actor.ID || actor.HasRole(iddomain.RoleContentReviewer) || actor.HasRole(iddomain.RoleSystemAdmin)
+	if !canRead {
+		return nil, nil, platform.ErrForbidden
+	}
+	sections, err := s.sections.ListByCourse(ctx, courseID)
+	if err != nil {
+		return nil, nil, err
+	}
+	lessonsBySection := make(map[string][]catalogdom.Lesson)
+	for _, section := range sections {
+		lessons, err := s.lessons.ListBySection(ctx, section.ID)
+		if err != nil {
+			return nil, nil, err
+		}
+		lessonsBySection[section.ID] = lessons
+	}
+	return sections, lessonsBySection, nil
+}
+
 // AddSection — للدورة المسودة المملوكة فقط.
 func (s *CatalogService) AddSection(ctx context.Context, actor *iddomain.Actor, courseID, title string, position int) (*catalogdom.Section, error) {
 	c, err := s.authorizeOwner(ctx, actor, courseID)
@@ -337,13 +368,13 @@ func (s *CatalogService) AddLesson(ctx context.Context, actor *iddomain.Actor, s
 		return nil, platform.ErrConflict
 	}
 	l := &catalogdom.Lesson{
-		SectionID: sectionID,
-		CourseID:  in.CourseID,
-		Type:      normalizeLessonType(in.Type),
-		Title:     in.Title,
-		Content:   in.Content,
-		VideoURL:  in.VideoURL,
-		Position:  in.Position,
+		SectionID:     sectionID,
+		CourseID:      in.CourseID,
+		Type:          normalizeLessonType(in.Type),
+		Title:         in.Title,
+		Content:       in.Content,
+		VideoURL:      in.VideoURL,
+		Position:      in.Position,
 		IsFreePreview: in.IsFreePreview,
 	}
 	if l.Title == "" {

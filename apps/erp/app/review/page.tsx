@@ -12,7 +12,13 @@ type Course = {
   slug: string;
   status: string;
   level: string;
+  description: string;
+  durationHours: number;
+  priceAmount: number;
+  currency: string;
 };
+
+type Outline = { sections: { id: string; title: string; lessons: { id: string; title: string; type: string }[] }[] };
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4001/v1";
@@ -43,6 +49,13 @@ export default async function ReviewPage() {
     );
   }
   const data = (await res.json()) as { items: Course[]; total: number };
+  const outlines = new Map<string, Outline>();
+  await Promise.all(data.items.map(async (course) => {
+    const response = await fetch(`${API_BASE}/courses/${course.id}/outline`, {
+      headers: { Authorization: `Bearer ${token}` }, cache: "no-store",
+    });
+    if (response.ok) outlines.set(course.id, (await response.json()) as Outline);
+  }));
 
   return (
     <div className="flex flex-1 flex-col">
@@ -85,8 +98,15 @@ export default async function ReviewPage() {
                     {c.summary}
                   </p>
                   <p className="mt-2 text-xs text-muted">
-                    المستوى: {c.level === "beginner" ? "مبتدئ" : c.level === "advanced" ? "متقدم" : "متوسط"}
+                    المستوى: {c.level === "beginner" ? "مبتدئ" : c.level === "advanced" ? "متقدم" : "متوسط"} · {c.durationHours} ساعة · {c.priceAmount.toLocaleString("ar-EG")} {c.currency === "SDG" ? "ج.س" : c.currency}
                   </p>
+                  {c.description && <p className="mt-3 max-w-3xl text-sm leading-7 text-muted">{c.description}</p>}
+                  <details className="mt-3 rounded-lg bg-background px-3 py-2 text-sm">
+                    <summary className="cursor-pointer font-semibold text-secondary">مراجعة المنهج ({outlines.get(c.id)?.sections.reduce((count, section) => count + section.lessons.length, 0) ?? 0} درس)</summary>
+                    <div className="mt-3 space-y-2 border-t border-border pt-3">
+                      {(outlines.get(c.id)?.sections ?? []).map((section) => <div key={section.id}><p className="font-semibold text-secondary">{section.title}</p><ul className="mt-1 list-inside list-disc text-muted">{section.lessons.map((lesson) => <li key={lesson.id}>{lesson.title} — {lesson.type}</li>)}</ul></div>)}
+                    </div>
+                  </details>
                 </div>
                 <ReviewActions courseId={c.id} />
               </li>

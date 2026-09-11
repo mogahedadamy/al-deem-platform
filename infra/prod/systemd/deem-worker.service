@@ -6,7 +6,7 @@ Wants=deem-core-api.service
 
 [Service]
 Type=simple
-ExecStart=/opt/deem/worker
+ExecStart=/opt/deem/current/bin/worker
 EnvironmentFile=/opt/deem/env/core-api.env
 Restart=always
 RestartSec=5

@@ -116,8 +116,8 @@
 ## 🔑 حسابات الاختبار
 | الحساب | كلمة المرور | الأدوار |
 |---|---|---|
-| test.student@example.com | Test#12345 | student + instructor + content_reviewer |
-| admin@alameedtraining.com | Admin#12345 | system_admin |
+| test.student@example.com | تم التدوير — خارج المستودع | student + instructor + content_reviewer |
+| admin@alameedtraining.com | تم التدوير — خارج المستودع | system_admin |
 
 > الدورتان الاختباريتان منشورتان: "أساسيات إدارة المشاريع" (25000 SDG) و"التحليل المالي للمشاريع الصغيرة" (40000 SDG)
 
@@ -166,10 +166,10 @@
 ## 🔑 حسابات الاختبار (بعد R2)
 | الحساب | كلمة المرور | الأدوار |
 |---|---|---|
-| test.student@example.com | Test#12345 | student + instructor + content_reviewer (مسجل وفعّال في الدورتين) |
-| admin@alameedtraining.com | Admin#12345 | system_admin |
-| finance@alameedtraining.com | Finance#12345 | finance_officer (قرار #6 — مخصص 24/7) |
-| support@alameedtraining.com | Support#12345 | support_agent (لم يسجل دخولًا بعد — placeholder profile) |
+| test.student@example.com | تم التدوير — خارج المستودع | student + instructor + content_reviewer (بيانات اختبار) |
+| admin@alameedtraining.com | تم التدوير — خارج المستودع | system_admin |
+| finance@alameedtraining.com | تم التدوير — خارج المستودع | finance_officer |
+| support@alameedtraining.com | تم التدوير — خارج المستودع | support_agent (يُنشأ عند أول دخول) |
 
 ## ✅ R3 — Assessment & Certificate (مكتملة — قرار #4 مطبق بالكامل)
 

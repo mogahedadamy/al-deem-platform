@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // المسارات المحمية — كل شيء عدا العامة
-const PUBLIC_PATHS = ["/", "/login", "/api/auth"];
+const PUBLIC_PATHS = ["/", "/login", "/api/auth", "/brand"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

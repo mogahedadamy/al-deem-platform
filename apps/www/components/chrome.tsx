@@ -1,107 +1,97 @@
-// Header/Footer — بأسلوب المرجع: شعار حقيقي + تدرج + زجاجية.
+import Image from "next/image";
 import Link from "next/link";
+import { ArrowUpLeft, BadgeCheck, Mail, MapPin } from "lucide-react";
+import { MobileNavigation } from "@/components/mobile-navigation";
+import { Container } from "@/components/ui";
+import { NAV_ITEMS, SITE } from "@/lib/site-content";
 
 export function SiteHeader() {
   return (
-    <header className="fixed top-0 z-50 w-full border-b border-border/50 bg-white/80 shadow-card backdrop-blur-md">
-      <nav
-        aria-label="القائمة الرئيسية"
-        className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:h-20 md:px-6"
-      >
-        <Link href="/" className="flex flex-shrink-0 items-center gap-3 transition-opacity hover:opacity-80">
-          <div className="flex h-10 w-10 transform items-center justify-center rounded-2xl border border-gray-200 bg-white shadow-hover transition-all duration-300 hover:scale-105 md:h-12 md:w-12">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/brand/logo.webp"
-              alt="شعار مركز العميد للتدريب المتقدم"
-              className="h-7 w-7 object-contain drop-shadow-sm md:h-9 md:w-9"
-            />
-          </div>
-          <div className="min-w-0">
-            <div className="overflow-hidden text-ellipsis whitespace-nowrap bg-gradient-primary bg-clip-text text-base font-bold leading-tight text-transparent md:text-2xl">
-              مركز العميد للتدريب المتقدم
-            </div>
-            <div className="hidden text-xs font-medium text-muted-foreground md:block">
-              Alameed Training Center
-            </div>
-          </div>
+    <header className="site-header">
+      <Container className="flex h-[4.5rem] items-center justify-between gap-4 lg:h-20">
+        <Link href="/" className="brand-lockup" aria-label={`${SITE.nameAr} — الرئيسية`}>
+          <span className="brand-mark">
+            <Image src="/brand/logo.webp" alt="" width={48} height={48} priority className="h-full w-full object-contain" />
+          </span>
+          <span className="min-w-0">
+            <span className="brand-title"><span className="sm:hidden">مركز العميد</span><span className="hidden sm:inline">{SITE.nameAr}</span></span>
+            <span className="brand-subtitle">{SITE.nameEn}</span>
+          </span>
         </Link>
-        <ul className="flex items-center gap-4 text-sm font-semibold md:gap-7">
-          <li>
-            <Link href="/" className="text-muted-foreground transition-colors hover:text-primary">
-              الرئيسية
-            </Link>
-          </li>
-          <li>
-            <Link href="/courses" className="text-muted-foreground transition-colors hover:text-primary">
-              الدورات
-            </Link>
-          </li>
-          <li>
-            <Link href="/about" className="text-muted-foreground transition-colors hover:text-primary">
-              عن المركز
-            </Link>
-          </li>
-          <li>
-            <Link href="/verify" className="text-muted-foreground transition-colors hover:text-primary">
-              تحقق من شهادة
-            </Link>
-          </li>
-          <li>
-            <a
-              href="https://learn.alameedtraining.com"
-              className="rounded-2xl bg-gradient-primary px-5 py-2.5 text-white shadow-hover transition-all duration-300 hover:scale-105 hover:shadow-glow"
-            >
-              منصة التعلم
-            </a>
-          </li>
-        </ul>
-      </nav>
+
+        <nav className="hidden lg:block" aria-label="القائمة الرئيسية">
+          <ul className="flex items-center gap-1">
+            {NAV_ITEMS.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href} className="nav-link">
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="hidden items-center gap-2 lg:flex">
+          <Link href="/verify" className="button button-ghost h-11 px-4">
+            <BadgeCheck className="h-4 w-4" aria-hidden="true" />
+            تحقق من شهادة
+          </Link>
+          <a href="https://learn.alameedtraining.com" className="button button-primary h-11 px-5">
+            منصة التعلم
+            <ArrowUpLeft className="h-4 w-4" aria-hidden="true" />
+          </a>
+        </div>
+
+        <MobileNavigation />
+      </Container>
     </header>
   );
 }
 
 export function SiteFooter() {
   return (
-    <footer className="relative bg-white">
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary to-transparent" />
-      <div className="mx-auto max-w-7xl px-6 py-8">
-        <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-          <div className="flex flex-col items-center gap-1 md:items-start">
-            <div className="text-lg font-bold text-foreground">
-              مركز العميد للتدريب المتقدم
-            </div>
-            <p className="text-center text-sm text-muted-foreground md:text-right">
-              © {new Date().getFullYear()} — جميع الحقوق محفوظة | السودان — الخرطوم
-            </p>
+    <footer className="site-footer">
+      <Container>
+        <div className="footer-main">
+          <div className="max-w-md">
+            <Link href="/" className="brand-lockup brand-lockup-light">
+              <span className="brand-mark brand-mark-light">
+                <Image src="/brand/logo.webp" alt="" width={48} height={48} className="h-full w-full object-contain" />
+              </span>
+              <span>
+                <span className="brand-title text-white">{SITE.nameAr}</span>
+                <span className="brand-subtitle text-white/60">{SITE.nameEn}</span>
+              </span>
+            </Link>
+            <p className="mt-5 max-w-sm text-sm leading-7 text-white/65">{SITE.description}</p>
           </div>
-          <ul className="flex items-center gap-5 text-sm">
-            <li>
-              <Link href="/about" className="text-muted-foreground transition-colors hover:text-primary">
-                عن المركز
-              </Link>
-            </li>
-            <li>
-              <Link href="/contact" className="text-muted-foreground transition-colors hover:text-primary">
-                تواصل معنا
-              </Link>
-            </li>
-            <li>
-              <Link href="/verify" className="text-muted-foreground transition-colors hover:text-primary">
-                تحقق من شهادة
-              </Link>
-            </li>
-            <li>
-              <a
-                href="https://learn.alameedtraining.com"
-                className="text-muted-foreground transition-colors hover:text-primary"
-              >
-                منصة التعلم
-              </a>
-            </li>
-          </ul>
+
+          <div>
+            <h2 className="footer-title">روابط سريعة</h2>
+            <ul className="mt-4 grid grid-cols-2 gap-x-8 gap-y-3 text-sm text-white/70">
+              <li><Link href="/courses">الدورات</Link></li>
+              <li><Link href="/about">عن المركز</Link></li>
+              <li><Link href="/verify">تحقق من شهادة</Link></li>
+              <li><Link href="/contact">تواصل معنا</Link></li>
+              <li><Link href="/privacy">سياسة الخصوصية</Link></li>
+              <li><Link href="/terms">الشروط والأحكام</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h2 className="footer-title">تواصل معنا</h2>
+            <ul className="mt-4 space-y-3 text-sm text-white/70">
+              <li className="flex items-center gap-3"><MapPin className="h-4 w-4 text-accent" />{SITE.location}</li>
+              <li className="flex items-center gap-3"><Mail className="h-4 w-4 text-accent" /><a dir="ltr" href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
+            </ul>
+          </div>
         </div>
-      </div>
+
+        <div className="footer-bottom">
+          <p>© {new Date().getFullYear()} {SITE.nameAr}. جميع الحقوق محفوظة.</p>
+          <p>تعلم بثقة · تقدّم بوضوح · أثبت إنجازك</p>
+        </div>
+      </Container>
     </footer>
   );
 }

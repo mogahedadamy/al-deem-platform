@@ -6,6 +6,8 @@ node_modules/
 .next/
 dist/
 out/
+test-results/
+playwright-report/
 *.tsbuildinfo
 services/core-api/core-api
 services/core-api/api

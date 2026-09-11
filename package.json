@@ -10,7 +10,8 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test",
+    "test": "turbo run test && playwright test",
+    "test:e2e": "playwright test",
     "clean": "turbo run clean",
     "docker:up": "docker compose -f infra/docker/compose.yaml up -d",
     "docker:down": "docker compose -f infra/docker/compose.yaml down",
@@ -21,6 +22,7 @@
     "worker:build": "cd services/core-api && go build -o ../../bin/worker ./cmd/worker"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "turbo": "^2.10.12"
   },
   "pnpm": {

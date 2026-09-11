@@ -20,6 +20,7 @@ export function RoleActions({
   const [error, setError] = useState<string | null>(null);
 
   async function toggle(roleKey: string, add: boolean) {
+    if (!window.confirm(`${add ? "إسناد" : "إزالة"} هذا الدور للمستخدم؟`)) return;
     setBusy(roleKey);
     setError(null);
     const res = await fetch(
