@@ -17,18 +17,26 @@
 
 alameedtraining.com {
 	encode zstd gzip
+	tls internal
 	import security
+	# أصول ثابتة — cache طويل (يخفف الحمل ويسرّع CF + المستخدم)
+	@static {
+		path /_next/static/* /brand/* /courses/* /favicon.ico
+	}
+	header @static Cache-Control "public, max-age=604800, immutable"
 	reverse_proxy 127.0.0.1:3011
 }
 
 # Canonical: www → apex
 www.alameedtraining.com {
+	tls internal
 	redir https://alameedtraining.com{uri} permanent
 }
 
 # learn — منصة التعلّم للطلاب والمدربين
 learn.alameedtraining.com {
 	encode zstd gzip
+	tls internal
 	import security
 	reverse_proxy 127.0.0.1:3012
 }
@@ -36,6 +44,7 @@ learn.alameedtraining.com {
 # erp — النظام الإداري (المالية، المحتوى، المستخدمون، التقارير)
 erp.alameedtraining.com {
 	encode zstd gzip
+	tls internal
 	import security
 	reverse_proxy 127.0.0.1:3013
 }
@@ -43,6 +52,7 @@ erp.alameedtraining.com {
 # api — Go core-api
 api.alameedtraining.com {
 	encode zstd gzip
+	tls internal
 	import security
 	reverse_proxy 127.0.0.1:4001
 }
@@ -50,6 +60,7 @@ api.alameedtraining.com {
 # auth — Keycloak SSO
 auth.alameedtraining.com {
 	encode zstd gzip
+	tls internal
 	import security
 	reverse_proxy 127.0.0.1:8091
 }
