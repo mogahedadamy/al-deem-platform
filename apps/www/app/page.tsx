@@ -269,10 +269,10 @@ export default function HomePage() {
           {/* صور الاعتمادات الرسمية */}
           <div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {[
-              { src: "/brand/registration-cert.png", title: "شهادة تسجيل المركز", desc: "من وزارة العدل السودانية" },
-              { src: "/brand/training-license.png", title: "ترخيص مركز التدريب", desc: "من وزارة التنمية البشرية" },
-              { src: "/brand/cert-sample.png", title: "نموذج شهادة الدورات", desc: "شهادات معتمدة لجميع الدورات" },
-              { src: "/brand/university-cert.png", title: "شهادة جامعية معتمدة", desc: "شراكة مع جامعة السودان" },
+              { src: "/brand/registration-cert.webp", title: "شهادة تسجيل المركز", desc: "من وزارة العدل السودانية" },
+              { src: "/brand/training-license.webp", title: "ترخيص مركز التدريب", desc: "من وزارة التنمية البشرية" },
+              { src: "/brand/cert-sample.webp", title: "نموذج شهادة الدورات", desc: "شهادات معتمدة لجميع الدورات" },
+              { src: "/brand/university-cert.webp", title: "شهادة جامعية معتمدة", desc: "شراكة مع جامعة السودان" },
             ].map((c) => (
               <figure
                 key={c.title}

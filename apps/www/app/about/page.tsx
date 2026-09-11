@@ -69,25 +69,25 @@ const CREDENTIALS = [
   {
     title: "شهادة تسجيل المركز",
     description: "شهادة تسجيل المركز من وزارة العدل السودانية",
-    image: "/brand/registration-cert.png",
+    image: "/brand/registration-cert.webp",
     type: "تسجيل رسمي",
   },
   {
     title: "ترخيص مركز التدريب",
     description: "ترخيص مزاولة المهنة من وزارة التنمية البشرية",
-    image: "/brand/training-license.png",
+    image: "/brand/training-license.webp",
     type: "ترخيص معتمد",
   },
   {
     title: "نموذج شهادة الدورات",
     description: "شهادات معتمدة لجميع دوراتنا التدريبية",
-    image: "/brand/cert-sample.png",
+    image: "/brand/cert-sample.webp",
     type: "شهادة معتمدة",
   },
   {
     title: "شهادة جامعية معتمدة",
     description: "شراكة مع جامعة السودان للعلوم والتكنولوجيا",
-    image: "/brand/university-cert.png",
+    image: "/brand/university-cert.webp",
     type: "اعتماد أكاديمي",
   },
 ] as const;

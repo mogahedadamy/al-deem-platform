@@ -12,7 +12,7 @@ export function SiteHeader() {
           <div className="flex h-10 w-10 transform items-center justify-center rounded-2xl border border-gray-200 bg-white shadow-hover transition-all duration-300 hover:scale-105 md:h-12 md:w-12">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/brand/logo.png"
+              src="/brand/logo.webp"
               alt="شعار مركز العميد للتدريب المتقدم"
               className="h-7 w-7 object-contain drop-shadow-sm md:h-9 md:w-9"
             />
