@@ -45,7 +45,10 @@ if [[ ! -f /etc/deem/backup.key ]]; then
 fi
 sudo chown mojahed:mojahed /etc/deem/backup.key /var/backups/deem
 sudo chmod 600 /etc/deem/backup.key
-sudo chmod 700 /var/lib/deem/private /var/lib/deem/private/receipts /etc/deem
+# /etc/deem is traversable by the backup service account, while the key itself
+# remains 0600 and owned by that account; directory contents cannot be listed.
+sudo chmod 700 /var/lib/deem/private /var/lib/deem/private/receipts
+sudo chmod 711 /etc/deem
 
 # Build before touching the current release.
 echo "── Building release $RELEASE_ID from $COMMIT"

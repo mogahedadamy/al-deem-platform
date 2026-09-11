@@ -55,7 +55,7 @@ if [[ "$(date +%u)" == "7" ]]; then
   }
   cleanup_drill
   docker exec "$CONTAINER" psql -U deem -d postgres -c "CREATE DATABASE $drill_db OWNER deem;" >/dev/null
-  if ! "${DECRYPT[@]}" -in "$OUT" | zcat | docker exec -i "$CONTAINER" psql -U deem -d "$drill_db" -q; then
+  if ! "${DECRYPT[@]}" -in "$OUT" | zcat | docker exec -i "$CONTAINER" psql -U deem -d "$drill_db" -q >/dev/null; then
     cleanup_drill
     echo "✗ restore drill failed" >&2
     exit 1
