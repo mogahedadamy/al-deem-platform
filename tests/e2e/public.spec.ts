@@ -15,12 +15,12 @@ test("public website critical routes render without overflow", async ({ page }) 
 
 test("catalog search and course details are connected to API", async ({ page }) => {
   await page.goto("/courses");
-  await page.getByPlaceholder(/إدارة المشاريع/).fill("السلامة");
+  await page.getByPlaceholder(/إدارة المشاريع/).fill("إدارة المشاريع");
   await page.getByRole("button", { name: "بحث" }).click();
   await expect(page).toHaveURL(/q=/);
-  await expect(page.getByText("الصحة والسلامة المهنية").first()).toBeVisible();
-  await page.getByText("الصحة والسلامة المهنية").first().click();
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("الصحة والسلامة المهنية");
+  await expect(page.getByText("أساسيات إدارة المشاريع").first()).toBeVisible();
+  await page.getByText("أساسيات إدارة المشاريع").first().click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("أساسيات إدارة المشاريع");
 });
 
 test("certificate verification handles an unknown serial", async ({ page }) => {
@@ -28,6 +28,18 @@ test("certificate verification handles an unknown serial", async ({ page }) => {
   await page.getByLabel("الرقم التسلسلي للشهادة").fill("ALD-2099-NOTFOUND");
   await page.getByRole("button", { name: "تحقق" }).click();
   await expect(page.getByText("لم نعثر على شهادة بهذا الرقم")).toBeVisible();
+});
+
+test("mobile navigation opens, closes, and routes correctly", async ({ page }, testInfo) => {
+  if (!testInfo.project.name.startsWith("mobile")) test.skip();
+  await page.goto("/");
+  await page.getByRole("button", { name: "فتح القائمة" }).click();
+  await expect(page.getByRole("navigation", { name: "قائمة الهاتف" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("navigation", { name: "قائمة الهاتف" })).toHaveCount(0);
+  await page.getByRole("button", { name: "فتح القائمة" }).click();
+  await page.getByRole("link", { name: "الدورات" }).first().click();
+  await expect(page).toHaveURL(/\/courses$/);
 });
 
 test("protected portals preserve requested destination", async ({ page }) => {

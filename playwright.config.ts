@@ -12,7 +12,10 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
+    { name: "mobile-320", use: { ...devices["iPhone 13"], viewport: { width: 320, height: 640 } } },
     { name: "mobile", use: { ...devices["iPhone 13"] } },
+    { name: "tablet", use: { ...devices["iPad (gen 7)"], viewport: { width: 768, height: 1024 } } },
+    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 900 } } },
+    { name: "desktop-wide", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 1000 } } },
   ],
 });
