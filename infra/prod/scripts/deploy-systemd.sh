@@ -63,10 +63,13 @@ pnpm --filter erp build
 
 # Populate an immutable, versioned source tree. node_modules is included so the
 # running release never depends on a mutable checkout or package install.
-sudo mkdir -p "$RELEASE/bin"
+sudo mkdir -p "$RELEASE"
 sudo rsync -a --delete \
   --exclude=.git --exclude=.env --exclude=.env.local --exclude=test-results \
   "$ROOT/" "$RELEASE/"
+# rsync --delete above deliberately mirrors the source tree, so create release
+# binaries only afterwards; otherwise the empty bin directory is removed.
+sudo mkdir -p "$RELEASE/bin"
 sudo install -m 755 /tmp/deem-core-api "$RELEASE/bin/core-api"
 sudo install -m 755 /tmp/deem-worker "$RELEASE/bin/worker"
 printf '%s\n' "$COMMIT" | sudo tee "$RELEASE/REVISION" >/dev/null
