@@ -42,6 +42,16 @@ test("mobile navigation opens, closes, and routes correctly", async ({ page }, t
   await expect(page).toHaveURL(/\/courses$/);
 });
 
+test("portal login surfaces are responsive and reachable", async ({ page }) => {
+  for (const [name, url] of [["learn", `${LEARN}/login`], ["erp", `${ERP}/login`]] as const) {
+    const response = await page.goto(url, { waitUntil: "networkidle" });
+    expect(response?.status(), name).toBe(200);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByRole("button", { name: /تسجيل الدخول/ })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `${name} login overflow`).toBe(true);
+  }
+});
+
 test("protected portals preserve requested destination", async ({ page }) => {
   await page.goto(`${LEARN}/dashboard`);
   await expect(page).toHaveURL(/\/login\?callbackUrl=%2Fdashboard/);
