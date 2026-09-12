@@ -86,7 +86,9 @@ func (a *keycloakAuth) Resolve(ctx context.Context, bearerToken string) (*domain
 
 	claims, err := a.verifyToken(ctx, token)
 	if err != nil {
-		slog.Debug("jwt verify failed", "err", err)
+		// سبب الرفض لا يحتوي token نفسه، لكنه ضروري لتشخيص issuer/audience
+		// أو دوران مفاتيح Keycloak في الإنتاج.
+		slog.Warn("jwt verification failed", "reason", err)
 		return nil, platform.ErrUnauthorized
 	}
 
