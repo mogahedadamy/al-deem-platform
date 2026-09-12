@@ -6,7 +6,8 @@ import { ErpFooter, ErpHeader } from "./shell";
 const cairo = Cairo({
   variable: "--font-cairo",
   subsets: ["arabic", "latin"],
-  weight: ["300", "400", "600", "700", "900"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {

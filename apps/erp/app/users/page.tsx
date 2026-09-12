@@ -86,26 +86,21 @@ export default async function UsersPage({
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-6xl px-6 py-8">
-          <nav className="mb-2 text-sm text-muted">
-            <Link href="/" className="hover:text-primary">
-              الرئيسية
-            </Link>
+        <div className="app-container py-8">
+          <nav className="mb-3 text-sm text-muted" aria-label="مسار التنقل">
+            <Link href="/" className="hover:text-primary">الرئيسية</Link>
             <span className="mx-2">/</span>
             <span className="font-medium text-secondary">المستخدمون</span>
           </nav>
-          <h1 className="text-2xl font-black text-secondary">
-            المستخدمون ({data.total})
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            إدارة أدوار الفريق — كل تغيير يُسجَّل في سجل التدقيق.
-          </p>
+          <p className="app-kicker">إدارة الوصول</p>
+          <h1 className="app-title">المستخدمون ({data.total})</h1>
+          <p className="app-description">إدارة أدوار الفريق — كل تغيير يُسجَّل في سجل التدقيق.</p>
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
-        <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-          <table className="min-w-[760px] w-full text-sm">
+      <div className="app-page flex-1">
+        <div className="app-table-wrap">
+          <table className="min-w-[760px] text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/[.03] text-right">
                 <th className="px-4 py-3 font-semibold text-secondary">الاسم</th>

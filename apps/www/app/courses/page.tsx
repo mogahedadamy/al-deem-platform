@@ -60,14 +60,14 @@ export default async function CoursesPage({ searchParams }: { searchParams: Sear
           <div className="mb-7 flex flex-col gap-4 rounded-2xl border border-border bg-white p-4 shadow-sm">
             <div className="flex items-center gap-2 font-black text-secondary"><SlidersHorizontal className="h-4 w-4 text-primary" /> تصفية النتائج</div>
             <div className="flex flex-wrap gap-2">
-              <Link href={filterHref(sp, { category: undefined, page: undefined })} className={`rounded-full px-4 py-2 text-xs font-bold transition-colors ${!sp.category ? "bg-secondary text-white" : "border border-border text-muted-foreground hover:border-primary hover:text-primary-dark"}`}>كل الفئات</Link>
+              <Link href={filterHref(sp, { category: undefined, page: undefined })} className={`inline-flex min-h-11 items-center rounded-full px-4 text-xs font-bold transition-colors ${!sp.category ? "bg-secondary text-white" : "border border-border text-muted-foreground hover:border-primary hover:text-primary-dark"}`}>كل الفئات</Link>
               {categories.items.map((category) => (
-                <Link key={category.slug} href={filterHref(sp, { category: category.slug, page: undefined })} className={`rounded-full px-4 py-2 text-xs font-bold transition-colors ${sp.category === category.slug ? "bg-secondary text-white" : "border border-border text-muted-foreground hover:border-primary hover:text-primary-dark"}`}>{category.nameAr}</Link>
+                <Link key={category.slug} href={filterHref(sp, { category: category.slug, page: undefined })} className={`inline-flex min-h-11 items-center rounded-full px-4 text-xs font-bold transition-colors ${sp.category === category.slug ? "bg-secondary text-white" : "border border-border text-muted-foreground hover:border-primary hover:text-primary-dark"}`}>{category.nameAr}</Link>
               ))}
             </div>
             <div className="flex flex-wrap gap-2 border-t border-border pt-4">
               {LEVELS.map((level) => (
-                <Link key={level.label} href={filterHref(sp, { level: level.value || undefined, page: undefined })} className={`rounded-full px-4 py-2 text-xs font-bold transition-colors ${(sp.level ?? "") === level.value ? "bg-primary-light text-primary-dark" : "text-muted-foreground hover:bg-surface-soft hover:text-secondary"}`}>{level.label}</Link>
+                <Link key={level.label} href={filterHref(sp, { level: level.value || undefined, page: undefined })} className={`inline-flex min-h-11 items-center rounded-full px-4 text-xs font-bold transition-colors ${(sp.level ?? "") === level.value ? "bg-primary-light text-primary-dark" : "text-muted-foreground hover:bg-surface-soft hover:text-secondary"}`}>{level.label}</Link>
               ))}
             </div>
           </div>

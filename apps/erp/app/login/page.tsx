@@ -1,6 +1,6 @@
-// تسجيل الدخول للنظام الإداري — Keycloak SSO.
 "use client";
 
+import Image from "next/image";
 import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
@@ -11,26 +11,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-6 py-24 text-center">
-      <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-full bg-secondary text-3xl font-black text-primary shadow-lg">
-        دي
+    <section className="auth-surface" aria-labelledby="erp-login-title">
+      <div className="auth-card">
+        <div className="auth-brand-mark">
+          <Image src="/brand/logo.webp" width={64} height={64} alt="مركز العميد للتدريب" className="h-full w-full object-contain" priority />
+        </div>
+        <p className="auth-eyebrow">نظام العمليات الداخلي</p>
+        <h1 id="erp-login-title" className="auth-title">إدارة المركز من مساحة واحدة</h1>
+        <p className="auth-copy">دخول آمن لموظفي المحتوى والمالية والإدارة لمتابعة العمليات والصلاحيات والتقارير.</p>
+        <button type="button" onClick={login} className="app-button app-button-primary mt-8 w-full min-h-12" aria-describedby="erp-login-note">
+          تسجيل الدخول إلى النظام الإداري
+        </button>
+        <p id="erp-login-note" className="auth-note">نظام داخلي لأصحاب الصلاحيات فقط. تسجل جميع الإجراءات الحساسة للمراجعة.</p>
       </div>
-      <h1 className="max-w-xl text-3xl font-black leading-snug text-secondary md:text-4xl">
-        النظام الإداري — مركز العميد للتدريب
-      </h1>
-      <p className="mt-4 max-w-md leading-8 text-muted">
-        دخول موظفي الإدارة: مراجعة المحتوى، المالية، المستخدمون، التقارير.
-        عبر الحساب الموحد فقط.
-      </p>
-      <button
-        onClick={login}
-        className="mt-10 flex h-12 items-center justify-center rounded-full bg-secondary px-10 font-semibold text-secondary-foreground transition-transform hover:scale-105"
-      >
-        تسجيل الدخول
-      </button>
-      <p className="mt-8 text-xs text-muted">
-        نظام داخلي — الوصول لأصحاب الصلاحيات فقط، ويُسجَّل كل إجراء.
-      </p>
-    </div>
+    </section>
   );
 }

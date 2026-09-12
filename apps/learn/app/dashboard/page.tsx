@@ -113,12 +113,10 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-6xl px-6 py-10">
-          <p className="text-sm text-muted">لوحة التحكم</p>
-          <h1 className="mt-1 text-3xl font-black text-secondary">
-            مرحبًا، {user.name ?? user.email}
-          </h1>
-          <p className="mt-2 text-muted">
+        <div className="app-container py-8 sm:py-10">
+          <p className="app-kicker">لوحة التحكم</p>
+          <h1 className="app-title">مرحبًا، {user.name ?? user.email}</h1>
+          <p className="app-description">
             {isInstructor
               ? "مساحة المدرب: دوراتك، دروسك، وحالة المراجعة."
               : "مساحة الطالب: دوراتي، تقدمي، وشهاداتي."}
@@ -126,28 +124,25 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+      <div className="app-page flex-1">
         {apiError && (
-          <p className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <p className="app-alert mb-6 border-amber-200 bg-amber-50 text-amber-800" role="alert">
             {apiError}
           </p>
         )}
 
         {isInstructor ? (
           <section aria-labelledby="my-courses">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 id="my-courses" className="text-xl font-bold text-secondary">
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 id="my-courses" className="text-xl font-black text-secondary">
                 دوراتي ({myCourses.length})
               </h2>
-              <Link
-                href="/instructor/courses/new"
-                className="rounded-full bg-secondary px-5 py-2 text-sm font-semibold text-secondary-foreground hover:opacity-90"
-              >
+              <Link href="/instructor/courses/new" className="app-button app-button-primary min-h-11 self-start sm:self-auto">
                 + دورة جديدة
               </Link>
             </div>
             {myCourses.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border bg-surface px-6 py-14 text-center">
+              <div className="app-empty">
                 <p className="font-semibold text-secondary">لم تنشئ دورات بعد</p>
                 <p className="mt-1 text-sm text-muted">
                   ابدأ بإنشاء مسودتك الأولى وستظهر هنا.
@@ -158,7 +153,7 @@ export default async function DashboardPage() {
                 {myCourses.map((c) => (
                   <li
                     key={c.id}
-                    className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 sm:flex-row sm:items-center sm:justify-between"
+                    className="app-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div>
                       <h3 className="font-bold text-secondary">{c.title}</h3>
@@ -185,7 +180,7 @@ export default async function DashboardPage() {
                         {c.priceAmount > 0 ? `${c.priceAmount} ${c.currency === "SDG" ? "ج.س" : c.currency}` : "مجانًا"}
                       </span>
                       {c.status === "draft" && (
-                        <Link href={`/instructor/courses/${c.id}/edit`} className="rounded-full border border-secondary px-4 py-1.5 text-xs font-bold text-secondary">
+                        <Link href={`/instructor/courses/${c.id}/edit`} className="app-button app-button-outline min-h-11 px-4 text-xs">
                           تحرير
                         </Link>
                       )}
@@ -199,50 +194,34 @@ export default async function DashboardPage() {
           <section aria-labelledby="student-courses" className="space-y-8">
             {/* بطاقات سريعة */}
             <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-xl border border-border bg-surface p-5">
-                <p className="text-sm text-muted">دوراتي</p>
-                <p className="mt-1 text-3xl font-black text-secondary">
-                  {myEnrollments.length}
-                </p>
+              <div className="app-card p-5 sm:p-6">
+                <p className="text-sm font-bold text-muted">دوراتي</p>
+                <p className="mt-2 text-3xl font-black text-secondary">{myEnrollments.length}</p>
               </div>
-              <div className="rounded-xl border border-border bg-surface p-5">
-                <p className="text-sm text-muted">مكتملة</p>
-                <p className="mt-1 text-3xl font-black text-secondary">
-                  {myEnrollments.filter((e) => e.status === "completed").length}
-                </p>
+              <div className="app-card p-5 sm:p-6">
+                <p className="text-sm font-bold text-muted">مكتملة</p>
+                <p className="mt-2 text-3xl font-black text-secondary">{myEnrollments.filter((e) => e.status === "completed").length}</p>
               </div>
-              <Link
-                href="/certificates"
-                className="rounded-xl border border-primary/40 bg-primary/5 p-5 transition-colors hover:bg-primary/10"
-              >
-                <p className="text-sm text-muted">شهاداتي</p>
-                <p className="mt-1 text-3xl font-black text-primary-dark">
-                  {myCertificateCount}
-                </p>
+              <Link href="/certificates" className="app-card app-card-interactive border-primary/40 bg-primary-light/45 p-5 sm:p-6">
+                <p className="text-sm font-bold text-muted">شهاداتي</p>
+                <p className="mt-2 text-3xl font-black text-primary-dark">{myCertificateCount}</p>
               </Link>
             </div>
 
             <div>
-              <div className="mb-4 flex items-center justify-between">
-                <h2 id="student-courses" className="text-xl font-bold text-secondary">
-                  دوراتي ({myEnrollments.length})
-                </h2>
-                <Link
-                  href="https://alameedtraining.com/courses"
-                  className="text-sm font-semibold text-primary-dark hover:text-primary"
-                >
-                  تصفّح الكتالوج ←
-                </Link>
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h2 id="student-courses" className="text-xl font-black text-secondary">دوراتي ({myEnrollments.length})</h2>
+                <Link href="https://alameedtraining.com/courses" className="app-button app-button-outline min-h-11 self-start text-sm sm:self-auto">تصفّح الكتالوج ←</Link>
               </div>
               {myEnrollments.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border bg-surface px-6 py-14 text-center">
+                <div className="app-empty">
                   <p className="font-semibold text-secondary">لم تسجّل في دورات بعد</p>
                   <p className="mt-1 text-sm text-muted">
                     تصفّح الكتالوج واختر دورتك الأولى.
                   </p>
                   <Link
                     href="https://alameedtraining.com/courses"
-                    className="mt-4 inline-block rounded-full bg-secondary px-6 py-2.5 text-sm font-semibold text-secondary-foreground"
+                    className="app-button app-button-primary mt-4 min-h-11"
                   >
                     تصفّح الدورات
                   </Link>
@@ -254,7 +233,7 @@ export default async function DashboardPage() {
                     return (
                       <li
                         key={e.id}
-                        className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-5 sm:flex-row sm:items-center sm:justify-between"
+                        className="app-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"
                       >
                         <div className="min-w-0 flex-1">
                           <h3 className="font-bold text-secondary">{e.courseTitle}</h3>
@@ -295,14 +274,14 @@ export default async function DashboardPage() {
                           <div className="flex shrink-0 gap-2">
                             <Link
                               href={`/courses/${e.courseSlug}/learn`}
-                              className="rounded-full bg-secondary px-5 py-2 text-sm font-semibold text-secondary-foreground hover:opacity-90"
+                              className="app-button app-button-primary min-h-11 text-sm"
                             >
                               متابعة التعلّم ←
                             </Link>
                             {e.status === "completed" && (
                               <Link
                                 href={`/courses/${e.courseSlug}/quiz`}
-                                className="rounded-full border-2 border-secondary px-5 py-2 text-sm font-semibold text-secondary hover:bg-secondary hover:text-secondary-foreground"
+                                className="app-button app-button-outline min-h-11 text-sm hover:bg-secondary hover:text-secondary-foreground"
                               >
                                 الاختبار
                               </Link>
@@ -311,7 +290,7 @@ export default async function DashboardPage() {
                         ) : (
                           <Link
                             href={`/courses/${e.courseSlug}`}
-                            className="shrink-0 rounded-full bg-amber-600 px-5 py-2 text-sm font-semibold text-white hover:opacity-90"
+                            className="app-button min-h-11 shrink-0 bg-amber-600 text-sm text-white hover:bg-amber-700"
                           >
                             استكمال الدفع
                           </Link>

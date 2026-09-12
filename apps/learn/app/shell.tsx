@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
+import { LearnMobileNavigation } from "./mobile-navigation";
 
 const NAV = [
   { href: "/dashboard", label: "لوحة التحكم" },
@@ -23,7 +24,7 @@ export async function LearnHeader() {
             <div className="flex items-center gap-2">
               <span className="hidden max-w-40 truncate text-xs text-muted lg:block">{session.user?.name ?? session.user?.email}</span>
               <form action={async () => { "use server"; await signOut({ redirectTo: "/" }); }}><button className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold text-secondary hover:border-primary">تسجيل الخروج</button></form>
-              <details className="relative md:hidden"><summary className="grid h-11 w-11 cursor-pointer list-none place-items-center rounded-xl bg-secondary text-white" aria-label="فتح القائمة">☰</summary><nav className="absolute left-0 top-[3.25rem] w-52 space-y-1 rounded-xl border border-border bg-white p-2 shadow-lg">{NAV.map((item) => <Link key={item.href} href={item.href} className="block rounded-lg px-3 py-2.5 text-sm font-bold text-secondary hover:bg-background">{item.label}</Link>)}</nav></details>
+              <LearnMobileNavigation items={NAV} />
             </div>
           </>
         ) : <Link href="/login" className="min-h-11 rounded-xl bg-secondary px-5 py-3 text-sm font-bold text-white">تسجيل الدخول</Link>}
