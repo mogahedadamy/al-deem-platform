@@ -60,27 +60,21 @@ export default async function ReviewPage() {
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-6xl px-6 py-8">
-          <nav className="mb-2 text-sm text-muted">
-            <Link href="/" className="hover:text-primary">
-              الرئيسية
-            </Link>
+        <div className="app-container py-8">
+          <nav className="mb-3 text-sm text-muted" aria-label="مسار التنقل">
+            <Link href="/" className="hover:text-primary">الرئيسية</Link>
             <span className="mx-2">/</span>
             <span className="font-medium text-secondary">مراجعة المحتوى</span>
           </nav>
-          <h1 className="text-2xl font-black text-secondary">
-            دورات بانتظار المراجعة
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            النشر يعرض الدورة للجمهور فورًا. الرفض يعيدها مسودة مع ملاحظاتك
-            للمدرب.
-          </p>
+          <p className="app-kicker">ضمان الجودة</p>
+          <h1 className="app-title">دورات بانتظار المراجعة</h1>
+          <p className="app-description">النشر يعرض الدورة للجمهور فورًا. الرفض يعيدها مسودة مع ملاحظاتك للمدرب.</p>
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+      <div className="app-page flex-1">
         {data.items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-surface px-6 py-16 text-center">
+          <div className="app-empty">
             <p className="font-semibold text-secondary">
               لا دورات بانتظار المراجعة ✓
             </p>
@@ -90,7 +84,7 @@ export default async function ReviewPage() {
             {data.items.map((c) => (
               <li
                 key={c.id}
-                className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-5 lg:flex-row lg:items-center lg:justify-between"
+                className="app-card flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between"
               >
                 <div className="min-w-0">
                   <h3 className="font-bold text-secondary">{c.title}</h3>

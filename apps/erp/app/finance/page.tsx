@@ -61,27 +61,21 @@ export default async function FinancePage() {
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-6xl px-6 py-8">
-          <nav className="mb-2 text-sm text-muted">
-            <Link href="/" className="hover:text-primary">
-              الرئيسية
-            </Link>
+        <div className="app-container py-8">
+          <nav className="mb-3 text-sm text-muted" aria-label="مسار التنقل">
+            <Link href="/" className="hover:text-primary">الرئيسية</Link>
             <span className="mx-2">/</span>
             <span className="font-medium text-secondary">مراجعة الدفعات</span>
           </nav>
-          <h1 className="text-2xl font-black text-secondary">
-            طلبات الدفع بانتظار المراجعة
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            تحويل بنكي — اعتمد الإيصال فيُفعَّل التسجيل فورًا وذريًا. قراراتك
-            تُسجَّل في سجل التدقيق.
-          </p>
+          <p className="app-kicker">المالية</p>
+          <h1 className="app-title">طلبات الدفع بانتظار المراجعة</h1>
+          <p className="app-description">تحويل بنكي — اعتمد الإيصال فيُفعَّل التسجيل فورًا وذريًا. قراراتك تُسجَّل في سجل التدقيق.</p>
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+      <div className="app-page flex-1">
         {data.items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-surface px-6 py-16 text-center">
+          <div className="app-empty">
             <p className="font-semibold text-secondary">لا طلبات بانتظار المراجعة ✓</p>
             <p className="mt-1 text-sm text-muted">
               ستظهر الطلبات هنا فور رفع الطلاب لإيصالاتهم.
@@ -92,7 +86,7 @@ export default async function FinancePage() {
             {data.items.map((p) => (
               <li
                 key={p.id}
-                className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-5 lg:flex-row lg:items-center lg:justify-between"
+                className="app-card flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between"
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-3">

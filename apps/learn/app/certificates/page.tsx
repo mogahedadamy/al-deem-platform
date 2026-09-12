@@ -36,25 +36,21 @@ export default async function CertificatesPage() {
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-6xl px-6 py-8">
-          <nav className="mb-2 text-sm text-muted">
-            <Link href="/dashboard" className="hover:text-primary">
-              لوحة التحكم
-            </Link>
+        <div className="app-container py-8">
+          <nav className="mb-3 text-sm text-muted" aria-label="مسار التنقل">
+            <Link href="/dashboard" className="hover:text-primary">لوحة التحكم</Link>
             <span className="mx-2">/</span>
             <span className="font-medium text-secondary">شهاداتي</span>
           </nav>
-          <h1 className="text-2xl font-black text-secondary">شهاداتي</h1>
-          <p className="mt-1 text-sm text-muted">
-            الشهادات الرقمية تصدر تلقائيًا عند اجتياز اختبار الدورة بنسبة 70%
-            فأكثر — ويمكن طلب نسخة ورقية رسمية.
-          </p>
+          <p className="app-kicker">إنجازاتك</p>
+          <h1 className="app-title">شهاداتي</h1>
+          <p className="app-description">الشهادات الرقمية تصدر تلقائيًا عند اجتياز اختبار الدورة بنسبة 70% فأكثر — ويمكن طلب نسخة ورقية رسمية.</p>
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+      <div className="app-page flex-1">
         {data.items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-surface px-6 py-16 text-center">
+          <div className="app-empty">
             <p className="font-semibold text-secondary">لا شهادات بعد</p>
             <p className="mt-1 text-sm text-muted">
               أكمل دورة واجتز اختبارها النهائي لتصدر شهادتك تلقائيًا.
@@ -65,7 +61,7 @@ export default async function CertificatesPage() {
             {data.items.filter((c) => c.id).map((c) => (
               <li
                 key={c.id}
-                className="flex flex-col overflow-hidden rounded-xl border border-border bg-surface"
+                className="app-card flex flex-col overflow-hidden"
               >
                 {/* رأس الشهادة */}
                 <div className="flex items-center justify-between border-b border-border bg-secondary px-5 py-4">

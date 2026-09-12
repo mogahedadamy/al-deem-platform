@@ -92,27 +92,24 @@ export default async function ReportsPage() {
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-6xl px-6 py-8">
-          <nav className="mb-2 text-sm text-muted">
-            <Link href="/" className="hover:text-primary">
-              الرئيسية
-            </Link>
+        <div className="app-container py-8">
+          <nav className="mb-3 text-sm text-muted" aria-label="مسار التنقل">
+            <Link href="/" className="hover:text-primary">الرئيسية</Link>
             <span className="mx-2">/</span>
             <span className="font-medium text-secondary">التقارير</span>
           </nav>
-          <h1 className="text-2xl font-black text-secondary">التقارير</h1>
-          <p className="mt-1 text-sm text-muted">
-            نظرة حية على أداء المركز — أرقام مباشرة من قاعدة البيانات.
-          </p>
+          <p className="app-kicker">مؤشرات التشغيل</p>
+          <h1 className="app-title">التقارير</h1>
+          <p className="app-description">نظرة حية على أداء المركز — أرقام مباشرة من قاعدة البيانات.</p>
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+      <div className="app-page flex-1">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {cards.map((c) => (
             <div
               key={c.label}
-              className="rounded-xl border border-border bg-surface p-5"
+              className="app-card p-5 sm:p-6"
             >
               <p className="text-sm text-muted">{c.label}</p>
               <p className="mt-2 text-3xl font-black text-secondary">
@@ -124,13 +121,11 @@ export default async function ReportsPage() {
         </div>
 
         {/* ملخص دورات المدرب — MVP تقارير */}
-        <div className="mt-8 rounded-xl border border-border bg-surface p-5">
-          <h2 className="font-bold text-secondary">ملخص الدورات والمدربين</h2>
-          <p className="mt-1 text-xs text-muted">
-            عدد الطلاب المسجّلين (نشط/مكتمل) لكل دورة منشورة.
-          </p>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-sm">
+        <div className="app-card mt-8 p-5 sm:p-6">
+          <h2 className="font-black text-secondary">ملخص الدورات والمدربين</h2>
+          <p className="mt-1 text-xs text-muted">عدد الطلاب المسجّلين (نشط/مكتمل) لكل دورة منشورة.</p>
+          <div className="app-table-wrap mt-4">
+            <table className="text-sm">
               <thead>
                 <tr className="border-b border-border text-right text-muted">
                   <th className="py-2 pl-3 font-semibold">الدورة</th>
@@ -160,7 +155,7 @@ export default async function ReportsPage() {
 
         {/* تفصيل الدفعات والطلبات الورقية */}
         <div className="mt-8 grid gap-4 lg:grid-cols-2">
-          <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="app-card p-5 sm:p-6">
             <h2 className="font-bold text-secondary">النسخ الورقية</h2>
             <dl className="mt-3 space-y-2 text-sm">
               {Object.entries(s.paperRequests).map(([st, n]) => (
@@ -172,7 +167,7 @@ export default async function ReportsPage() {
               {paperTotal === 0 && <p className="text-muted">لا طلبات بعد</p>}
             </dl>
           </div>
-          <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="app-card p-5 sm:p-6">
             <h2 className="font-bold text-secondary">الدفعات</h2>
             <dl className="mt-3 space-y-2 text-sm">
               <div className="flex justify-between">
