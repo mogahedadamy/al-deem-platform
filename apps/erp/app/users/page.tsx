@@ -27,8 +27,8 @@ const ROLES: { key: string; label: string }[] = [
   { key: "system_admin", label: "مدير النظام" },
 ];
 
-async function fetchUsers(token: string) {
-  const res = await fetch(`${API_BASE}/admin/users?pageSize=50`, {
+async function fetchUsers(token: string, page: number) {
+  const res = await fetch(`${API_BASE}/admin/users?page=${page}&pageSize=20`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
@@ -46,7 +46,14 @@ async function fetchUserRoles(token: string, userId: string) {
   return d.roles ?? [];
 }
 
-export default async function UsersPage() {
+export default async function UsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string | string[] }>;
+}) {
+  const query = await searchParams;
+  const requestedPage = Array.isArray(query.page) ? query.page[0] : query.page;
+  const page = Math.max(1, Number.parseInt(requestedPage ?? "1", 10) || 1);
   const session = await auth();
   const token = (session as { accessToken?: string } | null)?.accessToken;
   if (!token) {
@@ -56,7 +63,7 @@ export default async function UsersPage() {
       </div>
     );
   }
-  const data = await fetchUsers(token);
+  const data = await fetchUsers(token, page);
   if (!data) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-16 text-center">
@@ -74,6 +81,7 @@ export default async function UsersPage() {
       rolesByUser.set(u.id, await fetchUserRoles(token, u.id));
     }),
   );
+  const totalPages = Math.max(1, Math.ceil(data.total / 20));
 
   return (
     <div className="flex flex-1 flex-col">
@@ -122,6 +130,13 @@ export default async function UsersPage() {
             </tbody>
           </table>
         </div>
+        <nav className="mt-5 flex items-center justify-between gap-3" aria-label="ترقيم المستخدمين">
+          <span className="text-sm text-muted">الصفحة {page} من {totalPages}</span>
+          <div className="flex gap-2">
+            {page > 1 ? <Link href={`/users?page=${page - 1}`} className="min-h-11 rounded-xl border border-border px-4 py-2 text-sm font-bold text-secondary hover:border-primary">السابق</Link> : <span className="min-h-11 rounded-xl border border-border px-4 py-2 text-sm font-bold text-muted opacity-50">السابق</span>}
+            {page < totalPages ? <Link href={`/users?page=${page + 1}`} className="min-h-11 rounded-xl border border-border px-4 py-2 text-sm font-bold text-secondary hover:border-primary">التالي</Link> : <span className="min-h-11 rounded-xl border border-border px-4 py-2 text-sm font-bold text-muted opacity-50">التالي</span>}
+          </div>
+        </nav>
       </div>
     </div>
   );
