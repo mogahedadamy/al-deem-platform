@@ -69,26 +69,21 @@ export default async function PapersPage() {
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-6xl px-6 py-8">
-          <nav className="mb-2 text-sm text-muted">
-            <Link href="/" className="hover:text-primary">
-              الرئيسية
-            </Link>
+        <div className="app-container py-8">
+          <nav className="mb-3 text-sm text-muted" aria-label="مسار التنقل">
+            <Link href="/" className="hover:text-primary">الرئيسية</Link>
             <span className="mx-2">/</span>
             <span className="font-medium text-secondary">النسخ الورقية</span>
           </nav>
-          <h1 className="text-2xl font-black text-secondary">
-            طلبات الشهادات الورقية
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            دورة حياة الطلب: قيد المعالجة → معتمدة → مطبوعة → مُسلّمة.
-          </p>
+          <p className="app-kicker">التسليم والتشغيل</p>
+          <h1 className="app-title">طلبات الشهادات الورقية</h1>
+          <p className="app-description">دورة حياة الطلب: قيد المعالجة → معتمدة → مطبوعة → مُسلّمة.</p>
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+      <div className="app-page flex-1">
         {groups.every((g) => g.items.length === 0) ? (
-          <div className="rounded-xl border border-dashed border-border bg-surface px-6 py-16 text-center">
+          <div className="app-empty">
             <p className="font-semibold text-secondary">لا طلبات حاليًا ✓</p>
           </div>
         ) : (
@@ -109,7 +104,7 @@ export default async function PapersPage() {
                       {g.items.map((p) => (
                         <li
                           key={p.id}
-                          className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 lg:flex-row lg:items-center lg:justify-between"
+                          className="app-card flex flex-col gap-3 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between"
                         >
                           <div>
                             <p className="font-medium text-secondary" dir="rtl">

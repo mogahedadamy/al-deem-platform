@@ -69,34 +69,29 @@ export default async function CoursePage({ params }: { params: Params }) {
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-6xl px-6 py-10">
+        <div className="app-container py-8 sm:py-10">
           <nav className="mb-3 text-sm text-muted" aria-label="مسار التنقل">
-            <Link href="/" className="hover:text-primary">
-              الرئيسية
-            </Link>
+            <Link href="/" className="hover:text-primary">الرئيسية</Link>
             <span className="mx-2">/</span>
             <span className="font-medium text-secondary">{course.title}</span>
           </nav>
-          <h1 className="max-w-3xl text-3xl font-black leading-relaxed text-secondary md:text-4xl">
-            {course.title}
-          </h1>
-          <p className="mt-3 max-w-2xl text-lg leading-8 text-muted">
-            {course.summary}
-          </p>
+          <p className="app-kicker">تفاصيل البرنامج</p>
+          <h1 className="app-title max-w-3xl">{course.title}</h1>
+          <p className="app-description text-base sm:text-lg">{course.summary}</p>
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-6xl flex-1 px-6 py-10">
-        <div className="grid gap-10 lg:grid-cols-[2fr_1fr]">
+      <div className="app-page flex-1">
+        <div className="grid gap-8 lg:grid-cols-[2fr_1fr] lg:gap-10">
           {/* مسار الدورة */}
           <section aria-labelledby="outline">
-            <h2 id="outline" className="mb-4 text-xl font-bold text-secondary">
+            <h2 id="outline" className="mb-4 text-xl font-black text-secondary">
               مسار الدورة ({lessonCount} درسًا)
             </h2>
             {outline && outline.sections.length > 0 ? (
               <ol className="space-y-4">
                 {outline.sections.map((sec, i) => (
-                  <li key={sec.id} className="rounded-xl border border-border bg-surface">
+                  <li key={sec.id} className="app-card overflow-hidden">
                     <div className="flex items-center gap-3 border-b border-border px-4 py-3">
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">
                         {i + 1}
@@ -133,7 +128,7 @@ export default async function CoursePage({ params }: { params: Params }) {
 
           {/* بطاقة التسجيل/الحالة */}
           <aside>
-            <div className="rounded-xl border border-border bg-surface p-6">
+            <div className="app-card p-5 sm:p-6">
               <p className="text-2xl font-black text-secondary">
                 {course.priceAmount > 0
                   ? `${course.priceAmount} ${course.currency === "SDG" ? "ج.س" : course.currency}`

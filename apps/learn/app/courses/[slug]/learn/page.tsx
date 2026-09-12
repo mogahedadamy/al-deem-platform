@@ -123,11 +123,9 @@ export default async function LearnCoursePage({ params }: { params: Params }) {
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-5xl px-6 py-8">
-          <nav className="mb-2 text-sm text-muted">
-            <Link href="/dashboard" className="hover:text-primary">
-              لوحة التحكم
-            </Link>
+        <div className="app-container max-w-5xl py-8">
+          <nav className="mb-3 text-sm text-muted" aria-label="مسار التنقل">
+            <Link href="/dashboard" className="hover:text-primary">لوحة التحكم</Link>
             <span className="mx-2">/</span>
             <span className="font-medium text-secondary">{course.title}</span>
           </nav>
@@ -160,7 +158,7 @@ export default async function LearnCoursePage({ params }: { params: Params }) {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
+      <div className="app-page max-w-5xl flex-1">
         {lessons.length === 0 ? (
           <p className="py-12 text-center text-muted">
             لم تُضف دروس الدورة بعد.

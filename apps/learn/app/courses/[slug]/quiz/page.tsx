@@ -40,24 +40,19 @@ export default async function QuizPage({ params }: { params: Params }) {
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-3xl px-6 py-8">
-          <nav className="mb-2 text-sm text-muted">
-            <Link href={`/courses/${slug}/learn`} className="hover:text-primary">
-              {course.title}
-            </Link>
+        <div className="app-container max-w-3xl py-8">
+          <nav className="mb-3 text-sm text-muted" aria-label="مسار التنقل">
+            <Link href={`/courses/${slug}/learn`} className="hover:text-primary">{course.title}</Link>
             <span className="mx-2">/</span>
             <span className="font-medium text-secondary">الاختبار النهائي</span>
           </nav>
-          <h1 className="text-2xl font-black text-secondary">
-            اختبار: {course.title}
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            اجتياز الاختبار بنسبة 70% فأكثر يصدر شهادتك الرقمية تلقائيًا.
-          </p>
+          <p className="app-kicker">تقييم نهائي</p>
+          <h1 className="app-title">اختبار: {course.title}</h1>
+          <p className="app-description">اجتياز الاختبار بنسبة 70% فأكثر يصدر شهادتك الرقمية تلقائيًا.</p>
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-8">
+      <div className="app-page max-w-3xl flex-1">
         {!session ? (
           <p className="py-12 text-center text-muted">
             <Link href="/login" className="font-semibold text-primary-dark underline">
@@ -66,7 +61,7 @@ export default async function QuizPage({ params }: { params: Params }) {
             لأداء الاختبار.
           </p>
         ) : !entitled ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-6 py-8 text-center">
+          <div className="app-alert border-amber-200 bg-amber-50 text-amber-900">
             <p className="font-bold text-amber-900">
               الاختبار متاح بعد إكمال جميع دروس الدورة
             </p>

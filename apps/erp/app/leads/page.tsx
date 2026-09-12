@@ -93,20 +93,15 @@ export default async function LeadsPage() {
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-6xl px-6 py-8">
-          <nav className="mb-2 text-sm text-muted">
-            <Link href="/" className="hover:text-primary">
-              الرئيسية
-            </Link>
+        <div className="app-container py-8">
+          <nav className="mb-3 text-sm text-muted" aria-label="مسار التنقل">
+            <Link href="/" className="hover:text-primary">الرئيسية</Link>
             <span className="mx-2">/</span>
             <span className="font-medium text-secondary">الاستفسارات</span>
           </nav>
-          <h1 className="text-2xl font-black text-secondary">
-            الاستفسارات ({data.total})
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            من نموذج «تواصل معنا» — تابعها وحوّلها إلى تسجيلات.
-          </p>
+          <p className="app-kicker">علاقات العملاء</p>
+          <h1 className="app-title">الاستفسارات ({data.total})</h1>
+          <p className="app-description">من نموذج «تواصل معنا» — تابعها وحوّلها إلى تسجيلات.</p>
           {data.total > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
               {Object.entries(counts).map(([st, n]) => (
@@ -124,9 +119,9 @@ export default async function LeadsPage() {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+      <div className="app-page flex-1">
         {data.items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-surface px-6 py-14 text-center">
+          <div className="app-empty">
             <p className="font-semibold text-secondary">لا استفسارات بعد</p>
             <p className="mt-1 text-sm text-muted">
               ستظهر هنا رسائل نموذج «تواصل معنا» فور وصولها.
@@ -137,7 +132,7 @@ export default async function LeadsPage() {
             {data.items.map((l) => (
               <li
                 key={l.id}
-                className="rounded-xl border border-border bg-surface p-5"
+                className="app-card p-5 sm:p-6"
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
