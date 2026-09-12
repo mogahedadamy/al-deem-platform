@@ -73,8 +73,12 @@ sudo mkdir -p "$RELEASE/bin"
 sudo install -m 755 /tmp/deem-core-api "$RELEASE/bin/core-api"
 sudo install -m 755 /tmp/deem-worker "$RELEASE/bin/worker"
 printf '%s\n' "$COMMIT" | sudo tee "$RELEASE/REVISION" >/dev/null
-sudo chmod -R a-w "$RELEASE"
-sudo chmod a+rx "$RELEASE" "$RELEASE/bin" "$RELEASE/bin/core-api" "$RELEASE/bin/worker"
+# Next.js writes ISR/prerender cache artifacts at runtime. Keep each release
+# versioned for atomic rollback, but make the active release writable only by
+# the non-root application account instead of making its build tree read-only.
+sudo chown -R mojahed:mojahed "$RELEASE"
+sudo chmod -R u+rwX,go-rwx "$RELEASE"
+sudo chmod u+rx "$RELEASE/bin/core-api" "$RELEASE/bin/worker"
 
 # Install reproducible unit definitions, then atomically select the release.
 sudo install -m 644 infra/prod/systemd/deem-*.service infra/prod/systemd/deem-*.timer /etc/systemd/system/
@@ -99,8 +103,18 @@ for service in "${SERVICES[@]}"; do
   sudo systemctl restart "$service" || rollback
 done
 sudo systemctl enable --now deem-backup.timer deem-healthcheck.timer
-sleep 3
-sudo "$APP_DIR/current/infra/prod/scripts/healthcheck.sh" || rollback
+# Keycloak/JWKS and Redis can still be warming immediately after a coordinated
+# restart. Retry the health gate before rolling back a healthy release.
+healthy=false
+for attempt in $(seq 1 8); do
+  if sudo "$APP_DIR/current/infra/prod/scripts/healthcheck.sh"; then
+    healthy=true
+    break
+  fi
+  echo "· health gate attempt $attempt/8 failed; retrying in 3s" >&2
+  sleep 3
+done
+$healthy || rollback
 
 # احتفظ بآخر الإصدارات فقط؛ لا تحذف current أو الإصدار السابق للاسترجاع السريع.
 mapfile -t old_releases < <(sudo find "$APP_DIR/releases" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' | sort -nr | tail -n +$((RETAIN_RELEASES + 1)) | cut -d' ' -f2-)
