@@ -1,9 +1,18 @@
 {
   "realm": "al-deem",
   "enabled": true,
-  "registrationAllowed": false,
+  "displayName": "مركز العميد للتدريب",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "editUsernameAllowed": false,
   "loginWithEmailAllowed": true,
+  "rememberMe": true,
   "verifyEmail": true,
+  "internationalizationEnabled": true,
+  "supportedLocales": ["ar", "en"],
+  "defaultLocale": "ar",
+  "loginTheme": "alameed",
+  "emailTheme": "alameed",
   "resetPasswordAllowed": true,
   "sslRequired": "external",
   "bruteForceProtected": true,
@@ -22,7 +31,7 @@
       "name": "Configure OTP",
       "providerId": "CONFIGURE_TOTP",
       "enabled": true,
-      "defaultAction": true,
+      "defaultAction": false,
       "priority": 10
     }
   ],
@@ -38,6 +47,14 @@
       { "name": "system_admin", "description": "مدير النظام — إدارة كاملة" }
     ]
   },
+  "groups": [
+    {
+      "name": "students",
+      "path": "/students",
+      "realmRoles": ["student"]
+    }
+  ],
+  "defaultGroups": ["/students"],
   "clients": [
     {
       "clientId": "www",
@@ -76,6 +93,7 @@
       "clientId": "core-api",
       "name": "Al Deem Core API (confidential)",
       "publicClient": false,
+      "secret": "core-api-secret-change-me",
       "standardFlowEnabled": false,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": true,
@@ -111,7 +129,7 @@
     "host": "mailpit",
     "port": "1025",
     "from": "no-reply@alameedtraining.com",
-    "fromDisplayName": "مركز الديم للتدريب",
+    "fromDisplayName": "مركز العميد للتدريب",
     "starttls": "false",
     "auth": "false"
   }

@@ -31,7 +31,7 @@ services:
       retries: 10
 
   keycloak:
-    image: quay.io/keycloak/keycloak:latest
+    image: quay.io/keycloak/keycloak:26.7.3
     container_name: deem-keycloak
     command: ["start-dev", "--import-realm"]
     environment:
@@ -52,6 +52,7 @@ services:
       - "127.0.0.1:8091:8080"
     volumes:
       - ./keycloak/realms:/opt/keycloak/data/import:ro
+      - ./keycloak/themes:/opt/keycloak/themes:ro
     depends_on:
       postgres:
         condition: service_healthy

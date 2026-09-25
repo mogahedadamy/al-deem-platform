@@ -1,0 +1,211 @@
+:root {
+  --alameed-ink: #17352f;
+  --alameed-muted: #61736f;
+  --alameed-green: #087f6a;
+  --alameed-green-dark: #056451;
+  --alameed-gold: #d5a936;
+  --alameed-line: #dce7e3;
+}
+
+html,
+body,
+.login-pf body {
+  min-height: 100%;
+  color: var(--alameed-ink);
+  font-family: "Tajawal", Tahoma, Arial, sans-serif;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(213, 169, 54, .16), transparent 28rem),
+    radial-gradient(circle at 85% 85%, rgba(8, 127, 106, .18), transparent 32rem),
+    linear-gradient(135deg, #f9fcfb 0%, #edf6f3 100%);
+}
+
+html[lang="ar"] body,
+html[dir="rtl"] body {
+  direction: rtl;
+  text-align: right;
+}
+
+.login-pf-page {
+  display: flex;
+  min-height: 100vh;
+  padding: 32px 18px;
+  align-items: center;
+  justify-content: center;
+}
+
+#kc-header {
+  margin: 0 0 20px;
+  color: var(--alameed-ink);
+  text-align: center;
+}
+
+#kc-header-wrapper {
+  padding: 0;
+  color: transparent;
+  font-size: 0;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+#kc-header-wrapper::before {
+  display: block;
+  width: 88px;
+  height: 88px;
+  margin: 0 auto 14px;
+  content: "";
+  background: url('../img/alameed-mark.svg') center / contain no-repeat;
+  filter: drop-shadow(0 8px 16px rgba(8, 92, 77, .18));
+}
+
+#kc-header-wrapper::after {
+  display: block;
+  content: "مركز العميد للتدريب";
+  color: var(--alameed-ink);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.card-pf,
+.pf-v5-c-login__main,
+.pf-c-login__main {
+  width: min(100%, 470px);
+  margin: 0 auto;
+  padding: 34px 40px;
+  border: 1px solid rgba(220, 231, 227, .9);
+  border-top: 4px solid var(--alameed-green);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 24px 70px rgba(18, 71, 62, .13);
+}
+
+#kc-page-title,
+h1 {
+  color: var(--alameed-ink);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: center;
+}
+
+label,
+.pf-v5-c-form__label-text,
+.pf-c-form__label-text {
+  color: var(--alameed-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  min-height: 46px;
+  border: 1px solid var(--alameed-line);
+  border-radius: 9px;
+  color: var(--alameed-ink);
+  background: #fbfdfc;
+  box-shadow: none;
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus {
+  border-color: var(--alameed-green);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(8, 127, 106, .13);
+  outline: none;
+}
+
+input[type="submit"],
+button[type="submit"],
+.pf-v5-c-button.pf-m-primary,
+.pf-c-button.pf-m-primary,
+#kc-login {
+  min-height: 46px;
+  border: 0;
+  border-radius: 9px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--alameed-green), var(--alameed-green-dark));
+  box-shadow: 0 8px 20px rgba(8, 127, 106, .22);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+input[type="submit"]:hover,
+button[type="submit"]:hover,
+.pf-v5-c-button.pf-m-primary:hover,
+.pf-c-button.pf-m-primary:hover,
+#kc-login:hover {
+  background: var(--alameed-green-dark);
+  box-shadow: 0 10px 24px rgba(8, 127, 106, .3);
+  transform: translateY(-1px);
+}
+
+a {
+  color: var(--alameed-green);
+  font-weight: 600;
+}
+
+a:hover,
+a:focus {
+  color: var(--alameed-green-dark);
+  text-decoration: underline;
+}
+
+#kc-registration,
+#kc-info-wrapper {
+  color: var(--alameed-muted);
+  text-align: center;
+}
+
+.alert,
+.pf-v5-c-alert,
+.pf-c-alert {
+  border-radius: 9px;
+}
+
+html[dir="rtl"] .pf-v5-c-input-group,
+html[lang="ar"] .pf-v5-c-input-group,
+html[dir="rtl"] .pf-c-input-group,
+html[lang="ar"] .pf-c-input-group {
+  direction: ltr;
+}
+
+html[dir="rtl"] .pf-v5-c-input-group input,
+html[lang="ar"] .pf-v5-c-input-group input,
+html[dir="rtl"] .pf-c-input-group input,
+html[lang="ar"] .pf-c-input-group input {
+  direction: rtl;
+  text-align: right;
+}
+
+@media (max-width: 540px) {
+  .login-pf-page {
+    padding: 18px 12px;
+  }
+
+  .card-pf,
+  .pf-v5-c-login__main,
+  .pf-c-login__main {
+    padding: 26px 22px;
+    border-radius: 14px;
+  }
+
+  #kc-header-wrapper::before {
+    width: 72px;
+    height: 72px;
+  }
+
+  #kc-header-wrapper::after {
+    font-size: 19px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}

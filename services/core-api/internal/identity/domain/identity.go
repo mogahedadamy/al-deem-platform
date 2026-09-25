@@ -4,6 +4,8 @@
 // Domain types
 package identity
 
+import "time"
+
 type RoleKey string
 
 const (
@@ -51,6 +53,16 @@ type Profile struct {
 }
 
 // Can — سياسات الصلاحيات (Policy object). UI يعرض فقط؛ القرار هنا.
+type AuditLog struct {
+	ID           string
+	ActorID      *string
+	ActorName    string
+	Action       string
+	ResourceType string
+	ResourceID   *string
+	CreatedAt    time.Time
+}
+
 type Permission string
 
 const (

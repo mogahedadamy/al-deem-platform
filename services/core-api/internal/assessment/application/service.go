@@ -25,6 +25,7 @@ type AssessmentService struct {
 	studentName      func(ctx context.Context, studentID string) (string, error)
 	courseTitle      func(ctx context.Context, courseID string) (string, error)
 	courseIDBySlug   func(ctx context.Context, slug string) (string, error)
+	courseOwner      func(ctx context.Context, courseID string) (string, error)
 }
 
 func NewAssessmentService(
@@ -37,10 +38,11 @@ func NewAssessmentService(
 	studentName func(ctx context.Context, studentID string) (string, error),
 	courseTitle func(ctx context.Context, courseID string) (string, error),
 	courseIDBySlug func(ctx context.Context, slug string) (string, error),
+	courseOwner func(ctx context.Context, courseID string) (string, error),
 ) *AssessmentService {
 	return &AssessmentService{quizzes: q, attempts: a, certificates: c, papers: p,
 		audit: audit, enrollmentActive: enrollmentActive, studentName: studentName,
-		courseTitle: courseTitle, courseIDBySlug: courseIDBySlug}
+		courseTitle: courseTitle, courseIDBySlug: courseIDBySlug, courseOwner: courseOwner}
 }
 
 // ===== Instructor: quiz authoring =====
@@ -50,8 +52,17 @@ func (s *AssessmentService) CreateQuiz(ctx context.Context, actor *iddomain.Acto
 	if !actor.HasRole(iddomain.RoleInstructor) && !actor.HasRole(iddomain.RoleSystemAdmin) {
 		return nil, platform.ErrForbidden
 	}
-	if in.Title == "" || len(in.Questions) < 1 {
+	if in.CourseID == "" || in.LessonID == "" || in.Title == "" || len(in.Questions) < 1 {
 		return nil, platform.ErrValidation
+	}
+	if !actor.HasRole(iddomain.RoleSystemAdmin) {
+		ownerID, err := s.courseOwner(ctx, in.CourseID)
+		if err != nil {
+			return nil, err
+		}
+		if ownerID != actor.ID {
+			return nil, platform.ErrForbidden
+		}
 	}
 	// كل سؤال: خياران+، إجابة صحيحة واحدة على الأقل
 	for i, q := range in.Questions {
@@ -88,6 +99,22 @@ func (s *AssessmentService) GetQuizMetaByCourseSlug(ctx context.Context, slug st
 	courseID, err := s.courseIDBySlug(ctx, slug)
 	if err != nil {
 		return nil, nil, err
+	}
+	quiz, err := s.quizzes.GetByCourse(ctx, courseID)
+	if err != nil {
+		return nil, nil, err
+	}
+	questions, err := s.quizzes.ListQuestions(ctx, quiz.ID)
+	if err != nil {
+		return nil, nil, err
+	}
+	return quiz, questions, nil
+}
+
+// GetQuizForReview — مراجع المحتوى يرى الاختبار وإجاباته الصحيحة قبل النشر.
+func (s *AssessmentService) GetQuizForReview(ctx context.Context, actor *iddomain.Actor, courseID string) (*asmdom.Quiz, []asmdom.Question, error) {
+	if !actor.Can(iddomain.PermPublishCourse) {
+		return nil, nil, platform.ErrForbidden
 	}
 	quiz, err := s.quizzes.GetByCourse(ctx, courseID)
 	if err != nil {

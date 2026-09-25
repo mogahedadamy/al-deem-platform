@@ -367,6 +367,20 @@ func (s *CatalogService) AddLesson(ctx context.Context, actor *iddomain.Actor, s
 	if c.Status != catalogdom.CourseDraft {
 		return nil, platform.ErrConflict
 	}
+	sections, err := s.sections.ListByCourse(ctx, in.CourseID)
+	if err != nil {
+		return nil, err
+	}
+	belongs := false
+	for _, section := range sections {
+		if section.ID == sectionID {
+			belongs = true
+			break
+		}
+	}
+	if !belongs {
+		return nil, platform.ErrNotFound
+	}
 	l := &catalogdom.Lesson{
 		SectionID:     sectionID,
 		CourseID:      in.CourseID,
@@ -387,6 +401,117 @@ func (s *CatalogService) AddLesson(ctx context.Context, actor *iddomain.Actor, s
 		return nil, err
 	}
 	return l, nil
+}
+
+// UpdateSection وDeleteSection يسمحان للمدرب بتصحيح مسودته بعد إرجاعها من المراجعة.
+func (s *CatalogService) UpdateSection(ctx context.Context, actor *iddomain.Actor, courseID, sectionID string, in SectionInput) (*catalogdom.Section, error) {
+	course, err := s.authorizeOwner(ctx, actor, courseID)
+	if err != nil {
+		return nil, err
+	}
+	if course.Status != catalogdom.CourseDraft {
+		return nil, platform.ErrConflict
+	}
+	sections, err := s.sections.ListByCourse(ctx, courseID)
+	if err != nil {
+		return nil, err
+	}
+	for _, section := range sections {
+		if section.ID != sectionID {
+			continue
+		}
+		if in.Title != nil {
+			section.Title = *in.Title
+		}
+		if in.Position != nil {
+			section.Position = *in.Position
+		}
+		if section.Title == "" || section.Position < 1 {
+			return nil, platform.ErrValidation
+		}
+		if err := s.sections.Update(ctx, &section); err != nil {
+			return nil, err
+		}
+		return &section, nil
+	}
+	return nil, platform.ErrNotFound
+}
+
+func (s *CatalogService) DeleteSection(ctx context.Context, actor *iddomain.Actor, courseID, sectionID string) error {
+	course, err := s.authorizeOwner(ctx, actor, courseID)
+	if err != nil {
+		return err
+	}
+	if course.Status != catalogdom.CourseDraft {
+		return platform.ErrConflict
+	}
+	sections, err := s.sections.ListByCourse(ctx, courseID)
+	if err != nil {
+		return err
+	}
+	for _, section := range sections {
+		if section.ID == sectionID {
+			return s.sections.Delete(ctx, sectionID)
+		}
+	}
+	return platform.ErrNotFound
+}
+
+func (s *CatalogService) UpdateLesson(ctx context.Context, actor *iddomain.Actor, lessonID string, in UpdateLessonInput) (*catalogdom.Lesson, error) {
+	lesson, err := s.lessons.GetByID(ctx, lessonID)
+	if err != nil {
+		return nil, err
+	}
+	course, err := s.authorizeOwner(ctx, actor, lesson.CourseID)
+	if err != nil {
+		return nil, err
+	}
+	if course.Status != catalogdom.CourseDraft {
+		return nil, platform.ErrConflict
+	}
+	if in.Type != nil {
+		lesson.Type = normalizeLessonType(*in.Type)
+	}
+	if in.Title != nil {
+		lesson.Title = *in.Title
+	}
+	if in.Content != nil {
+		lesson.Content = in.Content
+	}
+	if in.VideoURL != nil {
+		lesson.VideoURL = in.VideoURL
+	}
+	if in.Position != nil {
+		lesson.Position = *in.Position
+	}
+	if in.IsFreePreview != nil {
+		lesson.IsFreePreview = *in.IsFreePreview
+	}
+	if lesson.Title == "" || lesson.Position < 1 {
+		return nil, platform.ErrValidation
+	}
+	if lesson.Type == "video" && (lesson.VideoURL == nil || *lesson.VideoURL == "") {
+		return nil, &platform.DomainError{Code: "VALIDATION", Msg: "video lesson requires videoUrl"}
+	}
+	if err := s.lessons.Update(ctx, lesson); err != nil {
+		return nil, err
+	}
+	return lesson, nil
+}
+
+func (s *CatalogService) DeleteLesson(ctx context.Context, actor *iddomain.Actor, lessonID string) error {
+	lesson, err := s.lessons.GetByID(ctx, lessonID)
+	if err != nil {
+		return err
+	}
+	course, err := s.authorizeOwner(ctx, actor, lesson.CourseID)
+	if err != nil {
+		return err
+	}
+	if course.Status != catalogdom.CourseDraft {
+		return platform.ErrConflict
+	}
+	return s.lessons.Delete(ctx, lessonID)
 }
 
 func (s *CatalogService) authorizeOwner(ctx context.Context, actor *iddomain.Actor, courseID string) (*catalogdom.Course, error) {
@@ -425,6 +550,20 @@ type UpdateCourseInput struct {
 	DurationHours   *int
 	CoverImageURL   *string
 	HasLiveSessions *bool
+}
+
+type SectionInput struct {
+	Title    *string
+	Position *int
+}
+
+type UpdateLessonInput struct {
+	Type          *string
+	Title         *string
+	Content       *string
+	VideoURL      *string
+	Position      *int
+	IsFreePreview *bool
 }
 
 type LessonInput struct {

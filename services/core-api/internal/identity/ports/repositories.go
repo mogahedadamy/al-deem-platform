@@ -27,6 +27,15 @@ type AuditLogger interface {
 	Log(ctx context.Context, actorID, action, resourceType, resourceID string, oldValues, newValues any) error
 }
 
+type AuditRepository interface {
+	ListAudit(ctx context.Context, limit, offset int) ([]domain.AuditLog, int, error)
+}
+
+// StaffInviteGateway ينشئ حساب موظف في موفر الهوية ويرسل له رسالة تفعيل آمنة.
+type StaffInviteGateway interface {
+	Invite(ctx context.Context, fullName, email string) (userID string, err error)
+}
+
 // ActorResolver — يبني Actor من JWT: يتحقق من issuer/audience/expiry ثم يجلب الأدوار من DB.
 type ActorResolver interface {
 	Resolve(ctx context.Context, bearerToken string) (*domain.Actor, error)

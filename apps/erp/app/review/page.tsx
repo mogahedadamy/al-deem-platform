@@ -18,7 +18,8 @@ type Course = {
   currency: string;
 };
 
-type Outline = { sections: { id: string; title: string; lessons: { id: string; title: string; type: string }[] }[] };
+type Outline = { sections: { id: string; title: string; lessons: { id: string; title: string; type: string; content?: string | null; videoUrl?: string | null; isFreePreview?: boolean }[] }[] };
+type Quiz = { title: string; passScore: number; questions: { id: string; question: string; points: number; options: { key: string; text: string; correct: boolean }[] }[] };
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4001/v1";
@@ -50,11 +51,15 @@ export default async function ReviewPage() {
   }
   const data = (await res.json()) as { items: Course[]; total: number };
   const outlines = new Map<string, Outline>();
+  const quizzes = new Map<string, Quiz>();
   await Promise.all(data.items.map(async (course) => {
-    const response = await fetch(`${API_BASE}/courses/${course.id}/outline`, {
-      headers: { Authorization: `Bearer ${token}` }, cache: "no-store",
-    });
-    if (response.ok) outlines.set(course.id, (await response.json()) as Outline);
+    const headers = { Authorization: `Bearer ${token}` };
+    const [outlineResponse, quizResponse] = await Promise.all([
+      fetch(`${API_BASE}/courses/${course.id}/outline`, { headers, cache: "no-store" }),
+      fetch(`${API_BASE}/review/courses/${course.id}/quiz`, { headers, cache: "no-store" }),
+    ]);
+    if (outlineResponse.ok) outlines.set(course.id, (await outlineResponse.json()) as Outline);
+    if (quizResponse.ok) quizzes.set(course.id, (await quizResponse.json()) as Quiz);
   }));
 
   return (
@@ -98,9 +103,10 @@ export default async function ReviewPage() {
                   <details className="mt-3 rounded-lg bg-background px-3 py-2 text-sm">
                     <summary className="cursor-pointer font-semibold text-secondary">مراجعة المنهج ({outlines.get(c.id)?.sections.reduce((count, section) => count + section.lessons.length, 0) ?? 0} درس)</summary>
                     <div className="mt-3 space-y-2 border-t border-border pt-3">
-                      {(outlines.get(c.id)?.sections ?? []).map((section) => <div key={section.id}><p className="font-semibold text-secondary">{section.title}</p><ul className="mt-1 list-inside list-disc text-muted">{section.lessons.map((lesson) => <li key={lesson.id}>{lesson.title} — {lesson.type}</li>)}</ul></div>)}
+                      {(outlines.get(c.id)?.sections ?? []).map((section) => <div key={section.id}><p className="font-semibold text-secondary">{section.title}</p><ul className="mt-1 list-inside list-disc text-muted">{section.lessons.map((lesson) => <li key={lesson.id}><span className="font-bold">{lesson.title}</span> — {lesson.type}{lesson.isFreePreview ? " · معاينة مجانية" : ""}{lesson.content && <span className="mt-1 block whitespace-pre-line leading-6" dir="auto">{lesson.content.length > 400 ? lesson.content.slice(0, 400) + "…" : lesson.content}</span>}{lesson.videoUrl && <a href={lesson.videoUrl} target="_blank" rel="noreferrer" dir="ltr" className="mt-1 block break-all font-bold text-primary-dark underline underline-offset-4">فتح الفيديو</a>}</li>)}</ul></div>)}
                     </div>
                   </details>
+                  {quizzes.get(c.id) && <details className="mt-3 rounded-lg bg-primary-light/30 px-3 py-2 text-sm"><summary className="cursor-pointer font-semibold text-secondary">مراجعة الاختبار: {quizzes.get(c.id)?.title} ({quizzes.get(c.id)?.questions.length} سؤال)</summary><div className="mt-3 space-y-3 border-t border-primary/20 pt-3">{quizzes.get(c.id)?.questions.map((question, index) => <div key={question.id}><p className="font-bold text-secondary">{index + 1}. {question.question} <span className="text-xs text-muted">({question.points} درجة)</span></p><ul className="mt-1 space-y-1 text-muted">{question.options.map((option) => <li key={option.key} className={option.correct ? "font-black text-emerald-700" : ""}>{option.correct ? "✓ " : "○ "}{option.text}</li>)}</ul></div>)}</div></details>}
                 </div>
                 <ReviewActions courseId={c.id} />
               </li>

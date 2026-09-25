@@ -171,11 +171,33 @@ func (s *Store) Log(ctx context.Context, actorID, action, resourceType, resource
 	return nil
 }
 
+func (s *Store) ListAudit(ctx context.Context, limit, offset int) ([]domain.AuditLog, int, error) {
+	var total int
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM audit_logs`).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+	rows, err := s.db.QueryContext(ctx, `SELECT a.id, a.actor_id, COALESCE(p.full_name, 'النظام'), a.action, a.resource_type, a.resource_id, a.created_at FROM audit_logs a LEFT JOIN profiles p ON p.id = a.actor_id ORDER BY a.created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+	items := make([]domain.AuditLog, 0)
+	for rows.Next() {
+		var item domain.AuditLog
+		if err := rows.Scan(&item.ID, &item.ActorID, &item.ActorName, &item.Action, &item.ResourceType, &item.ResourceID, &item.CreatedAt); err != nil {
+			return nil, 0, err
+		}
+		items = append(items, item)
+	}
+	return items, total, rows.Err()
+}
+
 // compile-time interface checks
 var (
 	_ ports.ProfileRepository = (*Store)(nil)
 	_ ports.RoleRepository    = (*Store)(nil)
 	_ ports.AuditLogger       = (*Store)(nil)
+	_ ports.AuditRepository   = (*Store)(nil)
 )
 
 func scanProfile(row *sql.Row) (*domain.Profile, error) {

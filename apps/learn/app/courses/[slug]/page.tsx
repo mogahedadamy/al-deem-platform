@@ -11,6 +11,7 @@ import {
   type PublicOutline,
 } from "@/lib/api";
 import { EnrollButton, SubmitPaymentForm } from "./client";
+import { paymentDetails } from "@/lib/payment-details";
 
 type Params = Promise<{ slug: string }>;
 
@@ -65,6 +66,7 @@ export default async function CoursePage({ params }: { params: Params }) {
 
   const lessonCount =
     outline?.sections.reduce((a, s) => a + s.lessons.length, 0) ?? 0;
+  const details = paymentDetails();
 
   return (
     <div className="flex flex-1 flex-col">
@@ -155,7 +157,7 @@ export default async function CoursePage({ params }: { params: Params }) {
               <div className="mt-6">
                 {!session ? (
                   <Link
-                    href="/login"
+                    href={`/login?callbackUrl=${encodeURIComponent(`/courses/${slug}`)}`}
                     className="flex h-12 items-center justify-center rounded-full bg-secondary px-8 font-semibold text-secondary-foreground transition-transform hover:scale-105"
                   >
                     سجّل الدخول للتسجيل
@@ -177,14 +179,15 @@ export default async function CoursePage({ params }: { params: Params }) {
                     {latestPayment?.status === "rejected" ? (
                       <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
                         <p className="font-semibold">رُفض الدفع:</p>
-                        <p className="mt-1">{latestPayment.rejectionReason}</p>
+                        <p className="mt-1">{latestPayment.rejectionReason || "يرجى مراجعة بيانات التحويل ثم رفع إيصال جديد."}</p>
                       </div>
                     ) : latestPayment ? (
-                      <p className="text-center text-sm text-muted">
-                        الإيصال قيد المراجعة من الموظف المالي — يتم عادةً خلال ساعات.
-                      </p>
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-900">
+                        <p className="font-black">استلمنا إيصال التحويل</p>
+                        <p className="mt-1 leading-6">الإيصال قيد المراجعة من الموظف المالي. سنرسل لك إشعاراً فور اتخاذ القرار.</p>
+                      </div>
                     ) : null}
-                    <SubmitPaymentForm enrollmentId={myEnrollment.id} />
+                    {(!latestPayment || latestPayment.status === "rejected") && (details ? <SubmitPaymentForm enrollmentId={myEnrollment.id} details={details} /> : <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><p className="font-black">التسجيل متوقف مؤقتاً لهذه الدورة</p><p className="mt-1 leading-6">لم يكتمل إعداد بيانات الدفع الرسمية بعد. لن نطلب منك رفع إيصال قبل ظهور بيانات التحويل المعتمدة.</p><a href="https://alameedtraining.com/contact" className="mt-3 inline-block font-black underline underline-offset-4">تواصل مع فريق التسجيل</a></div>)}
                   </div>
                 ) : myEnrollment.status === "active" || myEnrollment.status === "completed" ? (
                   <div className="space-y-3">

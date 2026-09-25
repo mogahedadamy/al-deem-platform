@@ -130,6 +130,10 @@ func main() {
 	if store != nil {
 		// ===== identity module (R0) =====
 		svc := app.NewIdentityService(store, store, store)
+		svc.SetAuditReader(store)
+		if inviter := auth.NewStaffInviter(cfg.KeycloakURL, cfg.KeycloakRealm, cfg.KeycloakClientID, cfg.KeycloakSecret); inviter != nil {
+			svc.SetStaffInviter(inviter)
+		}
 		resolver := auth.New(cfg.KeycloakURL, cfg.KeycloakRealm, cfg.KeycloakClientID, store, store)
 		idh := transport.NewHandler(svc, resolver)
 		idh.Register(mux)
@@ -217,6 +221,13 @@ func main() {
 					return "", err
 				}
 				return c.ID, nil
+			},
+			func(ctx context.Context, courseID string) (string, error) {
+				c, err := courses.GetByID(ctx, courseID)
+				if err != nil {
+					return "", err
+				}
+				return c.InstructorID, nil
 			},
 		)
 		asmh := asmtransport.NewAssessmentHandler(asmSvc, resolver)

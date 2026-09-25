@@ -6,8 +6,10 @@ import { LearnMobileNavigation } from "./mobile-navigation";
 const NAV = [
   { href: "/dashboard", label: "لوحة التحكم" },
   { href: "/certificates", label: "شهاداتي" },
+  { href: "/profile", label: "ملفي" },
   { href: "https://alameedtraining.com/courses", label: "الدورات" },
 ];
+const KEYCLOAK_ACCOUNT_URL = `${process.env.AUTH_KEYCLOAK_ISSUER ?? "http://localhost:8091/realms/al-deem"}/account`;
 
 export async function LearnHeader() {
   const session = await auth();
@@ -23,8 +25,9 @@ export async function LearnHeader() {
             <nav className="hidden items-center gap-5 text-sm font-semibold text-muted md:flex" aria-label="تنقل منصة التعلم">{NAV.map((item) => <Link key={item.href} href={item.href} className="hover:text-secondary">{item.label}</Link>)}</nav>
             <div className="flex items-center gap-2">
               <span className="hidden max-w-40 truncate text-xs text-muted lg:block">{session.user?.name ?? session.user?.email}</span>
+              <a href={KEYCLOAK_ACCOUNT_URL} className="hidden min-h-11 items-center rounded-xl border border-border px-4 text-sm font-bold text-secondary hover:border-primary lg:inline-flex">حسابي</a>
               <form action={async () => { "use server"; await signOut({ redirectTo: "/" }); }}><button className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold text-secondary hover:border-primary">تسجيل الخروج</button></form>
-              <LearnMobileNavigation items={NAV} />
+              <LearnMobileNavigation items={[...NAV, { href: KEYCLOAK_ACCOUNT_URL, label: "الحساب وكلمة المرور" }]} />
             </div>
           </>
         ) : <Link href="/login" className="min-h-11 rounded-xl bg-secondary px-5 py-3 text-sm font-bold text-white">تسجيل الدخول</Link>}

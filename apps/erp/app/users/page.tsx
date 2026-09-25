@@ -2,6 +2,7 @@
 import { auth } from "@/auth";
 import Link from "next/link";
 import { RoleActions } from "./client";
+import { InviteStaff } from "./invite-staff";
 
 export const metadata = { title: "المستخدمون" };
 
@@ -94,7 +95,8 @@ export default async function UsersPage({
           </nav>
           <p className="app-kicker">إدارة الوصول</p>
           <h1 className="app-title">المستخدمون ({data.total})</h1>
-          <p className="app-description">إدارة أدوار الفريق — كل تغيير يُسجَّل في سجل التدقيق.</p>
+          <p className="app-description">إدارة أدوار الفريق والدعوات — كل تغيير يُسجَّل في سجل التدقيق.</p>
+          <div className="mt-5"><InviteStaff roles={ROLES} /></div>
         </div>
       </header>
 

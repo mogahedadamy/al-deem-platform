@@ -40,6 +40,8 @@ func (h *AssessmentHandler) Register(mux *http.ServeMux) {
 
 	// instructor authoring
 	mux.HandleFunc("POST /v1/quizzes", h.auth(h.createQuiz))
+	// content review
+	mux.HandleFunc("GET /v1/review/courses/{courseId}/quiz", h.auth(h.reviewQuiz))
 
 	// erp: النسخ الورقية
 	mux.HandleFunc("GET /v1/erp/paper-requests", h.auth(h.listPapers))
@@ -102,9 +104,9 @@ func (h *AssessmentHandler) getQuiz(w http.ResponseWriter, r *http.Request, acto
 		Text string `json:"text"`
 	}
 	type qOut struct {
-		ID       string    `json:"id"`
-		Question string    `json:"question"`
-		Options  []optOut  `json:"options"`
+		ID       string   `json:"id"`
+		Question string   `json:"question"`
+		Options  []optOut `json:"options"`
 	}
 	qs := make([]qOut, len(questions))
 	for i, q := range questions {
@@ -122,7 +124,7 @@ func (h *AssessmentHandler) getQuiz(w http.ResponseWriter, r *http.Request, acto
 func (h *AssessmentHandler) submitAttempt(w http.ResponseWriter, r *http.Request, actor *iddomain.Actor) {
 	var in struct {
 		EnrollmentID string            `json:"enrollmentId"`
-		Answers       map[string]string `json:"answers"`
+		Answers      map[string]string `json:"answers"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<18)).Decode(&in); err != nil || in.EnrollmentID == "" {
 		asmErr(w, platform.ErrValidation, http.StatusBadRequest)
@@ -204,6 +206,23 @@ func (h *AssessmentHandler) createQuiz(w http.ResponseWriter, r *http.Request, a
 	asmJSON(w, http.StatusCreated, map[string]any{
 		"id": quiz.ID, "lessonId": quiz.LessonID, "title": quiz.Title, "passScore": quiz.PassScore,
 	})
+}
+
+func (h *AssessmentHandler) reviewQuiz(w http.ResponseWriter, r *http.Request, actor *iddomain.Actor) {
+	quiz, questions, err := h.svc.GetQuizForReview(r.Context(), actor, r.PathValue("courseId"))
+	if err != nil {
+		asmDomain(w, err)
+		return
+	}
+	out := make([]map[string]any, 0, len(questions))
+	for _, question := range questions {
+		options := make([]map[string]any, 0, len(question.Options))
+		for _, option := range question.Options {
+			options = append(options, map[string]any{"key": option.Key, "text": option.Text, "correct": option.Correct})
+		}
+		out = append(out, map[string]any{"id": question.ID, "question": question.Question, "position": question.Position, "points": question.Points, "options": options})
+	}
+	asmJSON(w, http.StatusOK, map[string]any{"id": quiz.ID, "title": quiz.Title, "passScore": quiz.PassScore, "questions": out})
 }
 
 // ===== erp =====

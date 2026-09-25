@@ -6,10 +6,10 @@ import (
 	"net/mail"
 	"strings"
 
-	ldom "github.com/al-deem/platform/core-api/internal/leads/domain"
-	"github.com/al-deem/platform/core-api/internal/leads/ports"
 	iddomain "github.com/al-deem/platform/core-api/internal/identity/domain"
 	idports "github.com/al-deem/platform/core-api/internal/identity/ports"
+	ldom "github.com/al-deem/platform/core-api/internal/leads/domain"
+	"github.com/al-deem/platform/core-api/internal/leads/ports"
 	"github.com/al-deem/platform/core-api/internal/platform"
 )
 
@@ -55,7 +55,7 @@ func (s *LeadsService) Submit(ctx context.Context, in SubmitInput) (*ldom.Lead, 
 
 // List — لفريق المبيعات/الإدارة (erp): فلتر بالحالة + pagination.
 func (s *LeadsService) List(ctx context.Context, actor *iddomain.Actor, status string, limit, offset int) ([]ldom.Lead, int, error) {
-	if !actor.HasRole(iddomain.RoleSystemAdmin) {
+	if !actor.HasRole(iddomain.RoleSystemAdmin) && !actor.HasRole(iddomain.RoleSupportAgent) {
 		return nil, 0, platform.ErrForbidden
 	}
 	if limit <= 0 || limit > 100 {
@@ -69,7 +69,7 @@ func (s *LeadsService) List(ctx context.Context, actor *iddomain.Actor, status s
 
 // Advance — تقدم الاستفسار مع ملاحظة (state machine صارم).
 func (s *LeadsService) Advance(ctx context.Context, actor *iddomain.Actor, id string, to ldom.LeadStatus, notes string) (*ldom.Lead, error) {
-	if !actor.HasRole(iddomain.RoleSystemAdmin) {
+	if !actor.HasRole(iddomain.RoleSystemAdmin) && !actor.HasRole(iddomain.RoleSupportAgent) {
 		return nil, platform.ErrForbidden
 	}
 	if !to.Valid() {

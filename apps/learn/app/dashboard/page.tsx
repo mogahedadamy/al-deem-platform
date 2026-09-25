@@ -69,6 +69,8 @@ export default async function DashboardPage() {
       if (meRes.ok) {
         const me = (await meRes.json()) as { roles?: string[] };
         roles = me.roles ?? [];
+      } else {
+        apiError = "تعذر التحقق من صلاحيات حسابك. أعد تسجيل الدخول أو حاول لاحقاً.";
       }
       const isInstructor = roles.some((r) =>
         ["instructor", "system_admin", "content_reviewer"].includes(r),
@@ -91,6 +93,8 @@ export default async function DashboardPage() {
       if (enRes.ok) {
         const data = (await enRes.json()) as { items: MyEnrollment[] };
         myEnrollments = data.items;
+      } else {
+        apiError ??= "تعذر تحميل دوراتك حالياً. لم يتأثر حسابك أو تسجيلاتك.";
       }
       const certRes = await fetch(`${apiBase}/me/certificates`, {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -99,6 +103,8 @@ export default async function DashboardPage() {
       if (certRes.ok) {
         const data = (await certRes.json()) as { items: unknown[] };
         myCertificateCount = data.items.length;
+      } else {
+        apiError ??= "تعذر تحميل الشهادات حالياً. حاول التحديث بعد قليل.";
       }
     } catch {
       apiError = "تعذر تحميل بياناتك — حاول لاحقًا";
@@ -137,9 +143,9 @@ export default async function DashboardPage() {
               <h2 id="my-courses" className="text-xl font-black text-secondary">
                 دوراتي ({myCourses.length})
               </h2>
-              <Link href="/instructor/courses/new" className="app-button app-button-primary min-h-11 self-start sm:self-auto">
+              <div className="flex flex-wrap gap-2"><Link href="/instructor/sessions" className="app-button app-button-outline min-h-11 self-start text-sm">الحصص المباشرة</Link><Link href="/instructor/courses/new" className="app-button app-button-primary min-h-11 self-start sm:self-auto">
                 + دورة جديدة
-              </Link>
+              </Link></div>
             </div>
             {myCourses.length === 0 ? (
               <div className="app-empty">

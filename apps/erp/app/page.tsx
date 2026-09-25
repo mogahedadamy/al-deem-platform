@@ -8,10 +8,11 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4001/v1";
 const WORKSPACES = [
   { href: "/review", title: "مراجعة المحتوى", description: "الدورات المرسلة للمراجعة — نشر أو رفض مع ملاحظات.", roles: ["content_reviewer", "system_admin"] },
   { href: "/users", title: "المستخدمون", description: "إدارة الحسابات والأدوار والصلاحيات.", roles: ["system_admin"] },
+  { href: "/audit", title: "سجل التدقيق", description: "مراجعة العمليات الحساسة والدعوات وتغييرات الصلاحيات.", roles: ["system_admin"] },
   { href: "/finance", title: "المالية", description: "مراجعة الدفعات والتسجيلات واعتمادها.", roles: ["finance_officer", "system_admin"] },
   { href: "/reports", title: "التقارير", description: "دورات، تسجيلات، إيراد معتمد وشهادات.", roles: ["erp_staff", "erp_manager", "system_admin"] },
   { href: "/papers", title: "النسخ الورقية", description: "طلبات الشهادات: اعتماد، طباعة وتسليم.", roles: ["erp_staff", "erp_manager", "system_admin"] },
-  { href: "/leads", title: "الاستفسارات", description: "متابعة رسائل الموقع وتأهيلها وتحويلها.", roles: ["system_admin"] },
+  { href: "/leads", title: "الدعم والاستفسارات", description: "متابعة رسائل الموقع، مساعدة العملاء، وتأهيل طلبات التسجيل.", roles: ["support_agent", "system_admin"] },
 ] as const;
 
 export default async function ErpHome() {

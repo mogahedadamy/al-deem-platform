@@ -30,6 +30,8 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /v1/admin/users/{id}/roles", h.requireActor(h.getUserRoles))
 	mux.HandleFunc("POST /v1/admin/users/{id}/roles", h.requireActor(h.assignRole))
 	mux.HandleFunc("DELETE /v1/admin/users/{id}/roles", h.requireActor(h.removeRole))
+	mux.HandleFunc("POST /v1/admin/invitations", h.requireActor(h.inviteStaff))
+	mux.HandleFunc("GET /v1/admin/audit-logs", h.requireActor(h.listAudit))
 }
 
 // ===== middleware: يجلب Actor من Bearer token =====
@@ -88,6 +90,39 @@ func (h *Handler) updateProfile(w http.ResponseWriter, r *http.Request, actor *d
 	writeJSON(w, http.StatusOK, map[string]any{
 		"id": p.ID, "fullName": p.FullName, "email": p.Email, "phone": p.Phone, "bio": p.Bio,
 	})
+}
+
+func (h *Handler) inviteStaff(w http.ResponseWriter, r *http.Request, actor *domain.Actor) {
+	var in struct {
+		FullName string `json:"fullName"`
+		Email    string `json:"email"`
+		RoleKey  string `json:"roleKey"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8192)).Decode(&in); err != nil {
+		writeError(w, platform.ErrValidation, http.StatusBadRequest)
+		return
+	}
+	id, err := h.svc.InviteStaff(r.Context(), actor, app.InviteStaffInput{FullName: in.FullName, Email: in.Email, Role: domain.RoleKey(in.RoleKey)})
+	if err != nil {
+		writeDomainError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]string{"id": id, "message": "أُرسلت دعوة تفعيل الحساب بنجاح"})
+}
+
+func (h *Handler) listAudit(w http.ResponseWriter, r *http.Request, actor *domain.Actor) {
+	page := atoiDefault(r.URL.Query().Get("page"), 1)
+	size := atoiDefault(r.URL.Query().Get("pageSize"), 25)
+	items, total, err := h.svc.ListAudit(r.Context(), actor, page, size)
+	if err != nil {
+		writeDomainError(w, err)
+		return
+	}
+	out := make([]map[string]any, 0, len(items))
+	for _, item := range items {
+		out = append(out, map[string]any{"id": item.ID, "actorId": item.ActorID, "actorName": item.ActorName, "action": item.Action, "resourceType": item.ResourceType, "resourceId": item.ResourceID, "createdAt": item.CreatedAt})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"items": out, "total": total, "page": page, "pageSize": size})
 }
 
 func (h *Handler) listUsers(w http.ResponseWriter, r *http.Request, actor *domain.Actor) {

@@ -1,4 +1,4 @@
-// إدارة الاستفسارات (leads) — system_admin فقط.
+// إدارة الدعم والاستفسارات — support_agent أو system_admin.
 // الاستفسارات من نموذج "تواصل معنا" في الموقع العام.
 import { auth } from "@/auth";
 import Link from "next/link";
@@ -75,7 +75,7 @@ export default async function LeadsPage() {
     return (
       <div className="mx-auto max-w-3xl px-6 py-16 text-center">
         <p className="font-semibold text-secondary">
-          إدارة الاستفسارات لمدير النظام فقط.
+          هذه المساحة متاحة لفريق الدعم ومدير النظام فقط.
         </p>
       </div>
     );

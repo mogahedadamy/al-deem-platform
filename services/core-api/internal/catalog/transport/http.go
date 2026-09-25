@@ -39,6 +39,10 @@ func (h *CatalogHandler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /v1/courses/{id}/submit", h.auth(h.submit))
 	mux.HandleFunc("POST /v1/courses/{id}/sections", h.auth(h.addSection))
 	mux.HandleFunc("POST /v1/sections/{sectionId}/lessons", h.auth(h.addLesson))
+	mux.HandleFunc("PATCH /v1/courses/{courseId}/sections/{sectionId}", h.auth(h.updateSection))
+	mux.HandleFunc("DELETE /v1/courses/{courseId}/sections/{sectionId}", h.auth(h.deleteSection))
+	mux.HandleFunc("PATCH /v1/lessons/{lessonId}", h.auth(h.updateLesson))
+	mux.HandleFunc("DELETE /v1/lessons/{lessonId}", h.auth(h.deleteLesson))
 
 	// review (erp)
 	mux.HandleFunc("GET /v1/review/courses", h.auth(h.listPending))
@@ -209,6 +213,7 @@ func (h *CatalogHandler) authoringOutline(w http.ResponseWriter, r *http.Request
 			lessonItems = append(lessonItems, map[string]any{
 				"id": lesson.ID, "title": lesson.Title, "type": lesson.Type,
 				"position": lesson.Position, "isFreePreview": lesson.IsFreePreview,
+				"content": lesson.Content, "videoUrl": lesson.VideoURL,
 			})
 		}
 		out = append(out, map[string]any{"id": section.ID, "title": section.Title, "position": section.Position, "lessons": lessonItems})
@@ -253,6 +258,50 @@ func (h *CatalogHandler) addLesson(w http.ResponseWriter, r *http.Request, actor
 		return
 	}
 	writeCatJSON(w, http.StatusCreated, map[string]any{"id": l.ID, "sectionId": l.SectionID, "type": l.Type, "title": l.Title, "position": l.Position, "isFreePreview": l.IsFreePreview})
+}
+
+func (h *CatalogHandler) updateSection(w http.ResponseWriter, r *http.Request, actor *iddomain.Actor) {
+	var in catapp.SectionInput
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16384)).Decode(&in); err != nil || (in.Title == nil && in.Position == nil) {
+		writeCatError(w, platform.ErrValidation, http.StatusBadRequest)
+		return
+	}
+	section, err := h.svc.UpdateSection(r.Context(), actor, r.PathValue("courseId"), r.PathValue("sectionId"), in)
+	if err != nil {
+		writeCatDomain(w, err)
+		return
+	}
+	writeCatJSON(w, http.StatusOK, map[string]any{"id": section.ID, "title": section.Title, "position": section.Position})
+}
+
+func (h *CatalogHandler) deleteSection(w http.ResponseWriter, r *http.Request, actor *iddomain.Actor) {
+	if err := h.svc.DeleteSection(r.Context(), actor, r.PathValue("courseId"), r.PathValue("sectionId")); err != nil {
+		writeCatDomain(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *CatalogHandler) updateLesson(w http.ResponseWriter, r *http.Request, actor *iddomain.Actor) {
+	var in catapp.UpdateLessonInput
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<18)).Decode(&in); err != nil {
+		writeCatError(w, platform.ErrValidation, http.StatusBadRequest)
+		return
+	}
+	lesson, err := h.svc.UpdateLesson(r.Context(), actor, r.PathValue("lessonId"), in)
+	if err != nil {
+		writeCatDomain(w, err)
+		return
+	}
+	writeCatJSON(w, http.StatusOK, map[string]any{"id": lesson.ID, "sectionId": lesson.SectionID, "type": lesson.Type, "title": lesson.Title, "position": lesson.Position, "isFreePreview": lesson.IsFreePreview})
+}
+
+func (h *CatalogHandler) deleteLesson(w http.ResponseWriter, r *http.Request, actor *iddomain.Actor) {
+	if err := h.svc.DeleteLesson(r.Context(), actor, r.PathValue("lessonId")); err != nil {
+		writeCatDomain(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // ===== review =====

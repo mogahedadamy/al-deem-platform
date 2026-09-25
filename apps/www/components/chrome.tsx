@@ -14,7 +14,7 @@ export function SiteHeader() {
             <Image src="/brand/logo.webp" alt="" width={48} height={48} priority className="h-full w-full object-contain" />
           </span>
           <span className="min-w-0">
-            <span className="brand-title"><span className="sm:hidden">مركز العميد</span><span className="hidden sm:inline">{SITE.nameAr}</span></span>
+            <span className="brand-title"><span className="sm:hidden">مركز العميد للتدريب</span><span className="hidden sm:inline">{SITE.nameAr}</span></span>
             <span className="brand-subtitle">{SITE.nameEn}</span>
           </span>
         </Link>

@@ -12,7 +12,8 @@ const NAV = [
   { href: "/papers", label: "الشهادات الورقية", roles: ["erp_staff", "erp_manager", "system_admin"] },
   { href: "/reports", label: "التقارير", roles: ["erp_staff", "erp_manager", "system_admin"] },
   { href: "/users", label: "المستخدمون", roles: ["system_admin"] },
-  { href: "/leads", label: "الاستفسارات", roles: ["system_admin"] },
+  { href: "/audit", label: "سجل التدقيق", roles: ["system_admin"] },
+  { href: "/leads", label: "الدعم والاستفسارات", roles: ["support_agent", "system_admin"] },
 ] as const;
 
 export async function ErpHeader() {

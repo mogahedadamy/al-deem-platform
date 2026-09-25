@@ -29,6 +29,7 @@ export default async function CertificatesPage() {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
+  const failed = !res.ok;
   const data = res.ok
     ? ((await res.json()) as { items: Certificate[] })
     : { items: [] };
@@ -49,7 +50,9 @@ export default async function CertificatesPage() {
       </header>
 
       <div className="app-page flex-1">
-        {data.items.length === 0 ? (
+        {failed ? (
+          <div className="app-alert border-amber-200 bg-amber-50 text-amber-900"><p className="font-black">تعذر تحميل شهاداتك حالياً</p><p className="mt-2 text-sm leading-7">لم تتأثر شهاداتك. حدّث الصفحة أو حاول بعد قليل.</p></div>
+        ) : data.items.length === 0 ? (
           <div className="app-empty">
             <p className="font-semibold text-secondary">لا شهادات بعد</p>
             <p className="mt-1 text-sm text-muted">
@@ -71,7 +74,7 @@ export default async function CertificatesPage() {
                     </span>
                     <div>
                       <p className="text-sm font-bold text-secondary-foreground">
-                        مركز الديم للتدريب
+                        مركز العميد للتدريب
                       </p>
                       <p className="text-xs text-secondary-foreground/70">
                         شهادة إتمام معتمدة
@@ -100,7 +103,7 @@ export default async function CertificatesPage() {
                   </p>
                   <div className="mt-4 flex items-center gap-3">
                     <a
-                      href={`https://www.alameedtraining.com/verify?serial=${c.serialNumber}`}
+                      href={`https://alameedtraining.com/verify?serial=${c.serialNumber}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm font-semibold text-primary-dark hover:text-primary"
