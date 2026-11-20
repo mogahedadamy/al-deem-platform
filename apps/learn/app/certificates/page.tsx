@@ -5,7 +5,7 @@ import { RequestPaperForm } from "./client";
 
 export const metadata = { title: "شهاداتي" };
 
-import type { Certificate } from "@al-deem/api-client";
+import type { Certificate } from "@alameed/api-client";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4001/v1";

@@ -1,5 +1,5 @@
 {
-  "name": "@al-deem/api-client",
+  "name": "@alameed/api-client",
   "version": "0.1.0",
   "private": true,
   "main": "src/index.ts",

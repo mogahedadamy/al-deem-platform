@@ -15,6 +15,14 @@ type ProfileRepository interface {
 	List(ctx context.Context, page, pageSize int, query string) ([]domain.Profile, int, error)
 }
 
+// IdentityRepository maps an external OIDC subject to the platform's stable
+// profile UUID. This keeps business data independent from the identity vendor.
+type IdentityRepository interface {
+	ResolveIdentity(ctx context.Context, issuer, subject string) (profileID string, err error)
+	LinkIdentity(ctx context.Context, issuer, subject, profileID string) error
+	CreateIdentity(ctx context.Context, issuer, subject string, p domain.Profile) (profileID string, err error)
+}
+
 // RoleRepository — إسناد/إزالة الأدوار (كل تغيير يسجل Audit).
 type RoleRepository interface {
 	GetUserRoles(ctx context.Context, userID string) ([]domain.RoleKey, error)

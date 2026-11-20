@@ -7,7 +7,7 @@ export default function LoginPage() {
   function login() {
     const requested = new URLSearchParams(window.location.search).get("callbackUrl");
     const callbackUrl = requested?.startsWith("/") && !requested.startsWith("//") ? requested : "/";
-    void signIn("keycloak", { callbackUrl });
+    void signIn("zitadel", { callbackUrl });
   }
 
   return (

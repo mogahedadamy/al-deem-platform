@@ -32,7 +32,7 @@ jobs:
       - name: Validate generated API contract
         run: |
           cp packages/api-client/src/schema.d.ts /tmp/schema.before.d.ts
-          pnpm --filter @al-deem/api-client gen:ts
+          pnpm --filter @alameed/api-client gen:ts
           diff -u /tmp/schema.before.d.ts packages/api-client/src/schema.d.ts
 
   public-e2e:

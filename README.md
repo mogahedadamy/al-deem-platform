@@ -1,4 +1,4 @@
-# Al Deem Training Platform — منصة الديم للتدريب v2
+# Alameed Training Center Platform — منصة مركز العميد للتدريب v2
 
 > Monorepo للمنصة الجديدة — 3 واجهات (www + learn + erp) + Go core-api
 > القرارات المعتمدة: `docs/plans/APPROVED_DECISIONS.md` (أصلًا في مجلد العمل الرئيسي)
@@ -25,13 +25,14 @@ platform/
 ## المتطلبات
 - Node ≥ 24 + pnpm
 - Go ≥ 1.25 (`export PATH=$PATH:/home/mojahed/go/bin`)
-- Docker (postgres/redis/keycloak/mailpit)
+- Docker (PostgreSQL/Redis/Zitadel/Mailpit)
 
 ## البدء السريع (بيئة محلية)
 
 ```bash
 # 1) تشغيل البنية المحلية
-pnpm docker:up          # postgres:5435 + redis:6391 + keycloak:8091 + mailpit:8092
+ZITADEL_MASTERKEY=32-character-random-secret \
+ZITADEL_ADMIN_PASSWORD=strong-bootstrap-password pnpm docker:up
 
 # 2) تبعيات الواجهات
 pnpm install
@@ -55,7 +56,7 @@ pnpm --filter erp dev   # :3003
 |---|---|---|
 | PostgreSQL 17 | 5435 | user: deem / pass: deem / db: deem |
 | Redis 7 | 6391 | — |
-| Keycloak 26 | 8091 | realm: `al-deem` — بيانات الإدارة محفوظة خارج المستودع |
+| Zitadel | 8091 | هوية موحدة OIDC — أسرار الإدارة محفوظة خارج المستودع |
 | Mailpit Web UI | 8092 (SMTP 8093) | — |
 | core-api | 4001 | — |
 

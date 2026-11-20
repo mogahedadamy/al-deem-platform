@@ -97,6 +97,57 @@ func (s *Store) List(ctx context.Context, page, pageSize int, query string) ([]d
 	return out, total, rows.Err()
 }
 
+// ===== IdentityRepository =====
+
+func (s *Store) ResolveIdentity(ctx context.Context, issuer, subject string) (string, error) {
+	var profileID string
+	err := s.db.QueryRowContext(ctx, `
+		SELECT profile_id FROM external_identities
+		WHERE issuer = $1 AND subject = $2`, issuer, subject).Scan(&profileID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", platform.ErrNotFound
+	}
+	return profileID, err
+}
+
+func (s *Store) LinkIdentity(ctx context.Context, issuer, subject, profileID string) error {
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO external_identities (issuer, subject, profile_id)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (issuer, subject) DO NOTHING`, issuer, subject, profileID)
+	return err
+}
+
+func (s *Store) CreateIdentity(ctx context.Context, issuer, subject string, p domain.Profile) (string, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	var profileID string
+	err = tx.QueryRowContext(ctx, `
+		INSERT INTO profiles (id, full_name, email, locale, status)
+		VALUES (gen_random_uuid(), $1, $2, COALESCE(NULLIF($3, ''), 'ar'), 'active')
+		RETURNING id`, p.FullName, p.Email, p.Locale).Scan(&profileID)
+	if err != nil {
+		return "", fmt.Errorf("create profile for identity: %w", err)
+	}
+	if _, err := tx.ExecContext(ctx, `
+		INSERT INTO external_identities (issuer, subject, profile_id)
+		VALUES ($1, $2, $3)`, issuer, subject, profileID); err != nil {
+		_ = tx.Rollback()
+		if existingID, lookupErr := s.ResolveIdentity(ctx, issuer, subject); lookupErr == nil {
+			return existingID, nil
+		}
+		return "", fmt.Errorf("link external identity: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return "", err
+	}
+	return profileID, nil
+}
+
 // ===== RoleRepository =====
 
 func (s *Store) GetUserRoles(ctx context.Context, userID string) ([]domain.RoleKey, error) {
@@ -120,7 +171,7 @@ func (s *Store) GetUserRoles(ctx context.Context, userID string) ([]domain.RoleK
 }
 
 func (s *Store) Assign(ctx context.Context, userID string, role domain.RoleKey, assignedBy string) error {
-	// المستخدم قد يكون في Keycloak ولم يسجل دخولًا بعد (لا profile في DB) —
+	// المستخدم قد يكون في مزود الهوية ولم يسجل دخولًا بعد (لا profile في DB) —
 	// نخلق placeholder نشطًا (يُحدَّث عند أول SSO في UpsertFromSSO)
 	if _, err := s.db.ExecContext(ctx, `
 		INSERT INTO profiles (id, full_name, email, locale, status)
@@ -194,10 +245,11 @@ func (s *Store) ListAudit(ctx context.Context, limit, offset int) ([]domain.Audi
 
 // compile-time interface checks
 var (
-	_ ports.ProfileRepository = (*Store)(nil)
-	_ ports.RoleRepository    = (*Store)(nil)
-	_ ports.AuditLogger       = (*Store)(nil)
-	_ ports.AuditRepository   = (*Store)(nil)
+	_ ports.ProfileRepository  = (*Store)(nil)
+	_ ports.IdentityRepository = (*Store)(nil)
+	_ ports.RoleRepository     = (*Store)(nil)
+	_ ports.AuditLogger        = (*Store)(nil)
+	_ ports.AuditRepository    = (*Store)(nil)
 )
 
 func scanProfile(row *sql.Row) (*domain.Profile, error) {

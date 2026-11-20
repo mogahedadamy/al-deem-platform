@@ -18,19 +18,19 @@
 
 ```bash
 systemctl is-active deem-core-api deem-worker deem-www deem-learn deem-erp deem-backup.timer
-auth_token='...' # access token حديث صادر من Keycloak
+auth_token='...' # access token حديث صادر من Zitadel
 curl -fsS http://127.0.0.1:4001/v1/ready
 curl -fsS -H "Authorization: Bearer $auth_token" http://127.0.0.1:4001/v1/me
 journalctl -u deem-core-api -u deem-worker -n 100 --no-pager
 systemctl list-timers 'deem-*' --all --no-pager
 ```
 
-`/v1/ready` يفحص قاعدة البيانات؛ يجب متابعة Redis وKeycloak وworker ونسخة النسخ الاحتياطي عبر مراقبة خارجية أيضاً.
+`/v1/ready` يفحص قاعدة البيانات؛ يجب متابعة Redis وZitadel وworker ونسخة النسخ الاحتياطي عبر مراقبة خارجية أيضاً.
 
 ## معالجة الحوادث
 
 - **خدمة لا تستجيب:** افحص `journalctl -u deem-<service>` ثم استخدم `sudo systemctl restart deem-<service>` فقط بعد تحديد السبب.
-- **SSO أو API يعيدان 401:** تحقق أن token يضم `iss` العام الصحيح، و`azp` من العملاء المسموحين، و`aud=core-api`؛ ثم راجع `KEYCLOAK_ISSUER` وscope `core-api-audience` في Keycloak الحي.
+- **SSO أو API يعيدان 401:** تحقق أن token يضم `iss` العام الصحيح، و`azp` من العملاء المسموحين، و`aud=core-api`؛ ثم راجع `OIDC_ISSUER` وscope `core-api-audience` في Zitadel الحي.
 - **Worker متوقف:** الأحداث تبقى معلقة في `zoom_webhook_events` وتلتقطها الوحدة عند عودتها؛ افحص backlog وقم بإعادة تشغيل `deem-worker`.
 - **Webhook Zoom:** لا تقبل الخدمة أي request إن غاب `ZOOM_WEBHOOK_SECRET`، وتتحقق من HMAC وtimestamp. لا تعطل هذه الحماية للتجربة.
 

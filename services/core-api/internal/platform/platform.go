@@ -9,24 +9,24 @@ import (
 
 // Config — إعداد الخدمة من environment (يُتحقق منه عند startup).
 type Config struct {
-	APIAddr          string
-	DatabaseURL      string
-	RedisURL         string
-	KeycloakURL      string
-	KeycloakRealm    string
-	KeycloakClientID string
-	KeycloakSecret   string
+	APIAddr           string
+	DatabaseURL       string
+	RedisURL          string
+	OIDCIssuer        string
+	OIDCClientID      string
+	ZitadelOrgID      string
+	ZitadelAdminToken string
 }
 
 func LoadConfig() Config {
 	c := Config{
-		APIAddr:          envOr("API_ADDR", ":4001"),
-		DatabaseURL:      os.Getenv("DATABASE_URL"),
-		RedisURL:         envOr("REDIS_URL", "redis://localhost:6391/0"),
-		KeycloakURL:      envOr("KEYCLOAK_URL", "http://localhost:8091"),
-		KeycloakRealm:    envOr("KEYCLOAK_REALM", "al-deem"),
-		KeycloakClientID: envOr("KEYCLOAK_CLIENT_ID", "core-api"),
-		KeycloakSecret:   os.Getenv("KEYCLOAK_CLIENT_SECRET"),
+		APIAddr:           envOr("API_ADDR", ":4001"),
+		DatabaseURL:       os.Getenv("DATABASE_URL"),
+		RedisURL:          envOr("REDIS_URL", "redis://localhost:6391/0"),
+		OIDCIssuer:        envOr("OIDC_ISSUER", "http://localhost:8091"),
+		OIDCClientID:      envOr("OIDC_CLIENT_ID", "core-api"),
+		ZitadelOrgID:      os.Getenv("ZITADEL_ORG_ID"),
+		ZitadelAdminToken: os.Getenv("ZITADEL_ADMIN_TOKEN"),
 	}
 	if c.DatabaseURL == "" {
 		slog.Warn("DATABASE_URL not set — DB-dependent endpoints will fail")

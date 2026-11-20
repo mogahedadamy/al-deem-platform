@@ -23,9 +23,9 @@ export function LoginEntry() {
     setBusy(true);
     try {
       await signIn(
-        "keycloak",
+        "zitadel",
         { callbackUrl },
-        nextMode === "register" ? { kc_action: "register" } : undefined,
+        nextMode === "register" ? { prompt: "create" } : undefined,
       );
     } finally {
       setBusy(false);

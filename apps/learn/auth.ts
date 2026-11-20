@@ -1,10 +1,10 @@
 import NextAuth from "next-auth";
-import Keycloak from "next-auth/providers/keycloak";
+import Zitadel from "next-auth/providers/zitadel";
 import type { JWT } from "next-auth/jwt";
 
-const issuer = process.env.AUTH_KEYCLOAK_ISSUER ?? "http://localhost:8091/realms/al-deem";
-const clientId = process.env.AUTH_KEYCLOAK_ID ?? "learn";
-const clientSecret = process.env.AUTH_KEYCLOAK_SECRET ?? "";
+const issuer = process.env.AUTH_ZITADEL_ISSUER ?? "http://localhost:8091";
+const clientId = process.env.AUTH_ZITADEL_ID ?? "learn";
+const clientSecret = process.env.AUTH_ZITADEL_SECRET ?? "";
 
 type RefreshResult = {
   access_token: string;
@@ -21,7 +21,7 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
       refresh_token: token.refreshToken,
     });
     if (clientSecret) body.set("client_secret", clientSecret);
-    const response = await fetch(`${issuer}/protocol/openid-connect/token`, {
+    const response = await fetch(`${issuer}/oauth/v2/token`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body,
@@ -44,9 +44,12 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   providers: [
-    Keycloak({ clientId, clientSecret, issuer, checks: ["pkce", "state", "nonce"] }),
+    Zitadel({ clientId, clientSecret, issuer, checks: ["pkce", "state", "nonce"] }),
   ],
   callbacks: {
+    signIn({ profile }) {
+      return profile?.email_verified === true;
+    },
     async jwt({ token, account }) {
       if (account) {
         token.accessToken = account.access_token;

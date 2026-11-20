@@ -33,7 +33,7 @@ for ENV in core-api www learn erp backup; do
     exit 1
   fi
 done
-# learn/erp are public OIDC clients, therefore AUTH_KEYCLOAK_SECRET is
+# learn/erp are public OIDC clients, therefore AUTH_ZITADEL_SECRET is
 # intentionally empty. AUTH_SECRET and Zoom's webhook secret must not be.
 if sudo grep -R -E -q 'CHANGE_ME|replace-with-random|^AUTH_SECRET=$|^ZOOM_WEBHOOK_SECRET=$' "$APP_DIR/env"; then
   echo "✗ production environment contains placeholder or blank critical secret" >&2
@@ -103,7 +103,7 @@ for service in "${SERVICES[@]}"; do
   sudo systemctl restart "$service" || rollback
 done
 sudo systemctl enable --now deem-backup.timer deem-healthcheck.timer
-# Keycloak/JWKS and Redis can still be warming immediately after a coordinated
+# Zitadel/JWKS and Redis can still be warming immediately after a coordinated
 # restart. Retry the health gate before rolling back a healthy release.
 healthy=false
 for attempt in $(seq 1 8); do

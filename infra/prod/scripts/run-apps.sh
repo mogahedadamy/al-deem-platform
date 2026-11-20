@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 ROOT="$(pwd)"
 AUTH_SECRET="${AUTH_SECRET:?ضع AUTH_SECRET أولًا (openssl rand -base64 32)}"
-ISSUER="https://auth.alameedtraining.com/realms/al-deem"
+ISSUER="https://auth.alameedtraining.com"
 
 # ملاحظات مهمة:
 # - NODE_USE_SYSTEM_CA=1: التطبيقات تجلب OIDC discovery من auth.alameedtraining.com
@@ -21,9 +21,9 @@ sleep 2
 
 (cd apps/www && NODE_USE_SYSTEM_CA=1 nohup npx next start -p 3011 > /tmp/www.log 2>&1 &)
 (cd apps/learn && NODE_USE_SYSTEM_CA=1 AUTH_SECRET="$AUTH_SECRET" AUTH_URL="https://learn.alameedtraining.com" \
-  AUTH_KEYCLOAK_ISSUER="$ISSUER" nohup npx next start -p 3012 > /tmp/learn.log 2>&1 &)
+  AUTH_ZITADEL_ISSUER="$ISSUER" nohup npx next start -p 3012 > /tmp/learn.log 2>&1 &)
 (cd apps/erp && NODE_USE_SYSTEM_CA=1 AUTH_SECRET="$AUTH_SECRET" AUTH_URL="https://erp.alameedtraining.com" \
-  AUTH_KEYCLOAK_ISSUER="$ISSUER" nohup npx next start -p 3013 > /tmp/erp.log 2>&1 &)
+  AUTH_ZITADEL_ISSUER="$ISSUER" nohup npx next start -p 3013 > /tmp/erp.log 2>&1 &)
 
 sleep 4
 echo "─── الحالة:"

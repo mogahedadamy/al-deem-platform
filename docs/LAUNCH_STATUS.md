@@ -1,4 +1,4 @@
-# حالة الإطلاق — Al Deem Platform v2
+# حالة الإطلاق — Alameed Training Center Platform v2
 
 > ملخص تنفيذي للمالك: ما جاهز، ما يحتاج قرارك، وكيف تُطلق المنصة.
 
@@ -12,7 +12,7 @@
 | learn | ✅ كامل | رحلة الطالب/المدرب كاملة + مشغل دروس + اختبارات + شهادات + حصص مباشرة |
 | erp | ✅ كامل | users/review/finance/papers/reports/leads + MFA |
 | worker | ✅ يعمل | أحداث Zoom (تسجيلات + حالات) كل 10 ثوانٍ |
-| Keycloak SSO | ✅ عبر النطاقات | realm al-deem + 3 clients + MFA لموظفي ERP |
+| Zitadel OIDC | 🟡 محليًا | discovery وJWKS جاهزان؛ عملاء الإنتاج وترحيل الحسابات يحتاجان إعدادًا قبل التحويل |
 | PostgreSQL 17 | ✅ | 6 migrations + backup آلي + drill أسبوعي |
 | Redis | ✅ | rate limiting 120/دقيقة (fail-open) |
 | Caddy | ✅ | 4 نطاقات + security headers + gzip |
@@ -41,8 +41,8 @@
 ```bash
 # توليد لكل تطبيق (3):
 openssl rand -base64 32   # → AUTH_SECRET في infra/prod/env.{www,learn,erp}
-# KC_HOSTNAME=https://auth.alameedtraining.com في compose
-# كلمة مرور bootstrap admin لـKeycloak يجب تغييرها فورًا
+# ZITADEL_MASTERKEY بطول 32 محرفًا ويحفظ خارج Git
+# كلمة مرور مدير Zitadel الأولية يجب تغييرها فورًا
 ```
 
 ### 3. systemd — **جاهزة الآن**
@@ -61,7 +61,7 @@ openssl rand -base64 32   # → AUTH_SECRET في infra/prod/env.{www,learn,erp}
 ## 🚀 خطوات الإطلاق (بعد DNS)
 1. DNS → السيرفر + تحقق `curl https://alameedtraining.com`
 2. أسرار حقيقية في `infra/prod/env.*` + rebuild + restart (الأوامر في `infra/prod/README.md`)
-3. Keycloak: `KC_HOSTNAME` + تغيير كلمة admin + فحص redirectUris
+3. Zitadel: أنشئ عملاء OIDC واضبط redirect URIs والجمهور وفق `docs/ZITADEL_IDENTITY.md`
 4. `caddy reload` (جاهز — النطاقات محدثة بالفعل)
 5. فحص دخاني: كل نطاق 200 + SSO + دفعة تجريبية + شهادة + تحقق عام
 6. تشغيل cron backup + systemd

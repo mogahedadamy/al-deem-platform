@@ -271,7 +271,7 @@ www      learn                           erp
 - روابط «تصفح الكتالوج» داخل dashboard تشير إلى `/` في learn، وهي splash وليست كتالوج www (`dashboard/page.tsx:225-243`).
 - زر `+ دورة جديدة` يشير لمسار غير موجود وثبت أنه 404 (`dashboard/page.tsx:142-147`).
 - صفحة البداية تحمل رسالة تطوير `R0 Foundation` (`app/page.tsx:29-31`).
-- الاسم التجاري لا يزال «الديم»، بينما الموقع العام «العميد».
+- الاسم التجاري لا يزال «مركز العميد»، بينما الموقع العام «العميد».
 - الأزرار الداكنة تستخدم `text-secondary-foreground` غير المعرفة في `globals.css`، وظهر النص داكناً فوق خلفية داكنة في اللقطات.
 - لا route-level loading UI.
 - فشل API non-2xx في dashboard لا يضبط `apiError`؛ يعرض 0 وempty state كأنها بيانات صحيحة (`dashboard/page.tsx:65-105`).
@@ -493,7 +493,7 @@ API auth يمنع الوصول للبيانات. بالإضافة إلى ذلك�
 - 35 رابطاً سليماً في www، لكن عدداً من الروابط والفلاتر النصية أصغر من هدف لمس 44px.
 - ERP users ينفذ N+1 لجلب الأدوار ولا يملك pagination UI.
 - reports بلا تصفية زمنية أو تصدير.
-- `@al-deem/ui` غير مستخدم من التطبيقات فعلياً، وتصاميم التطبيقات منفصلة.
+- `@alameed/ui` غير مستخدم من التطبيقات فعلياً، وتصاميم التطبيقات منفصلة.
 - health check لا يختبر DB/Redis/Keycloak.
 - logs لا تسجل status code أو actor، وحقلا request_id/ip في audit table غير مملوءين.
 
@@ -592,8 +592,8 @@ API auth يمنع الوصول للبيانات. بالإضافة إلى ذلك�
 ### الدين التقني
 
 - `apps/learn/app/dashboard/page.tsx` بطول 323 سطراً ويجمع auth و3 API fetches وrole detection وواجهتي طالب/مدرب.
-- أنواع API مكررة يدوياً في الصفحات؛ `@al-deem/api-client` يستخدم في موضع واحد فقط.
-- `@al-deem/ui` غير مستخدم؛ لكل تطبيق CSS ونمط مكونات مستقل.
+- أنواع API مكررة يدوياً في الصفحات؛ `@alameed/api-client` يستخدم في موضع واحد فقط.
+- `@alameed/ui` غير مستخدم؛ لكل تطبيق CSS ونمط مكونات مستقل.
 - Auth.js config مكرر بين learn وerp، وكذلك BFF proxy boilerplate وauth wrappers في Go transports.
 - لا طبقة موحدة لتمييز 401/403/404/5xx؛ عدة صفحات تحول كل non-OK إلى null/empty.
 - عمليات متعددة تنفذ audit بعد commit وبطريقة best-effort، فلا توجد وحدة transaction تشمل القرار وسجل التدقيق.
@@ -693,7 +693,7 @@ API auth يمنع الوصول للبيانات. بالإضافة إلى ذلك�
 
 - `pnpm build`: PASS.
 - `make check`: PASS، وgolangci-lint = 0 issues.
-- `pnpm lint`: FAIL بسبب `@al-deem/ui` لا يملك eslint dependency.
+- `pnpm lint`: FAIL بسبب `@alameed/ui` لا يملك eslint dependency.
 - learn lint: FAIL بخطأ `set-state-in-effect` و5 warnings.
 - erp lint: PASS مع warning لمتغير `failed` غير مستخدم.
 - `pnpm test`: 0 tasks؛ النجاح لا يعني وجود اختبارات.

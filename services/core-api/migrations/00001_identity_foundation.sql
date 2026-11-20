@@ -1,10 +1,10 @@
 -- +goose Up
 -- R0: Identity foundation
 -- قاعدة الهوية: الملفات الشخصية والأدوار والصلاحيات وسجل التدقيق.
--- المستخدمون أنفسهم يعيشون في Keycloak (SSO)؛ هنا نخزن الملف والربط بالأدوار.
+-- بيانات الاعتماد تعيش في مزود OIDC؛ هنا نخزن الملف والربط بالأدوار.
 
 CREATE TABLE profiles (
-    id          UUID PRIMARY KEY,                  -- Keycloak user id (sub claim)
+    id          UUID PRIMARY KEY,                  -- stable internal platform identity
     full_name   TEXT NOT NULL,
     email       TEXT NOT NULL UNIQUE,
     phone       TEXT,

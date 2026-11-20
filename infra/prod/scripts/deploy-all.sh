@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bootstrap and deploy Al Deem Platform v2 on a fresh Ubuntu server.
+# Bootstrap and deploy Alameed Training Center Platform v2 on a fresh Ubuntu server.
 # Run as the deployment user (mojahed), not with sudo.
 set -Eeuo pipefail
 
@@ -97,29 +97,38 @@ if [[ ! -s "$APP_DIR/env/docker.env" && -z "${DEEM_POSTGRES_PASSWORD:-}" ]]; the
   printf '\n'
   [[ -n "$DEEM_POSTGRES_PASSWORD" ]] || fatal "PostgreSQL password is required"
 fi
-if [[ ! -s "$APP_DIR/env/docker.env" && -z "${KC_BOOTSTRAP_ADMIN_PASSWORD:-}" ]]; then
-  read -rsp "Keycloak bootstrap admin password: " KC_BOOTSTRAP_ADMIN_PASSWORD
+if [[ ! -s "$APP_DIR/env/docker.env" && -z "${ZITADEL_ADMIN_PASSWORD:-}" ]]; then
+  read -rsp "Zitadel bootstrap admin password: " ZITADEL_ADMIN_PASSWORD
   printf '\n'
-  [[ -n "$KC_BOOTSTRAP_ADMIN_PASSWORD" ]] || fatal "Keycloak admin password is required"
+  [[ -n "$ZITADEL_ADMIN_PASSWORD" ]] || fatal "Zitadel admin password is required"
 fi
 if [[ -z "$BACKUP_OFFSITE_URI" ]]; then
   read -rp "Encrypted rclone backup destination (e.g. remote:alameedtraining-backups): " BACKUP_OFFSITE_URI
 fi
 [[ -n "$BACKUP_OFFSITE_URI" ]] || fatal "backup destination is required; configure rclone before deployment"
 if [[ -s "$APP_DIR/env/docker.env" ]]; then
-  # Reuse already-provisioned credentials on reruns; never silently rotate DB/Keycloak passwords.
+  # Reuse already-provisioned credentials on reruns; never silently rotate DB/Zitadel passwords.
   # shellcheck disable=SC1090
   source "$APP_DIR/env/docker.env"
   PG_PASSWORD="$DEEM_POSTGRES_PASSWORD"
-  KC_PASSWORD="$KC_BOOTSTRAP_ADMIN_PASSWORD"
+  ZITADEL_PASSWORD="$ZITADEL_ADMIN_PASSWORD"
+  ZITADEL_KEY="$ZITADEL_MASTERKEY"
 else
   PG_PASSWORD="${DEEM_POSTGRES_PASSWORD:-$(openssl rand -hex 24)}"
-  KC_PASSWORD="${KC_BOOTSTRAP_ADMIN_PASSWORD:-$(openssl rand -hex 24)}"
+  ZITADEL_PASSWORD="${ZITADEL_ADMIN_PASSWORD:-$(openssl rand -hex 24)}"
+  ZITADEL_KEY="${ZITADEL_MASTERKEY:-$(openssl rand -hex 16)}"
 fi
 AUTH_WWW="${AUTH_SECRET_WWW:-$(existing_env_value www AUTH_SECRET || true)}"
 AUTH_LEARN="${AUTH_SECRET_LEARN:-$(existing_env_value learn AUTH_SECRET || true)}"
 AUTH_ERP="${AUTH_SECRET_ERP:-$(existing_env_value erp AUTH_SECRET || true)}"
 ZOOM_WEBHOOK_SECRET="${ZOOM_WEBHOOK_SECRET:-$(existing_env_value core-api ZOOM_WEBHOOK_SECRET || true)}"
+ZITADEL_LEARN_ID="${ZITADEL_LEARN_CLIENT_ID:-$(existing_env_value learn AUTH_ZITADEL_ID || true)}"
+ZITADEL_ERP_ID="${ZITADEL_ERP_CLIENT_ID:-$(existing_env_value erp AUTH_ZITADEL_ID || true)}"
+ZITADEL_ORG_VALUE="${ZITADEL_ORG_ID:-$(existing_env_value core-api ZITADEL_ORG_ID || true)}"
+ZITADEL_TOKEN_VALUE="${ZITADEL_ADMIN_TOKEN:-$(existing_env_value core-api ZITADEL_ADMIN_TOKEN || true)}"
+if [[ -z "$ZITADEL_LEARN_ID" || -z "$ZITADEL_ERP_ID" || -z "$ZITADEL_ORG_VALUE" || -z "$ZITADEL_TOKEN_VALUE" ]]; then
+  fatal "set Zitadel client IDs, organization ID, and management token as described in docs/ZITADEL_IDENTITY.md"
+fi
 AUTH_WWW="${AUTH_WWW:-$(openssl rand -base64 32)}"
 AUTH_LEARN="${AUTH_LEARN:-$(openssl rand -base64 32)}"
 AUTH_ERP="${AUTH_ERP:-$(openssl rand -base64 32)}"
@@ -137,10 +146,9 @@ sudo chmod 700 /var/lib/deem/private /var/lib/deem/private/receipts
 if [[ ! -s "$PROD_ENV" ]]; then
   cat > "$PROD_ENV" <<EOF
 DEEM_POSTGRES_PASSWORD=$PG_PASSWORD
-KC_BOOTSTRAP_ADMIN_PASSWORD=$KC_PASSWORD
-KC_ENABLE_STUDENT_SELF_REGISTRATION=false
-KC_ENABLE_EMAIL_VERIFICATION=false
-KC_ENFORCE_GLOBAL_TOTP=false
+ZITADEL_ADMIN_PASSWORD=$ZITADEL_PASSWORD
+ZITADEL_ADMIN_USERNAME=admin@alameedtraining.com
+ZITADEL_MASTERKEY=$ZITADEL_KEY
 PAYMENT_BANK_NAME=
 PAYMENT_ACCOUNT_NAME=
 PAYMENT_ACCOUNT_NUMBER=
@@ -155,12 +163,12 @@ cat > "$APP_DIR/env/core-api.env" <<EOF
 API_ADDR=:4001
 DATABASE_URL=postgres://deem:$PG_PASSWORD@localhost:5435/deem?sslmode=disable
 REDIS_URL=redis://localhost:6391/0
-KEYCLOAK_URL=http://localhost:8091
-KEYCLOAK_ISSUER=https://auth.alameedtraining.com/realms/al-deem
-KEYCLOAK_ALLOWED_CLIENTS=learn,erp,www,core-api
-KEYCLOAK_REQUIRED_AUDIENCE=core-api
-KEYCLOAK_REALM=al-deem
-KEYCLOAK_CLIENT_ID=core-api
+OIDC_ISSUER=https://auth.alameedtraining.com
+OIDC_ALLOWED_CLIENTS=learn,erp,www,core-api
+OIDC_REQUIRED_AUDIENCE=core-api
+OIDC_CLIENT_ID=core-api
+ZITADEL_ORG_ID=$ZITADEL_ORG_VALUE
+ZITADEL_ADMIN_TOKEN=$ZITADEL_TOKEN_VALUE
 ZOOM_WEBHOOK_SECRET=$ZOOM_WEBHOOK_SECRET
 ZOOM_ACCOUNT_ID=
 ZOOM_CLIENT_ID=
@@ -170,27 +178,27 @@ EOF
 cat > "$APP_DIR/env/www.env" <<EOF
 AUTH_SECRET=$AUTH_WWW
 AUTH_URL=https://alameedtraining.com
-AUTH_KEYCLOAK_ID=www
-AUTH_KEYCLOAK_SECRET=
-AUTH_KEYCLOAK_ISSUER=https://auth.alameedtraining.com/realms/al-deem
+AUTH_ZITADEL_ID=
+AUTH_ZITADEL_SECRET=
+AUTH_ZITADEL_ISSUER=https://auth.alameedtraining.com
 NEXT_PUBLIC_API_URL=https://api.alameedtraining.com/v1
 NODE_USE_SYSTEM_CA=1
 EOF
 cat > "$APP_DIR/env/learn.env" <<EOF
 AUTH_SECRET=$AUTH_LEARN
 AUTH_URL=https://learn.alameedtraining.com
-AUTH_KEYCLOAK_ID=learn
-AUTH_KEYCLOAK_SECRET=
-AUTH_KEYCLOAK_ISSUER=https://auth.alameedtraining.com/realms/al-deem
+AUTH_ZITADEL_ID=$ZITADEL_LEARN_ID
+AUTH_ZITADEL_SECRET=
+AUTH_ZITADEL_ISSUER=https://auth.alameedtraining.com
 NEXT_PUBLIC_API_URL=https://api.alameedtraining.com/v1
 NODE_USE_SYSTEM_CA=1
 EOF
 cat > "$APP_DIR/env/erp.env" <<EOF
 AUTH_SECRET=$AUTH_ERP
 AUTH_URL=https://erp.alameedtraining.com
-AUTH_KEYCLOAK_ID=erp
-AUTH_KEYCLOAK_SECRET=
-AUTH_KEYCLOAK_ISSUER=https://auth.alameedtraining.com/realms/al-deem
+AUTH_ZITADEL_ID=$ZITADEL_ERP_ID
+AUTH_ZITADEL_SECRET=
+AUTH_ZITADEL_ISSUER=https://auth.alameedtraining.com
 NEXT_PUBLIC_API_URL=https://api.alameedtraining.com/v1
 NODE_USE_SYSTEM_CA=1
 EOF
@@ -216,16 +224,16 @@ for attempt in $(seq 1 30); do
   sleep 2
 done
 
-log "Creating Keycloak database if absent"
-"${DOCKER[@]}" exec deem-postgres psql -U deem -d postgres -tc "SELECT 1 FROM pg_database WHERE datname='keycloak'" | grep -q 1 \
-  || "${DOCKER[@]}" exec deem-postgres psql -U deem -d postgres -c 'CREATE DATABASE keycloak OWNER deem;'
+log "Creating Zitadel database if absent"
+"${DOCKER[@]}" exec deem-postgres psql -U deem -d postgres -tc "SELECT 1 FROM pg_database WHERE datname='zitadel'" | grep -q 1 \
+  || "${DOCKER[@]}" exec deem-postgres psql -U deem -d postgres -c 'CREATE DATABASE zitadel OWNER deem;'
 
-log "Starting Keycloak"
+log "Starting Zitadel"
 "${DOCKER[@]}" compose -f "$DOCKER_DIR/compose.yaml" -f "$DOCKER_DIR/compose.prod.yaml" \
-  --env-file "$PROD_ENV" up -d keycloak
+  --env-file "$PROD_ENV" up -d zitadel
 for attempt in $(seq 1 60); do
-  if curl -fsS --max-time 3 http://127.0.0.1:8091/realms/master/.well-known/openid-configuration >/dev/null 2>&1; then break; fi
-  [[ "$attempt" == 60 ]] && fatal "Keycloak did not become ready"
+  if curl -fsS --max-time 3 http://127.0.0.1:8091/.well-known/openid-configuration >/dev/null 2>&1; then break; fi
+  [[ "$attempt" == 60 ]] && fatal "Zitadel did not become ready"
   sleep 3
 done
 
@@ -233,34 +241,7 @@ log "Running database migrations"
 DB_URL="postgres://deem:$PG_PASSWORD@localhost:5435/deem?sslmode=disable"
 (cd "$REPO_ROOT/services/core-api" && goose -dir migrations postgres "$DB_URL" up)
 
-log "Configuring Keycloak realm"
-KC_ADMIN_USER=deem-admin KC_ADMIN_PASSWORD="$KC_PASSWORD" \
-  KC_ENABLE_STUDENT_SELF_REGISTRATION=false KC_ENABLE_EMAIL_VERIFICATION=false \
-  KC_OWNER_USERNAME="${KC_OWNER_USERNAME:-}" \
-  "$REPO_ROOT/infra/prod/scripts/configure-keycloak.sh"
-# Provision a random confidential-client secret through the Admin API and store
-# it only in the protected service env file, never in the repository realm JSON.
-if [[ -z "$(existing_env_value core-api KEYCLOAK_CLIENT_SECRET || true)" ]]; then
-  CORE_API_CLIENT_SECRET="$(openssl rand -hex 32)"
-else
-  CORE_API_CLIENT_SECRET="$(existing_env_value core-api KEYCLOAK_CLIENT_SECRET)"
-fi
-if [[ -n "$CORE_API_CLIENT_SECRET" ]]; then
-  admin_token="$(curl -fsS -d client_id=admin-cli -d grant_type=password \
-    --data-urlencode "username=deem-admin" --data-urlencode "password=$KC_PASSWORD" \
-    http://127.0.0.1:8091/realms/master/protocol/openid-connect/token | jq -er .access_token)"
-  core_client_id="$(curl -fsS -H "Authorization: Bearer $admin_token" \
-    'http://127.0.0.1:8091/admin/realms/al-deem/clients?clientId=core-api' | jq -er '.[0].id')"
-  CORE_API_CLIENT_SECRET="$(curl -fsS -X POST -H "Authorization: Bearer $admin_token" \
-    "http://127.0.0.1:8091/admin/realms/al-deem/clients/$core_client_id/client-secret" | jq -er .value)"
-  if grep -q '^KEYCLOAK_CLIENT_SECRET=' "$APP_DIR/env/core-api.env"; then
-    sudo sed -i "s/^KEYCLOAK_CLIENT_SECRET=.*/KEYCLOAK_CLIENT_SECRET=$CORE_API_CLIENT_SECRET/" "$APP_DIR/env/core-api.env"
-  else
-    printf '\nKEYCLOAK_CLIENT_SECRET=%s\n' "$CORE_API_CLIENT_SECRET" | sudo tee -a "$APP_DIR/env/core-api.env" >/dev/null
-  fi
-  sudo chown "$APP_USER:$APP_USER" "$APP_DIR/env/core-api.env"
-  sudo chmod 600 "$APP_DIR/env/core-api.env"
-fi
+log "Zitadel clients must match docs/ZITADEL_IDENTITY.md"
 
 log "Installing Caddy configuration"
 sudo install -d -m 755 /etc/caddy

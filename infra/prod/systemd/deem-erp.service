@@ -1,6 +1,6 @@
 # erp — النظام الإداري (Next.js :3013) — MFA عبر Keycloak
 [Unit]
-Description=Al Deem erp (Next.js)
+Description=Alameed Training Center erp (Next.js)
 After=network-online.target
 Wants=network-online.target
 

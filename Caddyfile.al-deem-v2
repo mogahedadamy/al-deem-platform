@@ -1,5 +1,5 @@
-# alameedtraining.com — Al Deem Platform v2 (platform/ monorepo).
-# Three Next.js apps (www/learn/erp) + Go core-api + Keycloak, all local ports.
+# alameedtraining.com — Alameed Training Center Platform v2 (platform/ monorepo).
+# Three Next.js apps (www/learn/erp) + Go core-api + Zitadel, all local ports.
 #
 # TLS: Let's Encrypt تلقائي (Caddy ACME) — يعمل مباشرة مع grey-cloud (DNS only).
 # للسودان (بعض مزودي الخدمة يخنقون Cloudflare): اجعل السجلات DNS only.
@@ -54,7 +54,7 @@ api.alameedtraining.com {
 	reverse_proxy 127.0.0.1:4001
 }
 
-# auth — Keycloak SSO
+# auth — Zitadel OIDC
 auth.alameedtraining.com {
 	encode zstd gzip
 	import security

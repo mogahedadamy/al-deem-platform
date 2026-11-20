@@ -1,6 +1,6 @@
 # learn — منصة التعلّم (Next.js :3012) — AUTH_URL وAUTH_SECRET إلزاميان
 [Unit]
-Description=Al Deem learn (Next.js)
+Description=Alameed Training Center learn (Next.js)
 After=network-online.target
 Wants=network-online.target
 

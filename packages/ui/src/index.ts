@@ -1,4 +1,4 @@
-// @al-deem/ui — RTL design system v0 (R0 foundation)
+// @alameed/ui — RTL design system v0 (R0 foundation)
 // مبني على نفس الهوية البصرية للمشروع القديم (خط Cairo + الألوان الذهبية/الداكنة).
 
 export type ColorToken = string;
@@ -30,7 +30,7 @@ export const radii = {
   full: "9999px",
 } as const;
 
-/** الأدوار المتوافقة مع Keycloak realm و roles table (R0). */
+/** الأدوار المتوافقة مع Zitadel realm و roles table (R0). */
 export const ROLE_LABELS_AR = {
   student: "طالب",
   instructor: "مدرب",

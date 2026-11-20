@@ -1,6 +1,6 @@
 # www — الموقع العام (Next.js :3011)
 [Unit]
-Description=Al Deem www (Next.js)
+Description=Alameed Training Center www (Next.js)
 After=network-online.target
 Wants=network-online.target
 

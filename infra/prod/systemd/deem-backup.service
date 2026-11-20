@@ -1,5 +1,5 @@
 [Unit]
-Description=Al Deem DB backup
+Description=Alameed Training Center DB backup
 
 [Service]
 Type=oneshot

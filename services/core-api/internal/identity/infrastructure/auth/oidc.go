@@ -1,4 +1,4 @@
-// Authentication — يتحقق من Keycloak JWT محليًا عبر JWKS (issuer/expiry) ثم يبني Actor من DB.
+// Authentication verifies standard OIDC JWTs locally through JWKS.
 // هذا هو النمط الصحيح للإنتاج: لا استدعاء شبكة لكل طلب.
 package auth
 
@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -24,26 +25,27 @@ import (
 	"github.com/al-deem/platform/core-api/internal/platform"
 )
 
-type keycloakAuth struct {
-	baseURL  string
-	realm    string
-	clientID string
-	profiles ports.ProfileRepository
-	roles    ports.RoleRepository
+type oidcAuth struct {
+	issuer     string
+	clientID   string
+	profiles   ports.ProfileRepository
+	identities ports.IdentityRepository
+	roles      ports.RoleRepository
 
 	mu         sync.RWMutex
 	cachedJWKS *jwksResponse
 	fetchedAt  time.Time
+	jwksURI    string
 }
 
-// New — ActorResolver عبر Keycloak (JWKS verification).
-func New(baseURL, realm, clientID string, profiles ports.ProfileRepository, roles ports.RoleRepository) ports.ActorResolver {
-	return &keycloakAuth{
-		baseURL:  strings.TrimRight(baseURL, "/"),
-		realm:    realm,
-		clientID: clientID,
-		profiles: profiles,
-		roles:    roles,
+// New builds a vendor-neutral OIDC actor resolver.
+func New(issuer, clientID string, profiles ports.ProfileRepository, identities ports.IdentityRepository, roles ports.RoleRepository) ports.ActorResolver {
+	return &oidcAuth{
+		issuer:     strings.TrimRight(issuer, "/"),
+		clientID:   clientID,
+		profiles:   profiles,
+		identities: identities,
+		roles:      roles,
 	}
 }
 
@@ -67,18 +69,12 @@ type tokenClaims struct {
 	Exp               int64           `json:"exp"`
 	Iss               string          `json:"iss"`
 	Azp               string          `json:"azp"`
+	ClientID          string          `json:"client_id"`
 	Aud               json.RawMessage `json:"aud"`
-	RealmAccess       struct {
-		Roles []string `json:"roles"`
-	} `json:"realm_access"`
-}
-
-func (a *keycloakAuth) issuer() string {
-	return a.baseURL + "/realms/" + a.realm
 }
 
 // Resolve — Bearer token → Actor (JWKS signature verify + claims + DB roles sync).
-func (a *keycloakAuth) Resolve(ctx context.Context, bearerToken string) (*domain.Actor, error) {
+func (a *oidcAuth) Resolve(ctx context.Context, bearerToken string) (*domain.Actor, error) {
 	token := strings.TrimPrefix(bearerToken, "Bearer ")
 	if token == "" || token == bearerToken {
 		return nil, platform.ErrUnauthorized
@@ -87,14 +83,31 @@ func (a *keycloakAuth) Resolve(ctx context.Context, bearerToken string) (*domain
 	claims, err := a.verifyToken(ctx, token)
 	if err != nil {
 		// سبب الرفض لا يحتوي token نفسه، لكنه ضروري لتشخيص issuer/audience
-		// أو دوران مفاتيح Keycloak في الإنتاج.
+		// أو دوران مفاتيح مزود الهوية في الإنتاج.
 		slog.Warn("jwt verification failed", "reason", err)
 		return nil, platform.ErrUnauthorized
 	}
 
-	// sync profile from SSO claims (idempotent upsert)
+	profileID, err := a.identities.ResolveIdentity(ctx, claims.Iss, claims.Sub)
+	if errors.Is(err, platform.ErrNotFound) {
+		if existing, profileErr := a.profiles.GetByID(ctx, claims.Sub); profileErr == nil {
+			profileID = existing.ID
+			err = a.identities.LinkIdentity(ctx, claims.Iss, claims.Sub, profileID)
+		} else {
+			profileID, err = a.identities.CreateIdentity(ctx, claims.Iss, claims.Sub, domain.Profile{
+				FullName: orDefault(claims.Name, claims.PreferredUsername),
+				Email:    claims.Email,
+				Locale:   "ar",
+				Status:   domain.ProfileActive,
+			})
+		}
+	}
+	if err != nil {
+		return nil, fmt.Errorf("resolve external identity: %w", err)
+	}
+
 	p := domain.Profile{
-		ID:       claims.Sub,
+		ID:       profileID,
 		FullName: orDefault(claims.Name, claims.PreferredUsername),
 		Email:    claims.Email,
 		Locale:   "ar",
@@ -105,26 +118,17 @@ func (a *keycloakAuth) Resolve(ctx context.Context, bearerToken string) (*domain
 	}
 
 	// roles من DB (مصدر الحقيقة)؛ أول دخول → student
-	dbRoles, err := a.roles.GetUserRoles(ctx, claims.Sub)
+	dbRoles, err := a.roles.GetUserRoles(ctx, profileID)
 	if err != nil {
 		return nil, fmt.Errorf("load roles: %w", err)
 	}
 	if len(dbRoles) == 0 {
-		for _, r := range claims.RealmAccess.Roles {
-			if domain.ValidRole(domain.RoleKey(r)) {
-				if err := a.roles.Assign(ctx, claims.Sub, domain.RoleKey(r), claims.Sub); err == nil {
-					dbRoles = append(dbRoles, domain.RoleKey(r))
-				}
-			}
-		}
-		if len(dbRoles) == 0 {
-			if err := a.roles.Assign(ctx, claims.Sub, domain.RoleStudent, claims.Sub); err == nil {
-				dbRoles = append(dbRoles, domain.RoleStudent)
-			}
+		if err := a.roles.Assign(ctx, profileID, domain.RoleStudent, profileID); err == nil {
+			dbRoles = append(dbRoles, domain.RoleStudent)
 		}
 	}
 
-	if full, err := a.profiles.GetByID(ctx, claims.Sub); err == nil {
+	if full, err := a.profiles.GetByID(ctx, profileID); err == nil {
 		p = *full
 	}
 	if p.Status != domain.ProfileActive {
@@ -134,7 +138,7 @@ func (a *keycloakAuth) Resolve(ctx context.Context, bearerToken string) (*domain
 }
 
 // verifyToken — تفكيك JWT والتحقق من التوقيع بمفتاح JWKS + iss/exp.
-func (a *keycloakAuth) verifyToken(ctx context.Context, token string) (*tokenClaims, error) {
+func (a *oidcAuth) verifyToken(ctx context.Context, token string) (*tokenClaims, error) {
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("bad token format")
@@ -149,30 +153,28 @@ func (a *keycloakAuth) verifyToken(ctx context.Context, token string) (*tokenCla
 	}
 	// Claims critical to authentication are mandatory. The public issuer can differ
 	// from the internal JWKS endpoint used by the API process.
-	expectedIssuer := strings.TrimRight(os.Getenv("KEYCLOAK_ISSUER"), "/")
-	if expectedIssuer == "" {
-		expectedIssuer = a.issuer()
-	}
+	expectedIssuer := a.issuer
 	if claims.Sub == "" || claims.Exp == 0 || time.Now().Unix() >= claims.Exp {
 		return nil, fmt.Errorf("token missing subject/expiry or expired")
 	}
 	if claims.Iss != expectedIssuer {
 		return nil, fmt.Errorf("issuer mismatch")
 	}
-	allowedClients := strings.Split(envOrDefault("KEYCLOAK_ALLOWED_CLIENTS", "learn,erp,www,core-api"), ",")
+	allowedClients := strings.Split(envOrDefault("OIDC_ALLOWED_CLIENTS", "learn,erp,www,core-api"), ",")
+	party := orDefault(claims.Azp, claims.ClientID)
 	clientAllowed := false
 	for _, client := range allowedClients {
-		if strings.TrimSpace(client) == claims.Azp {
+		if strings.TrimSpace(client) == party {
 			clientAllowed = true
 			break
 		}
 	}
 	if !clientAllowed {
-		return nil, fmt.Errorf("authorized party %q is not allowed", claims.Azp)
+		return nil, fmt.Errorf("authorized party %q is not allowed", party)
 	}
 	// لا يكفي azp وحده: يجب أن يكون الـAPI جمهوره المقصود صراحةً.
-	// KEYCLOAK_REQUIRED_AUDIENCE يسمح باسم جمهور مستقل إذا تغيّر client ID.
-	requiredAudience := envOrDefault("KEYCLOAK_REQUIRED_AUDIENCE", a.clientID)
+	// OIDC_REQUIRED_AUDIENCE يسمح باسم جمهور مستقل إذا تغيّر client ID.
+	requiredAudience := envOrDefault("OIDC_REQUIRED_AUDIENCE", a.clientID)
 	if !hasAudience(claims.Aud, requiredAudience) {
 		return nil, fmt.Errorf("required audience %q is missing", requiredAudience)
 	}
@@ -208,10 +210,10 @@ func (a *keycloakAuth) verifyToken(ctx context.Context, token string) (*tokenCla
 	return &claims, nil
 }
 
-// publicKey — يجلب/يخزن JWKS (cache ساعة). عند دوران مفاتيح Keycloak
+// publicKey يجلب ويخزن JWKS لمدة ساعة ويجددها عند دوران مفاتيح المزوّد.
 // (إعادة تشغيل/تدوير)، kid الجديد غير موجود في الكاش → إعادة جلب فورية.
 // التوكِنات الموقّعة بمفاتيح قديمة مدفونة ستفشل بشكل صحيح (تنتهي صلاحيتها خلال دقائق).
-func (a *keycloakAuth) publicKey(ctx context.Context, kid string) (*rsa.PublicKey, error) {
+func (a *oidcAuth) publicKey(ctx context.Context, kid string) (*rsa.PublicKey, error) {
 	a.mu.RLock()
 	cached := a.cachedJWKS
 	fresh := a.cachedJWKS != nil && time.Since(a.fetchedAt) < time.Hour
@@ -225,7 +227,11 @@ func (a *keycloakAuth) publicKey(ctx context.Context, kid string) (*rsa.PublicKe
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, a.issuer()+"/protocol/openid-connect/certs", nil)
+	jwksURI, err := a.discoveryJWKS(ctx)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, jwksURI, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -253,6 +259,36 @@ func (a *keycloakAuth) publicKey(ctx context.Context, kid string) (*rsa.PublicKe
 		return nil, fmt.Errorf("kid %q not found", kid)
 	}
 	return rsaKey(k)
+}
+
+func (a *oidcAuth) discoveryJWKS(ctx context.Context) (string, error) {
+	if a.jwksURI != "" {
+		return a.jwksURI, nil
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, a.issuer+"/.well-known/openid-configuration", nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := (&http.Client{Timeout: 8 * time.Second}).Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("oidc discovery http %d", resp.StatusCode)
+	}
+	var metadata struct {
+		Issuer  string `json:"issuer"`
+		JWKSURI string `json:"jwks_uri"`
+	}
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&metadata); err != nil {
+		return "", err
+	}
+	if strings.TrimRight(metadata.Issuer, "/") != a.issuer || metadata.JWKSURI == "" {
+		return "", fmt.Errorf("invalid oidc discovery metadata")
+	}
+	a.jwksURI = metadata.JWKSURI
+	return a.jwksURI, nil
 }
 
 func findKey(j *jwksResponse, kid string) *jwksKey {

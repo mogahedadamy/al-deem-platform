@@ -30,29 +30,31 @@ services:
       timeout: 3s
       retries: 10
 
-  keycloak:
-    image: quay.io/keycloak/keycloak:26.7.3
-    container_name: deem-keycloak
-    command: ["start-dev", "--import-realm"]
+  zitadel:
+    image: ghcr.io/zitadel/zitadel:v2.71.6
+    container_name: alameed-zitadel
+    command: ["start-from-init", "--masterkeyFromEnv"]
     environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: deem-admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:?set KC_BOOTSTRAP_ADMIN_PASSWORD in your local environment}
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
-      KC_DB_USERNAME: deem
-      KC_DB_PASSWORD: deem
-      # v2: SSO عام عبر auth.alameedtraining.com (Caddy proxy يمرر Host/X-Forwarded-*).
-      # localhost:8091 يظل يعمل (hostname strict معطل) للسيرفرات المحلية.
-      KC_HOSTNAME: https://auth.alameedtraining.com
-      KC_HOSTNAME_STRICT: "false"
-      KC_PROXY_HEADERS: xforwarded
-      KC_HEALTH_ENABLED: "true"
-      KC_METRICS_ENABLED: "true"
+      ZITADEL_MASTERKEY: ${ZITADEL_MASTERKEY:?set a 32-character ZITADEL_MASTERKEY}
+      ZITADEL_DATABASE_POSTGRES_HOST: postgres
+      ZITADEL_DATABASE_POSTGRES_PORT: 5432
+      ZITADEL_DATABASE_POSTGRES_DATABASE: zitadel
+      ZITADEL_DATABASE_POSTGRES_USER_USERNAME: deem
+      ZITADEL_DATABASE_POSTGRES_USER_PASSWORD: deem
+      ZITADEL_DATABASE_POSTGRES_USER_SSL_MODE: disable
+      ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME: deem
+      ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: deem
+      ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: disable
+      ZITADEL_EXTERNALDOMAIN: localhost
+      ZITADEL_EXTERNALPORT: 8091
+      ZITADEL_EXTERNALSECURE: "false"
+      ZITADEL_TLS_ENABLED: "false"
+      ZITADEL_FIRSTINSTANCE_ORG_NAME: "مركز العميد للتدريب"
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME: ${ZITADEL_ADMIN_USERNAME:-admin@alameedtraining.com}
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD: ${ZITADEL_ADMIN_PASSWORD:?set ZITADEL_ADMIN_PASSWORD}
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORDCHANGEREQUIRED: "true"
     ports:
       - "127.0.0.1:8091:8080"
-    volumes:
-      - ./keycloak/realms:/opt/keycloak/data/import:ro
-      - ./keycloak/themes:/opt/keycloak/themes:ro
     depends_on:
       postgres:
         condition: service_healthy

@@ -51,11 +51,11 @@ func checkRedis(ctx context.Context, redisURL string) error {
 	return client.Ping(ctx).Err()
 }
 
-func checkKeycloak(ctx context.Context, baseURL, realm string) error {
-	if baseURL == "" || realm == "" {
-		return errors.New("keycloak URL or realm is not configured")
+func checkOIDC(ctx context.Context, issuer string) error {
+	if issuer == "" {
+		return errors.New("OIDC issuer is not configured")
 	}
-	url := strings.TrimRight(baseURL, "/") + "/realms/" + realm + "/.well-known/openid-configuration"
+	url := strings.TrimRight(issuer, "/") + "/.well-known/openid-configuration"
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return err
@@ -66,7 +66,7 @@ func checkKeycloak(ctx context.Context, baseURL, realm string) error {
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
-		return errors.New("keycloak discovery is unavailable")
+		return errors.New("OIDC discovery is unavailable")
 	}
 	return nil
 }
@@ -95,7 +95,7 @@ func main() {
 	})
 	mux.HandleFunc("GET /v1/ready", func(w http.ResponseWriter, r *http.Request) {
 		// Readiness لا تعني أن العملية حية فقط؛ كل تبعيات رحلة المستخدم
-		// (PostgreSQL، Redis، وKeycloak/JWKS) يجب أن تكون قابلة للوصول.
+		// PostgreSQL وRedis ومزود OIDC/JWKS يجب أن تكون قابلة للوصول.
 		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 		defer cancel()
 		deps := map[string]string{}
@@ -112,11 +112,11 @@ func main() {
 		} else {
 			deps["redis"] = "ok"
 		}
-		if err := checkKeycloak(ctx, cfg.KeycloakURL, cfg.KeycloakRealm); err != nil {
-			deps["keycloak"] = "unavailable"
+		if err := checkOIDC(ctx, cfg.OIDCIssuer); err != nil {
+			deps["identity"] = "unavailable"
 			ready = false
 		} else {
-			deps["keycloak"] = "ok"
+			deps["identity"] = "ok"
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		if !ready {
@@ -131,10 +131,10 @@ func main() {
 		// ===== identity module (R0) =====
 		svc := app.NewIdentityService(store, store, store)
 		svc.SetAuditReader(store)
-		if inviter := auth.NewStaffInviter(cfg.KeycloakURL, cfg.KeycloakRealm, cfg.KeycloakClientID, cfg.KeycloakSecret); inviter != nil {
+		if inviter := auth.NewStaffInviter(cfg.OIDCIssuer, cfg.ZitadelOrgID, cfg.ZitadelAdminToken); inviter != nil {
 			svc.SetStaffInviter(inviter)
 		}
-		resolver := auth.New(cfg.KeycloakURL, cfg.KeycloakRealm, cfg.KeycloakClientID, store, store)
+		resolver := auth.New(cfg.OIDCIssuer, cfg.OIDCClientID, store, store, store)
 		idh := transport.NewHandler(svc, resolver)
 		idh.Register(mux)
 
@@ -267,7 +267,7 @@ func main() {
 		ldh.Register(mux)
 
 		slog.Info("modules wired", "identity", true, "catalog", true, "enrollment", true, "assessment", true, "livesessions", true, "leads", true,
-			"keycloak", cfg.KeycloakURL, "realm", cfg.KeycloakRealm)
+			"identity_issuer", cfg.OIDCIssuer)
 	}
 
 	// ===== Redis rate limiting (Blueprint 6.3) =====

@@ -1,4 +1,4 @@
-// @al-deem/api-client — واجهات مشتركة مولّدة من OpenAPI (38 paths).
+// @alameed/api-client — واجهات مشتركة مولّدة من OpenAPI (38 paths).
 // التطبيقات تستورد الأنواع مباشرة — والاستدعاءات عبر proxies الخاصة بها.
 import type { components } from "./schema";
 

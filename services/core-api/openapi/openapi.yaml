@@ -1,9 +1,9 @@
 openapi: 3.1.0
 info:
-  title: Al Deem Core API
+  title: Alameed Training Center Core API
   version: 0.1.0
   description: |
-    Core API لمنصة الديم للتدريب v2 — Go Modular Monolith.
+    Core API لمنصة مركز العميد للتدريب v2 — Go Modular Monolith.
     كل endpoint حساس يمر: Authenticate → Authorize → Validate → Use Case → Transaction → Audit → Response.
 servers:
   - url: http://localhost:4001/v1

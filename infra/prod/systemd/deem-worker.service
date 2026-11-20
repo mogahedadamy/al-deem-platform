@@ -1,6 +1,6 @@
 # worker — معالجة أحداث Zoom (Blueprint 11.3)
 [Unit]
-Description=Al Deem worker (Zoom events)
+Description=Alameed Training Center worker (Zoom events)
 After=network-online.target deem-core-api.service
 Wants=deem-core-api.service
 

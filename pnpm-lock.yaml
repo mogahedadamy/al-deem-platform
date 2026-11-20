@@ -17,7 +17,7 @@ importers:
 
   apps/erp:
     dependencies:
-      '@al-deem/api-client':
+      '@alameed/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
       next:
@@ -60,7 +60,7 @@ importers:
 
   apps/learn:
     dependencies:
-      '@al-deem/api-client':
+      '@alameed/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
       next:
@@ -103,7 +103,7 @@ importers:
 
   apps/www:
     dependencies:
-      '@al-deem/api-client':
+      '@alameed/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
       lucide-react:

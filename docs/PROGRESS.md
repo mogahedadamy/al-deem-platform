@@ -1,7 +1,10 @@
-# سجل تقدم البناء — منصة الديم v2
+# سجل تقدم البناء — منصة مركز العميد v2
 
 > تحديث حي لحالة التنفيذ حسب DETAILED_EXECUTION_BLUEPRINT_AR.md
 > آخر تحديث: 2026-09-10 (جلسة R0 + R1 + R2 + R3)
+>
+> ملاحظة 2026-11-20: البنود التي تذكر Keycloak أدناه توثق التنفيذ التاريخي.
+> انتقلت البنية الحالية إلى Zitadel وOIDC وفق `docs/ZITADEL_IDENTITY.md`.
 
 ---
 
@@ -16,10 +19,10 @@
 ### 2. البيئة المحلية (infra/docker/compose.yaml)
 | الخدمة | المنفذ | الحالة |
 |---|---|---|
-| PostgreSQL 17 | 5435 | ✅ healthy — قاعدتان: `deem` (تطبيق) + `keycloak` (منفصلة) |
+| PostgreSQL 17 | 5435 | ✅ healthy — قواعد التطبيق وZitadel |
 | Redis 7 | 6391 | ✅ healthy |
-| Keycloak 26.7.3 | 8091 | ✅ realm `al-deem` مستورد تلقائيًا مع 8 أدوار + 4 clients |
-| Mailpit | 8092 (UI) / 8093 (SMTP) | ✅ healthy — SMTP مربوط بـKeycloak realm |
+| Zitadel | 8091 | ✅ discovery وJWKS محليًا؛ إعداد عملاء الإنتاج منفصل |
+| Mailpit | 8092 (UI) / 8093 (SMTP) | ✅ healthy للاختبارات المحلية |
 > المنافذ 5435/6391/8091/8092/8093 لتجنب التعارض مع خدمات السيرفر القائمة
 
 ### 3. Keycloak SSO (realm: al-deem)
@@ -76,7 +79,7 @@
 - [x] `/courses` — كتالوج حقيقي من DB: فلاتر فئات/مستويات (روابط server-side، تعمل بلا JS)، ترقيم صفحات، بحث
 - [x] `/courses/[slug]` — تفاصيل + outline + generateMetadata (SEO) + 404
 - [x] الرئيسية — أحدث 3 دورات ديناميكيًا + مزايا المركز
-- [x] حالات: loading/empty/error handled + RTL + Cairo + هوية الديم
+- [x] حالات: loading/empty/error handled + RTL + Cairo + هوية مركز العميد
 
 ### 5. Frontend — learn (منصة التعلم)
 - [x] **Auth.js v5 + Keycloak SSO يعمل بالكامل** (PKCE + nonce + state)

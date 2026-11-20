@@ -1,9 +1,9 @@
-# core-api — Al Deem Platform v2
+# core-api — Alameed Training Center Platform v2
 # التثبيت:
 #   sudo cp infra/prod/systemd/deem-*.service /etc/systemd/system/
 #   sudo systemctl daemon-reload && sudo systemctl enable --now deem-core-api
 [Unit]
-Description=Al Deem core-api (Go)
+Description=Alameed Training Center core-api (Go)
 After=network-online.target
 Wants=network-online.target
 
