@@ -1,15 +1,7 @@
 import type { Metadata } from "next";
-import { Cairo } from "next/font/google";
 import { SiteFooter, SiteHeader } from "@/components/chrome";
 import { SITE } from "@/lib/site-content";
 import "./globals.css";
-
-const cairo = Cairo({
-  variable: "--font-cairo",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  display: "swap",
-});
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://alameedtraining.com";
 
@@ -40,7 +32,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ar" dir="rtl" className={`${cairo.variable} h-full antialiased`}>
+    <html lang="ar" dir="rtl" className="h-full antialiased">
       <body className="min-h-full bg-background text-foreground">
         <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:right-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:font-bold focus:text-secondary">
           الانتقال إلى المحتوى

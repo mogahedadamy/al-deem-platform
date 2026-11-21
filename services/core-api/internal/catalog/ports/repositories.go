@@ -12,11 +12,27 @@ type CourseRepository interface {
 	GetByID(ctx context.Context, id string) (*catalogdom.Course, error)
 	GetBySlug(ctx context.Context, slug string) (*catalogdom.Course, error)
 	Update(ctx context.Context, c *catalogdom.Course) error
-	UpdateStatus(ctx context.Context, id string, status catalogdom.CourseStatus, reviewNotes *string, reviewedBy *string, publishedAt *string) error
+	TransitionStatus(ctx context.Context, transition CourseStatusTransition) error
 	Delete(ctx context.Context, id string) error
 	ListPublished(ctx context.Context, categoryID *string, level *string, query string, page, pageSize int) ([]catalogdom.Course, int, error)
 	ListByInstructor(ctx context.Context, instructorID string) ([]catalogdom.Course, error)
 	ListPendingReview(ctx context.Context, page, pageSize int) ([]catalogdom.Course, int, error)
+}
+
+// CourseStatusTransition is the complete, atomic state-change command. The
+// repository must compare ExpectedStatus and persist both the new state and
+// its audit record in one transaction.
+type CourseStatusTransition struct {
+	CourseID       string
+	ExpectedStatus catalogdom.CourseStatus
+	NewStatus      catalogdom.CourseStatus
+	ReviewNotes    *string
+	ReviewedBy     *string
+	PublishedAt    *string
+	ActorID        string
+	Action         string
+	OldValues      any
+	NewValues      any
 }
 
 type SectionRepository interface {

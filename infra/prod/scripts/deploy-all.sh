@@ -122,12 +122,18 @@ AUTH_WWW="${AUTH_SECRET_WWW:-$(existing_env_value www AUTH_SECRET || true)}"
 AUTH_LEARN="${AUTH_SECRET_LEARN:-$(existing_env_value learn AUTH_SECRET || true)}"
 AUTH_ERP="${AUTH_SECRET_ERP:-$(existing_env_value erp AUTH_SECRET || true)}"
 ZOOM_WEBHOOK_SECRET="${ZOOM_WEBHOOK_SECRET:-$(existing_env_value core-api ZOOM_WEBHOOK_SECRET || true)}"
+ZITADEL_WWW_SECRET="${ZITADEL_WWW_CLIENT_SECRET:-$(existing_env_value www AUTH_ZITADEL_SECRET || true)}"
+ZITADEL_LEARN_SECRET="${ZITADEL_LEARN_CLIENT_SECRET:-$(existing_env_value learn AUTH_ZITADEL_SECRET || true)}"
+ZITADEL_ERP_SECRET="${ZITADEL_ERP_CLIENT_SECRET:-$(existing_env_value erp AUTH_ZITADEL_SECRET || true)}"
+ZITADEL_WWW_ID="${ZITADEL_WWW_CLIENT_ID:-$(existing_env_value www AUTH_ZITADEL_ID || true)}"
 ZITADEL_LEARN_ID="${ZITADEL_LEARN_CLIENT_ID:-$(existing_env_value learn AUTH_ZITADEL_ID || true)}"
 ZITADEL_ERP_ID="${ZITADEL_ERP_CLIENT_ID:-$(existing_env_value erp AUTH_ZITADEL_ID || true)}"
 ZITADEL_ORG_VALUE="${ZITADEL_ORG_ID:-$(existing_env_value core-api ZITADEL_ORG_ID || true)}"
 ZITADEL_TOKEN_VALUE="${ZITADEL_ADMIN_TOKEN:-$(existing_env_value core-api ZITADEL_ADMIN_TOKEN || true)}"
-if [[ -z "$ZITADEL_LEARN_ID" || -z "$ZITADEL_ERP_ID" || -z "$ZITADEL_ORG_VALUE" || -z "$ZITADEL_TOKEN_VALUE" ]]; then
-  fatal "set Zitadel client IDs, organization ID, and management token as described in docs/ZITADEL_IDENTITY.md"
+if [[ -z "$ZITADEL_WWW_ID" || -z "$ZITADEL_LEARN_ID" || -z "$ZITADEL_ERP_ID" ||
+      -z "$ZITADEL_WWW_SECRET" || -z "$ZITADEL_LEARN_SECRET" || -z "$ZITADEL_ERP_SECRET" ||
+      -z "$ZITADEL_ORG_VALUE" || -z "$ZITADEL_TOKEN_VALUE" ]]; then
+  fatal "set Zitadel client IDs/secrets, organization ID, and management token as described in docs/ZITADEL_IDENTITY.md"
 fi
 AUTH_WWW="${AUTH_WWW:-$(openssl rand -base64 32)}"
 AUTH_LEARN="${AUTH_LEARN:-$(openssl rand -base64 32)}"
@@ -164,7 +170,7 @@ API_ADDR=:4001
 DATABASE_URL=postgres://deem:$PG_PASSWORD@localhost:5435/deem?sslmode=disable
 REDIS_URL=redis://localhost:6391/0
 OIDC_ISSUER=https://auth.alameedtraining.com
-OIDC_ALLOWED_CLIENTS=learn,erp,www,core-api
+OIDC_ALLOWED_CLIENTS=$ZITADEL_WWW_ID,$ZITADEL_LEARN_ID,$ZITADEL_ERP_ID
 OIDC_REQUIRED_AUDIENCE=core-api
 OIDC_CLIENT_ID=core-api
 ZITADEL_ORG_ID=$ZITADEL_ORG_VALUE
@@ -178,8 +184,8 @@ EOF
 cat > "$APP_DIR/env/www.env" <<EOF
 AUTH_SECRET=$AUTH_WWW
 AUTH_URL=https://alameedtraining.com
-AUTH_ZITADEL_ID=
-AUTH_ZITADEL_SECRET=
+AUTH_ZITADEL_ID=$ZITADEL_WWW_ID
+AUTH_ZITADEL_SECRET=$ZITADEL_WWW_SECRET
 AUTH_ZITADEL_ISSUER=https://auth.alameedtraining.com
 NEXT_PUBLIC_API_URL=https://api.alameedtraining.com/v1
 NODE_USE_SYSTEM_CA=1
@@ -188,7 +194,7 @@ cat > "$APP_DIR/env/learn.env" <<EOF
 AUTH_SECRET=$AUTH_LEARN
 AUTH_URL=https://learn.alameedtraining.com
 AUTH_ZITADEL_ID=$ZITADEL_LEARN_ID
-AUTH_ZITADEL_SECRET=
+AUTH_ZITADEL_SECRET=$ZITADEL_LEARN_SECRET
 AUTH_ZITADEL_ISSUER=https://auth.alameedtraining.com
 NEXT_PUBLIC_API_URL=https://api.alameedtraining.com/v1
 NODE_USE_SYSTEM_CA=1
@@ -197,7 +203,7 @@ cat > "$APP_DIR/env/erp.env" <<EOF
 AUTH_SECRET=$AUTH_ERP
 AUTH_URL=https://erp.alameedtraining.com
 AUTH_ZITADEL_ID=$ZITADEL_ERP_ID
-AUTH_ZITADEL_SECRET=
+AUTH_ZITADEL_SECRET=$ZITADEL_ERP_SECRET
 AUTH_ZITADEL_ISSUER=https://auth.alameedtraining.com
 NEXT_PUBLIC_API_URL=https://api.alameedtraining.com/v1
 NODE_USE_SYSTEM_CA=1
@@ -207,6 +213,13 @@ DEEM_BACKUP_KEY_FILE=/etc/deem/backup.key
 DEEM_BACKUP_OFFSITE_URI=$BACKUP_OFFSITE_URI
 DEEM_BACKUP_KEEP_DAYS=30
 DEEM_PG_CONTAINER=deem-postgres
+DEEM_POSTGRES_USER=deem
+DEEM_APP_DATABASE=deem
+DEEM_IDENTITY_DATABASE=zitadel
+DEEM_PRIVATE_RECEIPTS_DIR=/var/lib/deem/private/receipts
+DEEM_APP_RESTORE_DRILL_DB=deem_restore_drill
+DEEM_IDENTITY_RESTORE_DRILL_DB=zitadel_restore_drill
+RCLONE_CONFIG=/home/$APP_USER/.config/rclone/rclone.conf
 EOF
 sudo chown "$APP_USER:$APP_USER" "$APP_DIR"/env/*.env
 sudo chmod 600 "$APP_DIR"/env/*.env
@@ -287,7 +300,7 @@ Remaining production actions:
 1. Point @, www, learn, erp, api, and auth DNS A records to the new server IP.
 2. Keep DNS as DNS only until Let's Encrypt certificates are issued.
 3. Configure real SMTP before enabling student self-registration/email verification.
-4. Replace the local backup target ($BACKUP_OFFSITE_URI) with an encrypted off-host rclone remote.
+4. Verify the off-host rclone target ($BACKUP_OFFSITE_URI), then run and monitor the first backup and restore drill.
 5. Add real PAYMENT_* values in /opt/deem/env/www.env and /opt/deem/env/learn.env if required by the UI.
 6. Add Zoom credentials in /opt/deem/env/core-api.env before enabling live sessions.
 EOF

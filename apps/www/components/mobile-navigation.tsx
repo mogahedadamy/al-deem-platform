@@ -42,6 +42,7 @@ export function MobileNavigation() {
               ))}
             </ul>
           </nav>
+          <Link href="/login" className="button button-ghost">تسجيل الدخول</Link>
           <a href="https://learn.alameedtraining.com" className="button button-primary mt-4 w-full">
             الدخول إلى منصة التعلم
           </a>

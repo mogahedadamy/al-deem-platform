@@ -205,17 +205,23 @@ func (s *CatalogService) SubmitForReview(ctx context.Context, actor *iddomain.Ac
 	if !actor.HasRole(iddomain.RoleSystemAdmin) && !catalogdom.CanModifyCourse(actor.ID, c.InstructorID) {
 		return platform.ErrForbidden
 	}
-	if n, _ := s.lessons.CountByCourse(ctx, courseID); n == 0 {
+	n, err := s.lessons.CountByCourse(ctx, courseID)
+	if err != nil {
+		return fmt.Errorf("count course lessons: %w", err)
+	}
+	if n == 0 {
 		return &platform.DomainError{Code: "VALIDATION", Msg: "course must have at least one lesson before review"}
 	}
 	now := time.Now()
 	if err := c.SubmitForReview(now); err != nil {
 		return err
 	}
-	if err := s.courses.UpdateStatus(ctx, c.ID, c.Status, nil, nil, nil); err != nil {
-		return err
-	}
-	return s.audit.Log(ctx, actor.ID, "course.submitted_review", "course", c.ID, nil, map[string]any{"status": c.Status})
+	return s.courses.TransitionStatus(ctx, ports.CourseStatusTransition{
+		CourseID: c.ID, ExpectedStatus: catalogdom.CourseDraft, NewStatus: c.Status,
+		ActorID: actor.ID, Action: "course.submitted_review",
+		OldValues: map[string]any{"status": catalogdom.CourseDraft},
+		NewValues: map[string]any{"status": c.Status},
+	})
 }
 
 // ===== Content review (erp) =====
@@ -251,10 +257,13 @@ func (s *CatalogService) PublishCourse(ctx context.Context, actor *iddomain.Acto
 		return err
 	}
 	publishedAt := now.Format(time.RFC3339)
-	if err := s.courses.UpdateStatus(ctx, c.ID, c.Status, nil, &actor.ID, &publishedAt); err != nil {
-		return err
-	}
-	return s.audit.Log(ctx, actor.ID, "course.published", "course", c.ID, map[string]any{"status": "pending_review"}, map[string]any{"status": "published"})
+	return s.courses.TransitionStatus(ctx, ports.CourseStatusTransition{
+		CourseID: c.ID, ExpectedStatus: catalogdom.CoursePendingReview, NewStatus: c.Status,
+		ReviewedBy: &actor.ID, PublishedAt: &publishedAt,
+		ActorID: actor.ID, Action: "course.published",
+		OldValues: map[string]any{"status": catalogdom.CoursePendingReview},
+		NewValues: map[string]any{"status": c.Status},
+	})
 }
 
 // RejectCourse — pending_review → draft + ملاحظات إلزامية.
@@ -276,10 +285,13 @@ func (s *CatalogService) RejectCourse(ctx context.Context, actor *iddomain.Actor
 	if err := c.Reject(actor.ID, notes, now); err != nil {
 		return err
 	}
-	if err := s.courses.UpdateStatus(ctx, c.ID, c.Status, &notes, &actor.ID, nil); err != nil {
-		return err
-	}
-	return s.audit.Log(ctx, actor.ID, "course.rejected", "course", c.ID, map[string]any{"status": "pending_review"}, map[string]any{"status": "draft", "notes": notes})
+	return s.courses.TransitionStatus(ctx, ports.CourseStatusTransition{
+		CourseID: c.ID, ExpectedStatus: catalogdom.CoursePendingReview, NewStatus: c.Status,
+		ReviewNotes: &notes, ReviewedBy: &actor.ID,
+		ActorID: actor.ID, Action: "course.rejected",
+		OldValues: map[string]any{"status": catalogdom.CoursePendingReview},
+		NewValues: map[string]any{"status": c.Status, "notes": notes},
+	})
 }
 
 // ArchiveCourse — content_reviewer/system_admin.
@@ -295,10 +307,12 @@ func (s *CatalogService) ArchiveCourse(ctx context.Context, actor *iddomain.Acto
 	if err := c.Archive(now); err != nil {
 		return err
 	}
-	if err := s.courses.UpdateStatus(ctx, c.ID, c.Status, nil, nil, nil); err != nil {
-		return err
-	}
-	return s.audit.Log(ctx, actor.ID, "course.archived", "course", c.ID, map[string]any{"status": "published"}, map[string]any{"status": "archived"})
+	return s.courses.TransitionStatus(ctx, ports.CourseStatusTransition{
+		CourseID: c.ID, ExpectedStatus: catalogdom.CoursePublished, NewStatus: c.Status,
+		ActorID: actor.ID, Action: "course.archived",
+		OldValues: map[string]any{"status": catalogdom.CoursePublished},
+		NewValues: map[string]any{"status": c.Status},
+	})
 }
 
 // ===== Instructor: my courses + sections/lessons =====

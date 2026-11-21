@@ -36,14 +36,30 @@ systemctl list-timers 'deem-*' --all --no-pager
 
 ## النسخ الاحتياطي والاستعادة
 
-تعمل `deem-backup.timer` يومياً 03:00. السكربت ينتج نسخة `sql.gz.enc` فقط، ويفشل إن غاب مفتاح التشفير أو النسخ خارج الخادم عبر rclone. ينفذ restore drill كل أحد على `deem_restore_drill` ويخرج non-zero عند الفشل.
+تعمل `deem-backup.timer` يومياً 03:00. ينشئ كل تشغيل مجموعة مستقلة مشفرة
+تضم قاعدة المنصة `deem`، وقاعدة الهوية `zitadel`، وأرشيف الإيصالات الخاصة،
+وملف SHA-256 للقطع المشفرة. يفشل التشغيل إن غاب مفتاح التشفير أو مجلد
+الإيصالات أو النسخ خارج الخادم عبر rclone.
+
+ينفذ السكربت كل أحد restore drill لقاعدتين معزولتين باسم
+`deem_restore_drill` و`zitadel_restore_drill`، ويفك أرشيف الإيصالات داخل
+مجلد مؤقت معزول ثم يقارن محتواه بالمصدر. تُحذف أهداف الاختبار في النجاح
+والفشل، ويخرج السكربت non-zero عند أي اختلاف. يمكن فرض الاختبار يدوياً في
+نافذة تغيير مصرح بها بوضع `DEEM_BACKUP_FORCE_RESTORE_DRILL=1` في بيئة الأمر.
+تنشر النسخة الخارجية `SHA256SUMS` آخراً بعد `rclone check`؛ وجوده هو
+علامة اكتمال المجموعة، ويُحذف إذا فشل التحقق النهائي.
 
 ```bash
 journalctl -u deem-backup.service -n 100 --no-pager
 sudo systemctl start deem-backup.service  # فقط في نافذة تغيير مصرح بها
 ```
 
-لا تستعد إلى قاعدة الإنتاج مباشرة. استخدم drill/هدف منفصل واحتفظ بمفتاح `/etc/deem/backup.key` خارج Git وفي مخزن أسرار معتمد.
+لا تستعد إلى قاعدة الإنتاج مباشرة. استخدم drill/هدف منفصل واحتفظ بمفتاح
+`/etc/deem/backup.key` خارج Git وفي مخزن أسرار معتمد. يجب أن يحتوي كل مجلد
+نسخة خارجية على `deem.sql.gz.enc` و`zitadel.sql.gz.enc` و
+`receipts.tar.gz.enc` و`SHA256SUMS`.
+تعمل خدمة النسخ كـ`root` لقراءة إيصالات `0700/0600`؛ يجب أن يشير
+`RCLONE_CONFIG` في `/opt/deem/env/backup.env` إلى ملف إعداد rclone المحمي.
 
 ## MFA والأسرار
 

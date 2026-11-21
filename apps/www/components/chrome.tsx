@@ -36,6 +36,7 @@ export function SiteHeader() {
             <BadgeCheck className="h-4 w-4" aria-hidden="true" />
             تحقق من شهادة
           </Link>
+          <Link href="/login" className="button button-ghost">تسجيل الدخول</Link>
           <a href="https://learn.alameedtraining.com" className="button button-primary h-11 px-5">
             منصة التعلم
             <ArrowUpLeft className="h-4 w-4" aria-hidden="true" />

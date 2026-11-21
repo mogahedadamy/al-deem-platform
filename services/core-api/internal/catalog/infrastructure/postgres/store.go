@@ -5,6 +5,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -63,18 +64,53 @@ func (s *CourseStore) Update(ctx context.Context, c *catalogdom.Course) error {
 	return nil
 }
 
-func (s *CourseStore) UpdateStatus(ctx context.Context, id string, status catalogdom.CourseStatus, reviewNotes, reviewedBy, publishedAt *string) error {
-	_, err := s.db.ExecContext(ctx, `
+func (s *CourseStore) TransitionStatus(ctx context.Context, transition ports.CourseStatusTransition) (err error) {
+	oldValues, err := json.Marshal(transition.OldValues)
+	if err != nil {
+		return fmt.Errorf("marshal transition old values: %w", err)
+	}
+	newValues, err := json.Marshal(transition.NewValues)
+	if err != nil {
+		return fmt.Errorf("marshal transition new values: %w", err)
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin course transition: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	result, err := tx.ExecContext(ctx, `
 		UPDATE courses SET
 			status = $2,
 			review_notes = COALESCE($3, review_notes),
 			reviewed_by  = COALESCE($4, reviewed_by),
 			published_at = COALESCE($5::timestamptz, published_at),
 			updated_at = now()
-		WHERE id = $1`,
-		id, string(status), reviewNotes, reviewedBy, publishedAt)
+		WHERE id = $1 AND status = $6`,
+		transition.CourseID, string(transition.NewStatus), transition.ReviewNotes,
+		transition.ReviewedBy, transition.PublishedAt, string(transition.ExpectedStatus))
 	if err != nil {
-		return fmt.Errorf("update status: %w", err)
+		return fmt.Errorf("update course status: %w", err)
+	}
+	updated, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("course transition rows affected: %w", err)
+	}
+	if updated != 1 {
+		return platform.ErrConflict
+	}
+	if _, err = tx.ExecContext(ctx, `
+		INSERT INTO audit_logs (actor_id, action, resource_type, resource_id, old_values, new_values)
+		VALUES ($1, $2, 'course', $3, $4::jsonb, $5::jsonb)`,
+		transition.ActorID, transition.Action, transition.CourseID, string(oldValues), string(newValues)); err != nil {
+		return fmt.Errorf("audit course transition: %w", err)
+	}
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("commit course transition: %w", err)
 	}
 	return nil
 }

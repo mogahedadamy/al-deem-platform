@@ -59,4 +59,9 @@ sudo /opt/deem/current/infra/prod/scripts/healthcheck.sh
 
 ## النسخ الاحتياطي
 
-`deem-backup.timer` يعمل يومياً 03:00. لا ينجح السكربت إن غاب مفتاح التشفير أو rclone أو النسخ خارج الخادم. كل أحد ينفذ restore drill في قاعدة `deem_restore_drill` ثم يحذفها؛ failure يخرج non-zero حتى يظهر في systemd/journal/monitoring.
+`deem-backup.timer` يعمل يومياً 03:00. لا ينجح السكربت إن غاب مفتاح
+التشفير أو rclone أو النسخ خارج الخادم أو مجلد الإيصالات الخاصة. تحتوي كل
+مجموعة على نسختي `deem` و`zitadel` وأرشيف الإيصالات، وجميعها مشفرة قبل
+الكتابة إلى مجلد النسخ. كل أحد ينفذ restore drill في قاعدتي
+`deem_restore_drill` و`zitadel_restore_drill`، ويتحقق من استعادة الإيصالات،
+ثم ينظف الأهداف؛ failure يخرج non-zero حتى يظهر في systemd/journal/monitoring.

@@ -1,4 +1,4 @@
-# erp — النظام الإداري (Next.js :3013) — MFA عبر Keycloak
+# erp — النظام الإداري (Next.js :3013) — MFA عبر Zitadel
 [Unit]
 Description=Alameed Training Center erp (Next.js)
 After=network-online.target

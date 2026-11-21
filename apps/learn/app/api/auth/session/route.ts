@@ -1,12 +1,16 @@
-import { auth } from "@/auth";
-import { NextResponse } from "next/server";
+import { handlers } from "@/auth";
+import { NextResponse, type NextRequest } from "next/server";
 
-export async function GET() {
-  const session = await auth();
-  if (!session) return NextResponse.json(null);
-  const safeSession = { ...session } as typeof session & { accessToken?: string };
-  delete safeSession.accessToken;
-  return NextResponse.json(safeSession, {
-    headers: { "Cache-Control": "private, no-store" },
-  });
+export async function GET(request: NextRequest) {
+  const result = await handlers.GET(request);
+  if (!result.ok) return result;
+  const session = await result.json();
+  const response = NextResponse.json(
+    session?.user ? { user: session.user, expires: session.expires } : null,
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
+  for (const cookie of result.headers.getSetCookie()) {
+    response.headers.append("Set-Cookie", cookie);
+  }
+  return response;
 }

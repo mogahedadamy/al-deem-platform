@@ -1,6 +1,6 @@
-# backup يومي 3 صباحًا + drill أسبوعي مدمج في السكربت
+# نسخة يومية 3 صباحًا + اختبار استعادة أسبوعي مدمج في السكربت
 [Unit]
-Description=Alameed Training Center daily DB backup
+Description=Alameed Training Center daily platform backup
 
 [Timer]
 OnCalendar=*-*-* 03:00:00

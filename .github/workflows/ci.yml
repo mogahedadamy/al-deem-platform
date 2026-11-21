@@ -24,11 +24,38 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm build
+      - name: Validate session rejection and public session shape
+        shell: bash
+        env:
+          AUTH_SECRET: ci-only-auth-secret-at-least-32-bytes
+          AUTH_ZITADEL_ISSUER: http://127.0.0.1:8091
+          SESSION_TEST_SECRET: ci-only-auth-secret-at-least-32-bytes
+        run: |
+          pnpm --filter www exec next start -p 3001 >/tmp/alameed-www.log 2>&1 &
+          www_pid=$!
+          pnpm --filter learn exec next start -p 3002 >/tmp/alameed-learn.log 2>&1 &
+          learn_pid=$!
+          pnpm --filter erp exec next start -p 3003 >/tmp/alameed-erp.log 2>&1 &
+          erp_pid=$!
+          trap 'kill "$www_pid" "$learn_pid" "$erp_pid" 2>/dev/null || true' EXIT
+          for port in 3001 3002 3003; do
+            for attempt in {1..30}; do
+              if curl -fsS "http://127.0.0.1:$port/api/auth/session" >/dev/null; then
+                break
+              fi
+              if [[ "$attempt" == 30 ]]; then
+                echo "::error::application on port $port did not become ready"
+                exit 1
+              fi
+              sleep 1
+            done
+          done
+          node --test apps/learn/app/api/auth/session/session.integration.mjs
       - name: Go vet and tests
         working-directory: services/core-api
         run: |
           go vet ./...
-          go test ./... -count=1 -cover
+          go test -race ./... -count=1 -cover
       - name: Validate generated API contract
         run: |
           cp packages/api-client/src/schema.d.ts /tmp/schema.before.d.ts
@@ -52,3 +79,41 @@ jobs:
       - run: pnpm exec playwright test tests/e2e/public.spec.ts --project=desktop
         env:
           E2E_BASE_URL: https://alameedtraining.com
+
+  identity-e2e:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    needs: quality
+    env:
+      E2E_BASE_URL: https://alameedtraining.com
+      E2E_LEARN_BASE_URL: https://learn.alameedtraining.com
+      E2E_ERP_BASE_URL: https://erp.alameedtraining.com
+      E2E_ZITADEL_ISSUER: https://auth.alameedtraining.com
+      E2E_STUDENT_USER: ${{ secrets.E2E_STUDENT_USER }}
+      E2E_STUDENT_PASSWORD: ${{ secrets.E2E_STUDENT_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Require authenticated release credentials
+        shell: bash
+        run: |
+          missing=0
+          for variable in E2E_STUDENT_USER E2E_STUDENT_PASSWORD; do
+            if [[ -z "${!variable}" ]]; then
+              echo "::error::$variable is required for authenticated release tests"
+              missing=1
+            fi
+          done
+          exit "$missing"
+      - name: Verify all account entry pages
+        run: pnpm exec playwright test tests/e2e/account-entry.spec.ts --project=mobile --project=desktop
+      - name: Verify authenticated Zitadel journey
+        run: pnpm exec playwright test tests/e2e/authenticated.spec.ts --project=desktop

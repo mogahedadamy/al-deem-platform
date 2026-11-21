@@ -12,8 +12,8 @@ type RefreshResult = {
   refresh_token?: string;
 };
 
-async function refreshAccessToken(token: JWT): Promise<JWT> {
-  if (typeof token.refreshToken !== "string") return { ...token, authError: "RefreshTokenMissing" };
+async function refreshAccessToken(token: JWT): Promise<JWT | null> {
+  if (typeof token.refreshToken !== "string") return null;
   try {
     const body = new URLSearchParams({
       client_id: clientId,
@@ -29,28 +29,39 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
     });
     if (!response.ok) throw new Error(`refresh failed: ${response.status}`);
     const refreshed = (await response.json()) as RefreshResult;
+    if (typeof refreshed.access_token !== "string" || !refreshed.access_token ||
+        !Number.isFinite(refreshed.expires_in) || refreshed.expires_in <= 0) return null;
     return {
       ...token,
       accessToken: refreshed.access_token,
       accessTokenExpires: Date.now() + refreshed.expires_in * 1000,
       refreshToken: refreshed.refresh_token ?? token.refreshToken,
-      authError: undefined,
     };
   } catch {
-    return { ...token, authError: "RefreshAccessTokenError" };
+    return null;
   }
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
+  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60, updateAge: 24 * 60 * 60 },
+  jwt: { maxAge: 30 * 24 * 60 * 60 },
   providers: [
-    Zitadel({ clientId, clientSecret, issuer, checks: ["pkce", "state", "nonce"] }),
+    Zitadel({
+      clientId,
+      clientSecret,
+      issuer,
+      checks: ["pkce", "state", "nonce"],
+      authorization: { params: { scope: "openid email profile offline_access" } },
+    }),
   ],
   callbacks: {
     signIn({ profile }) {
       return profile?.email_verified === true;
     },
     async jwt({ token, account }) {
+      if (!account && token.authError) return null;
+      if (account && !account.access_token) return null;
       if (account) {
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
@@ -70,9 +81,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         (session.user as { id?: string }).id = token.providerSubject as string | undefined;
       }
-      (session as { accessToken?: string; authError?: string }).accessToken =
+      (session as { accessToken?: string }).accessToken =
         token.accessToken as string | undefined;
-      (session as { authError?: string }).authError = token.authError as string | undefined;
       return session;
     },
   },

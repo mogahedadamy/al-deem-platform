@@ -26,3 +26,26 @@ func TestHasAudience(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateClient(t *testing.T) {
+	for _, tt := range []struct {
+		name, setting, azp, client string
+		allow                      bool
+	}{
+		{"authorized party", "101, 202", "202", "", true},
+		{"client claim", "101,202", "", "101", true},
+		{"matching claims", "101,202", "101", "101", true},
+		{"conflicting claims", "101,202", "101", "202", false},
+		{"unknown client", "101,202", "201", "", false},
+		{"unconfigured", "", "learn", "", false},
+		{"missing client", "101,202", "", "", false},
+		{"empty entry", "101,", "101", "", false},
+		{"wildcard", "101,*", "101", "", false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := validateClient(tt.setting, tt.azp, tt.client) == nil; got != tt.allow {
+				t.Fatalf("accepted = %v, want %v", got, tt.allow)
+			}
+		})
+	}
+}

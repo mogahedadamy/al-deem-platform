@@ -160,17 +160,8 @@ func (a *oidcAuth) verifyToken(ctx context.Context, token string) (*tokenClaims,
 	if claims.Iss != expectedIssuer {
 		return nil, fmt.Errorf("issuer mismatch")
 	}
-	allowedClients := strings.Split(envOrDefault("OIDC_ALLOWED_CLIENTS", "learn,erp,www,core-api"), ",")
-	party := orDefault(claims.Azp, claims.ClientID)
-	clientAllowed := false
-	for _, client := range allowedClients {
-		if strings.TrimSpace(client) == party {
-			clientAllowed = true
-			break
-		}
-	}
-	if !clientAllowed {
-		return nil, fmt.Errorf("authorized party %q is not allowed", party)
+	if err := validateClient(os.Getenv("OIDC_ALLOWED_CLIENTS"), claims.Azp, claims.ClientID); err != nil {
+		return nil, err
 	}
 	// لا يكفي azp وحده: يجب أن يكون الـAPI جمهوره المقصود صراحةً.
 	// OIDC_REQUIRED_AUDIENCE يسمح باسم جمهور مستقل إذا تغيّر client ID.
@@ -313,6 +304,28 @@ func rsaKey(k *jwksKey) (*rsa.PublicKey, error) {
 		return nil, err
 	}
 	return &rsa.PublicKey{N: new(big.Int).SetBytes(nb), E: int(new(big.Int).SetBytes(eb).Int64())}, nil
+}
+
+// validateClient requires an explicit list of provider-issued OIDC client IDs.
+func validateClient(configured, azp, clientID string) error {
+	if azp != "" && clientID != "" && azp != clientID {
+		return errors.New("conflicting OIDC client claims")
+	}
+	party := orDefault(azp, clientID)
+	matched := false
+	for _, entry := range strings.Split(configured, ",") {
+		id := strings.TrimSpace(entry)
+		if id == "" || strings.ContainsAny(id, "* \t\r\n") {
+			return errors.New("invalid OIDC_ALLOWED_CLIENTS setting")
+		}
+		if party == id {
+			matched = true
+		}
+	}
+	if !matched {
+		return errors.New("missing or unrecognized authorized party")
+	}
+	return nil
 }
 
 // hasAudience accepts both JWT representations permitted by RFC 7519: a

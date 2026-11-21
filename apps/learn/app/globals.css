@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  --font-cairo: "Cairo", "Noto Sans Arabic", Tahoma, Arial, sans-serif;
   /* Alameed visual contract — preserves the existing gold / ink identity. */
   --background: hsl(220 22% 97%);
   --foreground: hsl(210 30% 13%);

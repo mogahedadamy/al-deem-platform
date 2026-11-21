@@ -1,12 +1,18 @@
 [Unit]
-Description=Alameed Training Center DB backup
+Description=Alameed Training Center encrypted platform backup
 
 [Service]
 Type=oneshot
-User=mojahed
+# Receipt files are written by the root-run core API with private permissions.
+# Docker access is already root-equivalent; run this tightly sandboxed oneshot
+# as root so backup coverage does not silently depend on relaxed receipt ACLs.
+User=root
+UMask=0077
 EnvironmentFile=/opt/deem/env/backup.env
 ExecStart=/opt/deem/current/infra/prod/scripts/backup.sh /var/backups/deem
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectHome=read-only
+ProtectSystem=strict
+ReadOnlyPaths=/etc/deem/backup.key /var/lib/deem/private/receipts
 ReadWritePaths=/var/backups/deem

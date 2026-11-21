@@ -12,10 +12,10 @@ function safeCallback(value: string | null) {
   return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
 }
 
-export function LoginEntry() {
+export function LoginEntry({ initialMode = "login" }: { initialMode?: EntryMode }) {
   const searchParams = useSearchParams();
-  const initialMode: EntryMode = searchParams.get("mode") === "register" ? "register" : "login";
-  const [mode, setMode] = useState<EntryMode>(initialMode);
+  const requestedMode: EntryMode = searchParams.get("mode") === "register" ? "register" : initialMode;
+  const [mode] = useState<EntryMode>(requestedMode);
   const [busy, setBusy] = useState(false);
   const callbackUrl = safeCallback(searchParams.get("callbackUrl"));
 
@@ -50,8 +50,8 @@ export function LoginEntry() {
         </div>
 
         <div className="auth-mode-switch" role="tablist" aria-label="اختيار إجراء الحساب">
-          <button type="button" role="tab" aria-selected={!registering} className={!registering ? "is-active" : ""} onClick={() => setMode("login")}>تسجيل الدخول</button>
-          <button type="button" role="tab" aria-selected={registering} className={registering ? "is-active" : ""} onClick={() => setMode("register")}>إنشاء حساب</button>
+          <Link role="tab" aria-selected={!registering} className={!registering ? "is-active" : ""} href="/login">تسجيل الدخول</Link>
+          <Link role="tab" aria-selected={registering} className={registering ? "is-active" : ""} href="/register">إنشاء حساب</Link>
         </div>
 
         <h1 id="login-title" className="auth-title">
@@ -83,9 +83,9 @@ export function LoginEntry() {
         </p>
 
         {!registering ? (
-          <p className="mt-5 text-sm leading-7 text-muted">ليس لديك حساب؟ <button type="button" onClick={() => setMode("register")} className="font-black text-primary-dark underline underline-offset-4">أنشئ حساب طالب جديد</button></p>
+          <p className="mt-5 text-sm leading-7 text-muted">ليس لديك حساب؟ <Link href="/register" className="font-black text-primary-dark underline underline-offset-4">أنشئ حساب طالب جديد</Link></p>
         ) : (
-          <p className="mt-5 text-sm leading-7 text-muted">هل لديك حساب بالفعل؟ <button type="button" onClick={() => setMode("login")} className="font-black text-primary-dark underline underline-offset-4">سجّل الدخول</button></p>
+          <p className="mt-5 text-sm leading-7 text-muted">هل لديك حساب بالفعل؟ <Link href="/login" className="font-black text-primary-dark underline underline-offset-4">سجّل الدخول</Link></p>
         )}
 
         <div className="auth-help-row">
