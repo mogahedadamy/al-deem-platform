@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteFooter, SiteHeader } from "@/components/chrome";
 import { SITE } from "@/lib/site-content";
+import "@alameed/ui/src/fonts/cairo.css";
 import "./globals.css";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://alameedtraining.com";

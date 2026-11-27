@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, BadgeCheck, BookOpenCheck, Check, Clock3, LockKeyhole, Radio, ShieldCheck } from "lucide-react";
 import { getCourse, getCourseOutline, RequestError } from "@/lib/api";
 import { ErrorState, formatPrice, LevelBadge } from "@/components/catalog";
+import { LEARN_URL } from "@/lib/portal-url";
+import { SITE } from "@/lib/site-content";
 import { ButtonLink, Container } from "@/components/ui";
 
 type Params = Promise<{ slug: string }>;
@@ -54,7 +56,7 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
   const readyForEnrollment = lessonCount > 0;
   const schema = {
     "@context": "https://schema.org", "@type": "Course", name: course.title, description: course.summary,
-    provider: { "@type": "Organization", name: "مركز العميد للتدريب المتقدم", sameAs: "https://alameedtraining.com" },
+    provider: { "@type": "Organization", name: SITE.nameAr, sameAs: "https://alameedtraining.com" },
   };
 
   return (
@@ -71,7 +73,7 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
               <p className="mt-5 max-w-2xl text-base leading-8 text-white/70 lg:text-lg">{course.summary}</p>
               <div className="mt-7 flex flex-wrap gap-5 text-sm font-bold text-white/70"><span className="inline-flex items-center gap-2"><Clock3 className="h-4 w-4 text-accent" /> {course.durationHours} ساعة</span><span className="inline-flex items-center gap-2"><BookOpenCheck className="h-4 w-4 text-accent" /> {lessonCount || "منهج قيد الإعداد"}</span><span className="inline-flex items-center gap-2"><BadgeCheck className="h-4 w-4 text-accent" /> شهادة رقمية</span></div>
             </div>
-            <div className="relative aspect-[16/10] overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/5 shadow-2xl">
+            <div className="relative aspect-[3/1] overflow-hidden rounded-[1.75rem] lg:aspect-[16/10] border border-white/10 bg-white/5 shadow-2xl">
               {image ? <Image src={image} alt={`غلاف دورة ${course.title}`} fill priority sizes="(max-width: 1024px) 100vw, 42vw" className="object-cover" /> : <div className="absolute inset-0 grid place-items-center"><BookOpenCheck className="h-16 w-16 text-white/20" /></div>}
               <div className="absolute inset-0 bg-gradient-to-t from-secondary/45 to-transparent" />
             </div>
@@ -80,8 +82,15 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
       </section>
 
       <section className="section-shell">
-        <Container className="grid gap-8 lg:grid-cols-[1fr_22rem] lg:items-start">
-          <div className="space-y-10">
+        <Container className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+          <aside className="card lg:sticky lg:top-28 lg:col-start-2 lg:row-start-1 p-6 shadow-md">
+            <p className="text-sm font-bold text-muted-foreground">رسوم البرنامج</p><p className="mt-1 text-3xl font-black text-secondary">{formatPrice(course.priceAmount, course.currency)}</p>
+            <div className="my-6 h-px bg-border" />
+            <ul className="space-y-4 text-sm"><li className="flex justify-between"><span className="text-muted-foreground">المستوى</span><span className="font-bold text-secondary"><LevelBadge level={course.level} /></span></li><li className="flex justify-between"><span className="text-muted-foreground">اللغة</span><span className="font-bold text-secondary">العربية</span></li><li className="flex justify-between"><span className="text-muted-foreground">الشهادة</span><span className="font-bold text-secondary">متاحة بعد النجاح</span></li></ul>
+            {readyForEnrollment ? <a href={`${LEARN_URL}/courses/${encodeURIComponent(course.slug)}`} className="button button-primary mt-7 w-full">سجّل في البرنامج <ArrowLeft className="h-4 w-4" /></a> : <span className="mt-7 flex min-h-12 items-center justify-center rounded-xl bg-muted px-4 text-sm font-black text-muted-foreground">يفتح التسجيل بعد اكتمال المنهج</span>}
+            <div className="mt-5 flex items-start gap-2 rounded-xl bg-surface-soft p-3 text-xs leading-6 text-muted-foreground"><ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-success" /> لن تُقبل أي دفعة قبل اكتمال محتوى البرنامج ونشره.</div>
+          </aside>
+          <div className="min-w-0 space-y-10 lg:col-start-1 lg:row-start-1">
             <section aria-labelledby="course-about"><h2 id="course-about" className="text-2xl font-black text-secondary">عن البرنامج</h2><p className="mt-4 whitespace-pre-line leading-8 text-muted-foreground">{course.description || course.summary}</p></section>
             <section aria-labelledby="course-benefits"><h2 id="course-benefits" className="text-2xl font-black text-secondary">ما الذي تحصل عليه؟</h2><div className="mt-5 grid gap-3 sm:grid-cols-2">{["وصول منظم إلى محتوى البرنامج", "متابعة واضحة للتقدم والإنجاز", "اختبار نهائي وفق متطلبات البرنامج", "شهادة إلكترونية قابلة للتحقق"].map((benefit) => <div key={benefit} className="flex items-center gap-3 rounded-xl border border-border bg-white p-4 text-sm font-bold text-secondary"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary-light text-primary-dark"><Check className="h-4 w-4" /></span>{benefit}</div>)}</div></section>
             <section aria-labelledby="outline"><div className="flex items-center justify-between gap-4"><div><h2 id="outline" className="text-2xl font-black text-secondary">محتوى البرنامج</h2><p className="mt-2 text-sm text-muted-foreground">تعرف على الوحدات والدروس قبل التسجيل.</p></div>{lessonCount > 0 && <span className="rounded-full bg-surface-soft px-3 py-1.5 text-xs font-bold text-muted-foreground">{lessonCount} درس</span>}</div>
@@ -89,13 +98,7 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
             </section>
           </div>
 
-          <aside className="card sticky top-28 p-6 shadow-md">
-            <p className="text-sm font-bold text-muted-foreground">رسوم البرنامج</p><p className="mt-1 text-3xl font-black text-secondary">{formatPrice(course.priceAmount, course.currency)}</p>
-            <div className="my-6 h-px bg-border" />
-            <ul className="space-y-4 text-sm"><li className="flex justify-between"><span className="text-muted-foreground">المستوى</span><span className="font-bold text-secondary"><LevelBadge level={course.level} /></span></li><li className="flex justify-between"><span className="text-muted-foreground">اللغة</span><span className="font-bold text-secondary">العربية</span></li><li className="flex justify-between"><span className="text-muted-foreground">الشهادة</span><span className="font-bold text-secondary">متاحة بعد النجاح</span></li></ul>
-            {readyForEnrollment ? <a href={`https://learn.alameedtraining.com/courses/${course.slug}`} className="button button-primary mt-7 w-full">سجّل في البرنامج <ArrowLeft className="h-4 w-4" /></a> : <span className="mt-7 flex min-h-12 items-center justify-center rounded-xl bg-muted px-4 text-sm font-black text-muted-foreground">يفتح التسجيل بعد اكتمال المنهج</span>}
-            <div className="mt-5 flex items-start gap-2 rounded-xl bg-surface-soft p-3 text-xs leading-6 text-muted-foreground"><ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-success" /> لن تُقبل أي دفعة قبل اكتمال محتوى البرنامج ونشره.</div>
-          </aside>
+
         </Container>
       </section>
 

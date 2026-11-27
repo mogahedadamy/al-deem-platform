@@ -1,10 +1,11 @@
-import { Suspense } from "react";
-import { LoginEntry } from "./login-entry";
+import type { Metadata } from "next";
+import { AccountEntry } from "@alameed/ui/src/account-entry";
 
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<section className="auth-surface"><div className="auth-card text-center text-sm font-bold text-muted">جارٍ تجهيز بوابة الحساب…</div></section>}>
-      <LoginEntry />
-    </Suspense>
-  );
+export const metadata: Metadata = { title: "تسجيل الدخول" };
+
+export default async function LoginPage({ searchParams }: PageProps<"/login">) {
+  const params = await searchParams;
+  const callbackUrl = typeof params.callbackUrl === "string" ? params.callbackUrl : undefined;
+  const helpUrl = new URL("/contact", process.env.NEXT_PUBLIC_SITE_URL || "https://alameedtraining.com").href;
+  return <AccountEntry portal="learn" mode={params.mode === "register" ? "register" : "login"} callbackUrl={callbackUrl} helpUrl={helpUrl} />;
 }

@@ -44,9 +44,11 @@ export default async function CoursesPage({ searchParams }: { searchParams: Sear
 
   return (
     <>
-      <PageHero eyebrow="كتالوج البرامج" title="اختر المهارة التي تصنع خطوتك القادمة" description="ابحث في البرامج المهنية المتاحة، وقارن المستوى والمدة والرسوم قبل أن تبدأ.">
+      <PageHero eyebrow="كتالوج البرامج" title="الدورات التدريبية" description="ابحث في البرامج المهنية المتاحة، وقارن المستوى والمدة والرسوم قبل أن تبدأ.">
         <form action="/courses" method="get" role="search" className="mx-auto mt-7 flex max-w-2xl flex-col gap-2 rounded-2xl border border-border bg-white p-2 shadow-md sm:flex-row">
-          <label className="relative flex-1">
+          {sp.category && <input type="hidden" name="category" value={sp.category} />}
+          {sp.level && <input type="hidden" name="level" value={sp.level} />}
+          <label className="relative min-w-0 flex-1">
             <span className="sr-only">ابحث باسم الدورة</span>
             <Search className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <input name="q" defaultValue={sp.q} placeholder="مثال: إدارة المشاريع أو اللغة الإنجليزية" className="h-12 w-full rounded-xl bg-transparent pr-12 pl-4 text-sm text-secondary outline-none" />
@@ -56,37 +58,39 @@ export default async function CoursesPage({ searchParams }: { searchParams: Sear
       </PageHero>
 
       <section className="section-shell pt-8 md:pt-10">
-        <Container>
-          <div className="mb-7 flex flex-col gap-4 rounded-2xl border border-border bg-white p-4 shadow-sm">
+        <Container className="grid items-start gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] xl:gap-8">
+          <aside aria-label="تصفية الدورات" className="flex min-w-0 flex-col gap-4 rounded-2xl border border-border bg-white p-4 shadow-sm">
             <div className="flex items-center gap-2 font-black text-secondary"><SlidersHorizontal className="h-4 w-4 text-primary" /> تصفية النتائج</div>
             <div className="flex flex-wrap gap-2">
-              <Link href={filterHref(sp, { category: undefined, page: undefined })} className={`inline-flex min-h-11 items-center rounded-full px-4 text-xs font-bold transition-colors ${!sp.category ? "bg-secondary text-white" : "border border-border text-muted-foreground hover:border-primary hover:text-primary-dark"}`}>كل الفئات</Link>
+              <Link aria-current={!sp.category ? "true" : undefined} href={filterHref(sp, { category: undefined, page: undefined })} className={`inline-flex min-h-11 items-center rounded-full px-4 text-xs font-bold transition-colors ${!sp.category ? "bg-secondary text-white" : "border border-border text-muted-foreground hover:border-primary hover:text-primary-dark"}`}>كل الفئات</Link>
               {categories.items.map((category) => (
-                <Link key={category.slug} href={filterHref(sp, { category: category.slug, page: undefined })} className={`inline-flex min-h-11 items-center rounded-full px-4 text-xs font-bold transition-colors ${sp.category === category.slug ? "bg-secondary text-white" : "border border-border text-muted-foreground hover:border-primary hover:text-primary-dark"}`}>{category.nameAr}</Link>
+                <Link aria-current={sp.category === category.slug ? "true" : undefined} key={category.slug} href={filterHref(sp, { category: category.slug, page: undefined })} className={`inline-flex min-h-11 items-center rounded-full px-4 text-xs font-bold transition-colors ${sp.category === category.slug ? "bg-secondary text-white" : "border border-border text-muted-foreground hover:border-primary hover:text-primary-dark"}`}>{category.nameAr}</Link>
               ))}
             </div>
             <div className="flex flex-wrap gap-2 border-t border-border pt-4">
               {LEVELS.map((level) => (
-                <Link key={level.label} href={filterHref(sp, { level: level.value || undefined, page: undefined })} className={`inline-flex min-h-11 items-center rounded-full px-4 text-xs font-bold transition-colors ${(sp.level ?? "") === level.value ? "bg-primary-light text-primary-dark" : "text-muted-foreground hover:bg-surface-soft hover:text-secondary"}`}>{level.label}</Link>
+                <Link aria-current={(sp.level ?? "") === level.value ? "true" : undefined} key={level.label} href={filterHref(sp, { level: level.value || undefined, page: undefined })} className={`inline-flex min-h-11 items-center rounded-full px-4 text-xs font-bold transition-colors ${(sp.level ?? "") === level.value ? "bg-primary-light text-primary-dark" : "text-muted-foreground hover:bg-surface-soft hover:text-secondary"}`}>{level.label}</Link>
               ))}
             </div>
-          </div>
+          </aside>
 
-          {error ? <ErrorState message={error} /> : courses.items.length === 0 ? (
-            <EmptyState title={sp.q || sp.category || sp.level ? "لا توجد نتائج مطابقة" : "لا توجد دورات منشورة بعد"} hint={sp.q || sp.category || sp.level ? "جرّب كلمة أخرى أو أزل بعض عوامل التصفية." : "ستظهر البرامج هنا فور اعتمادها."} />
-          ) : (
-            <>
-              <div className="mb-5 flex items-center justify-between gap-4"><p className="text-sm text-muted-foreground">عرض <strong className="text-secondary">{courses.items.length}</strong> من <strong className="text-secondary">{courses.total}</strong> دورة</p>{sp.q && <p className="text-sm text-muted-foreground">نتائج البحث عن: <strong className="text-secondary">{sp.q}</strong></p>}</div>
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{courses.items.map((course, index) => <CourseCard key={course.id} course={course} priority={index < 3} />)}</div>
-              {totalPages > 1 && (
-                <nav className="mt-10 flex items-center justify-center gap-3" aria-label="ترقيم الصفحات">
-                  {page > 1 && <Link href={filterHref(sp, { page: String(page - 1) })} className="button button-ghost">السابق</Link>}
-                  <span className="rounded-xl bg-white px-4 py-3 text-sm font-bold text-muted-foreground">صفحة {page} من {totalPages}</span>
-                  {page < totalPages && <Link href={filterHref(sp, { page: String(page + 1) })} className="button button-secondary">التالي</Link>}
-                </nav>
-              )}
-            </>
-          )}
+          <div className="min-w-0">
+            {error ? <ErrorState message={error} /> : courses.items.length === 0 ? (
+              <EmptyState title={sp.q || sp.category || sp.level ? "لا توجد نتائج مطابقة" : "لا توجد دورات منشورة بعد"} hint={sp.q || sp.category || sp.level ? "جرّب كلمة أخرى أو أزل بعض عوامل التصفية." : "ستظهر البرامج هنا فور اعتمادها."} />
+            ) : (
+              <>
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-4 break-words"><p className="text-sm text-muted-foreground">عرض <strong className="text-secondary">{courses.items.length}</strong> من <strong className="text-secondary">{courses.total}</strong> دورة</p>{sp.q && <p className="text-sm text-muted-foreground">نتائج البحث عن: <strong className="text-secondary">{sp.q}</strong></p>}</div>
+                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{courses.items.map((course, index) => <CourseCard key={course.id} course={course} priority={index < 3} />)}</div>
+                {totalPages > 1 && (
+                  <nav className="mt-10 flex items-center justify-center gap-3" aria-label="ترقيم الصفحات">
+                    {page > 1 && <Link href={filterHref(sp, { page: String(page - 1) })} className="button button-ghost">السابق</Link>}
+                    <span className="rounded-xl bg-white px-4 py-3 text-sm font-bold text-muted-foreground">صفحة {page} من {totalPages}</span>
+                    {page < totalPages && <Link href={filterHref(sp, { page: String(page + 1) })} className="button button-secondary">التالي</Link>}
+                  </nav>
+                )}
+              </>
+            )}
+          </div>
         </Container>
       </section>
     </>

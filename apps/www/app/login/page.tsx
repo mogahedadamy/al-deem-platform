@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
-import { AccountEntry } from "./account-entry";
+import { AccountEntry } from "@alameed/ui/src/account-entry";
 
 export const metadata: Metadata = { title: "تسجيل الدخول" };
-export default function LoginPage() { return <Suspense fallback={<section className="identity-page" />}><AccountEntry /></Suspense>; }
+
+export default async function LoginPage({ searchParams }: PageProps<"/login">) {
+  const params = await searchParams;
+  const callbackUrl = typeof params.callbackUrl === "string" ? params.callbackUrl : undefined;
+  return <AccountEntry portal="www" mode={params.mode === "register" ? "register" : "login"} callbackUrl={callbackUrl} />;
+}

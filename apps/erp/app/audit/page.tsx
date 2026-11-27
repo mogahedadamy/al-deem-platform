@@ -14,5 +14,34 @@ export default async function AuditPage() {
   const token = (session as { accessToken?: string } | null)?.accessToken;
   const response = token ? await fetch(`${API_BASE}/admin/audit-logs?pageSize=50`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }).catch(() => null) : null;
   const data = response?.ok ? await response.json() as { items: Item[]; total: number } : null;
-  return <div className="flex flex-1 flex-col"><header className="border-b border-border bg-surface"><div className="app-container py-8"><nav className="mb-3 text-sm text-muted" aria-label="مسار التنقل"><Link href="/" className="hover:text-primary">الرئيسية</Link><span className="mx-2">/</span><span className="font-medium text-secondary">سجل التدقيق</span></nav><p className="app-kicker">الأمان والحوكمة</p><h1 className="app-title">سجل العمليات الحساسة</h1><p className="app-description">مراجعة أحدث تغييرات الأدوار والدعوات والمحتوى والمدفوعات. هذه المساحة متاحة لمدير النظام فقط.</p></div></header><main className="app-page flex-1">{!data ? <div className="app-alert border-amber-200 bg-amber-50 text-amber-900"><p className="font-black">تعذر تحميل سجل التدقيق</p><p className="mt-2 text-sm">تأكد من صلاحيات الحساب أو حاول لاحقاً.</p></div> : data.items.length === 0 ? <div className="app-empty"><p className="font-black text-secondary">لا عمليات مسجلة بعد</p></div> : <div className="app-table-wrap"><table><thead><tr><th>الوقت</th><th>المنفذ</th><th>العملية</th><th>المورد</th></tr></thead><tbody>{data.items.map((item) => <tr key={item.id}><td className="whitespace-nowrap text-xs text-muted">{new Date(item.createdAt).toLocaleString("ar-EG", { dateStyle: "medium", timeStyle: "short" })}</td><td className="font-bold text-secondary">{item.actorName || "النظام"}</td><td>{actionLabel[item.action] ?? item.action}</td><td className="text-xs text-muted">{item.resourceType}{item.resourceId ? ` · ${item.resourceId}` : ""}</td></tr>)}</tbody></table></div>}</main></div>;
+  return (
+    <div className="flex flex-1 flex-col">
+      <header className="border-b border-border bg-surface">
+        <div className="app-container py-8">
+          <nav className="mb-3 text-sm text-muted" aria-label="مسار التنقل"><Link href="/" className="hover:text-primary">الرئيسية</Link><span className="mx-2">/</span><span className="font-medium text-secondary">سجل التدقيق</span></nav>
+          <p className="app-kicker">الأمان والحوكمة</p>
+          <h1 className="app-title">سجل العمليات الحساسة</h1>
+          <p className="app-description">مراجعة أحدث تغييرات الأدوار والدعوات والمحتوى والمدفوعات. هذه المساحة متاحة لمدير النظام فقط.</p>
+        </div>
+      </header>
+      <div className="app-page flex-1">
+        {!data ? (
+          <div className="app-alert border-amber-200 bg-amber-50 text-amber-900"><p className="font-black">تعذر تحميل سجل التدقيق</p><p className="mt-2 text-sm">تأكد من صلاحيات الحساب أو حاول لاحقاً.</p></div>
+        ) : data.items.length === 0 ? (
+          <div className="app-empty"><p className="font-black text-secondary">لا عمليات مسجلة بعد</p></div>
+        ) : (
+          <>
+            <p className="app-table-hint" id="audit-table-hint">يمكن تمرير الجدول أفقياً عند ضيق الشاشة، مع بقاء هوية المنفذ ظاهرة.</p>
+            <div className="app-table-wrap" tabIndex={0} role="region" aria-label="سجل العمليات الحساسة" aria-describedby="audit-table-hint">
+              <table>
+                <caption className="sr-only">أحدث العمليات الحساسة مرتبة من الأحدث</caption>
+                <thead><tr><th scope="col">المنفذ</th><th scope="col">العملية</th><th scope="col">الوقت</th><th scope="col">المورد</th></tr></thead>
+                <tbody>{data.items.map((item) => <tr key={item.id}><td className="font-bold text-secondary">{item.actorName || "النظام"}</td><td>{actionLabel[item.action] ?? item.action}</td><td className="whitespace-nowrap text-xs text-muted"><time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString("ar-EG", { dateStyle: "medium", timeStyle: "short" })}</time></td><td className="text-xs text-muted">{item.resourceType}{item.resourceId ? ` · ${item.resourceId}` : ""}</td></tr>)}</tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }

@@ -2,6 +2,7 @@
 import { auth } from "@/auth";
 import Link from "next/link";
 import { RequestPaperForm } from "./client";
+import { siteUrl } from "@/lib/site-url";
 
 export const metadata = { title: "شهاداتي" };
 
@@ -61,7 +62,9 @@ export default async function CertificatesPage() {
           </div>
         ) : (
           <ul className="grid gap-6 md:grid-cols-2">
-            {data.items.filter((c) => c.id).map((c) => (
+            {data.items.map((c) => {
+              if (!c.id || !c.serialNumber) return null;
+              return (
               <li
                 key={c.id}
                 className="app-card flex flex-col overflow-hidden"
@@ -103,7 +106,7 @@ export default async function CertificatesPage() {
                   </p>
                   <div className="mt-4 flex items-center gap-3">
                     <a
-                      href={`https://alameedtraining.com/verify?serial=${c.serialNumber}`}
+                      href={`${siteUrl("/verify")}?serial=${encodeURIComponent(c.serialNumber)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm font-semibold text-primary-dark hover:text-primary"
@@ -114,7 +117,8 @@ export default async function CertificatesPage() {
                   <RequestPaperForm certificateId={c.id!} />
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </div>

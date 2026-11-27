@@ -5,7 +5,7 @@ import { Container, PageHero } from "@/components/ui";
 
 export const metadata: Metadata = {
   title: "التحقق من الشهادات",
-  description: "تحقق من صحة شهادة صادرة عن مركز العميد للتدريب المتقدم باستخدام رقمها التسلسلي.",
+  description: "تحقق من صحة شهادة صادرة عن مركز العميد للتدريب باستخدام رقمها التسلسلي.",
 };
 
 type SearchParams = Promise<{ serial?: string }>;
@@ -35,7 +35,7 @@ export default async function VerifyPage({ searchParams }: { searchParams: Searc
       <section className="section-shell pt-8 md:pt-12">
         <Container className="max-w-3xl">
           <form method="GET" role="search" className="card flex flex-col gap-3 p-3 shadow-md sm:flex-row">
-            <label className="relative flex-1"><span className="sr-only">الرقم التسلسلي للشهادة</span><Hash className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" /><input name="serial" defaultValue={serial} dir="ltr" required placeholder="ALD-2026-XXXXXXXX" className="form-control pr-12 font-mono uppercase" /></label>
+            <label className="relative min-w-0 flex-1"><span className="sr-only">الرقم التسلسلي للشهادة</span><Hash className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" /><input name="serial" defaultValue={serial} dir="ltr" required placeholder="ALD-2026-XXXXXXXX" className="form-control pr-12 font-mono uppercase" /></label>
             <button type="submit" className="button button-primary sm:min-w-32"><Search className="h-4 w-4" /> تحقق</button>
           </form>
           <div className="mt-4 flex items-start gap-2 px-2 text-xs leading-6 text-muted-foreground"><ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-success" /> لا نعرض أي بيانات إضافية عن المتدرب، وتستخدم الصفحة للتحقق من صحة الشهادة فقط.</div>

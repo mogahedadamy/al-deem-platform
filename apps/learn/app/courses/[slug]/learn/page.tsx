@@ -166,6 +166,7 @@ export default async function LearnCoursePage({ params }: { params: Params }) {
         ) : (
           <LessonPlayer
             enrollmentId={myEnrollment!.id}
+            courseSlug={slug}
             lessons={lessons}
           />
         )}

@@ -2,6 +2,7 @@
 // البيانات من core-api عبر session token (ID Token / access token).
 import { auth } from "@/auth";
 import Link from "next/link";
+import { siteUrl } from "@/lib/site-url";
 
 export const metadata = { title: "لوحة التحكم" };
 
@@ -170,7 +171,7 @@ export default async function DashboardPage() {
                         </p>
                       )}
                     </div>
-                    <div className="flex shrink-0 items-center gap-3">
+                    <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto sm:shrink-0">
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-semibold ${
                           c.status === "published"
@@ -217,7 +218,7 @@ export default async function DashboardPage() {
             <div>
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 id="student-courses" className="text-xl font-black text-secondary">دوراتي ({myEnrollments.length})</h2>
-                <Link href="https://alameedtraining.com/courses" className="app-button app-button-outline min-h-11 self-start text-sm sm:self-auto">تصفّح الكتالوج ←</Link>
+                <Link href={siteUrl("/courses")} className="app-button app-button-outline min-h-11 self-start text-sm sm:self-auto">تصفّح الكتالوج ←</Link>
               </div>
               {myEnrollments.length === 0 ? (
                 <div className="app-empty">
@@ -226,7 +227,7 @@ export default async function DashboardPage() {
                     تصفّح الكتالوج واختر دورتك الأولى.
                   </p>
                   <Link
-                    href="https://alameedtraining.com/courses"
+                    href={siteUrl("/courses")}
                     className="app-button app-button-primary mt-4 min-h-11"
                   >
                     تصفّح الدورات
@@ -247,6 +248,7 @@ export default async function DashboardPage() {
                             <div
                               className="h-2 w-28 overflow-hidden rounded-full bg-border"
                               role="progressbar"
+                              aria-label={`تقدمك في دورة ${e.courseTitle}`}
                               aria-valuenow={e.progressPct}
                               aria-valuemin={0}
                               aria-valuemax={100}
@@ -277,7 +279,7 @@ export default async function DashboardPage() {
                           </div>
                         </div>
                         {active ? (
-                          <div className="flex shrink-0 gap-2">
+                          <div className="flex w-full flex-col gap-2 sm:w-auto sm:shrink-0 sm:flex-row">
                             <Link
                               href={`/courses/${e.courseSlug}/learn`}
                               className="app-button app-button-primary min-h-11 text-sm"

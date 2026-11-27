@@ -101,13 +101,15 @@ export default async function UsersPage({
       </header>
 
       <div className="app-page flex-1">
-        <div className="app-table-wrap">
+        <p className="app-table-hint" id="users-table-hint">يمكن تمرير الجدول أفقياً عند ضيق الشاشة، وتبقى هوية المستخدم في العمود الأول.</p>
+        <div className="app-table-wrap" tabIndex={0} role="region" aria-label="المستخدمون وأدوارهم" aria-describedby="users-table-hint">
           <table className="min-w-[760px] text-sm">
+            <caption className="sr-only">قائمة المستخدمين مع البريد والأدوار الحالية وإجراءات تعديلها</caption>
             <thead>
               <tr className="border-b border-border bg-secondary/[.03] text-right">
-                <th className="px-4 py-3 font-semibold text-secondary">الاسم</th>
-                <th className="px-4 py-3 font-semibold text-secondary">البريد</th>
-                <th className="px-4 py-3 font-semibold text-secondary">الأدوار</th>
+                <th scope="col" className="px-4 py-3 font-semibold text-secondary">الاسم</th>
+                <th scope="col" className="px-4 py-3 font-semibold text-secondary">البريد</th>
+                <th scope="col" className="px-4 py-3 font-semibold text-secondary">الأدوار</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">

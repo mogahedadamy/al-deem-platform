@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "@alameed/ui/src/fonts/cairo.css";
 import "./globals.css";
 import { LearnFooter, LearnHeader } from "./shell";
 
@@ -15,9 +16,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ar" dir="rtl" className="h-full antialiased">
       <body className="min-h-full bg-background text-foreground">
+        <a href="#main-content" className="skip-link">
+          انتقل إلى المحتوى الرئيسي
+        </a>
         <div className="flex min-h-screen flex-col">
           <LearnHeader />
-          <main className="flex flex-1 flex-col">{children}</main>
+          <main id="main-content" tabIndex={-1} className="flex flex-1 flex-col">
+            {children}
+          </main>
           <LearnFooter />
         </div>
       </body>

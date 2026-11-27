@@ -2,6 +2,7 @@
 // Server component: يجلب البيانات، وEnrollButton client للتفاعل.
 import { auth } from "@/auth";
 import Link from "next/link";
+import { siteUrl } from "@/lib/site-url";
 import { notFound } from "next/navigation";
 import {
   apiGet,
@@ -187,7 +188,7 @@ export default async function CoursePage({ params }: { params: Params }) {
                         <p className="mt-1 leading-6">الإيصال قيد المراجعة من الموظف المالي. سنرسل لك إشعاراً فور اتخاذ القرار.</p>
                       </div>
                     ) : null}
-                    {(!latestPayment || latestPayment.status === "rejected") && (details ? <SubmitPaymentForm enrollmentId={myEnrollment.id} details={details} /> : <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><p className="font-black">التسجيل متوقف مؤقتاً لهذه الدورة</p><p className="mt-1 leading-6">لم يكتمل إعداد بيانات الدفع الرسمية بعد. لن نطلب منك رفع إيصال قبل ظهور بيانات التحويل المعتمدة.</p><a href="https://alameedtraining.com/contact" className="mt-3 inline-block font-black underline underline-offset-4">تواصل مع فريق التسجيل</a></div>)}
+                    {(!latestPayment || latestPayment.status === "rejected") && (details ? <SubmitPaymentForm enrollmentId={myEnrollment.id} details={details} /> : <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><p className="font-black">التسجيل متوقف مؤقتاً لهذه الدورة</p><p className="mt-1 leading-6">لم يكتمل إعداد بيانات الدفع الرسمية بعد. لن نطلب منك رفع إيصال قبل ظهور بيانات التحويل المعتمدة.</p><a href={siteUrl("/contact")} className="mt-3 inline-block font-black underline underline-offset-4">تواصل مع فريق التسجيل</a></div>)}
                   </div>
                 ) : myEnrollment.status === "active" || myEnrollment.status === "completed" ? (
                   <div className="space-y-3">

@@ -56,22 +56,28 @@ export function QuizRunner({
   const allAnswered =
     quiz?.questions.every((q) => answers[q.id]) ?? false;
 
-  async function submit() {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (!quiz || !allAnswered) return;
     setBusy(true);
     setError(null);
-    const res = await fetch(`/api/quizzes/${quiz.id}/attempts`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enrollmentId, answers }),
-    });
-    setBusy(false);
-    if (!res.ok) {
-      const b = await res.json().catch(() => null);
-      setError(b?.message ?? "تعذر تقديم المحاولة");
-      return;
+    try {
+      const res = await fetch(`/api/quizzes/${quiz.id}/attempts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enrollmentId, answers }),
+      });
+      if (!res.ok) {
+        const b = await res.json().catch(() => null);
+        setError(b?.message ?? "تعذر تقديم المحاولة");
+        return;
+      }
+      setResult((await res.json()) as AttemptResult);
+    } catch {
+      setError("تعذر الاتصال بخدمة الاختبار. إجاباتك محفوظة في هذه الصفحة ويمكنك إعادة المحاولة.");
+    } finally {
+      setBusy(false);
     }
-    setResult((await res.json()) as AttemptResult);
   }
 
   // شاشة النتيجة
@@ -83,6 +89,8 @@ export function QuizRunner({
             ? "border-emerald-200 bg-emerald-50"
             : "border-amber-200 bg-amber-50"
         }`}
+        role="status"
+        aria-live="polite"
       >
         <p className="text-4xl font-black">{result.score}%</p>
         {result.passed ? (
@@ -111,6 +119,7 @@ export function QuizRunner({
               راجع الدروس ثم أعد المحاولة. الحد الأقصى 3 محاولات خلال 24 ساعة.
             </p>
             <button
+              type="button"
               onClick={() => {
                 setResult(null);
                 setAnswers({});
@@ -153,13 +162,16 @@ export function QuizRunner({
   const answeredCount = Object.keys(answers).length;
 
   return (
-    <div>
+    <form onSubmit={submit}>
+      <div className="sticky top-20 z-10 mb-5 rounded-xl border border-border bg-surface/95 p-4 shadow-sm backdrop-blur" aria-live="polite">
+        <div className="flex items-center justify-between gap-4 text-sm"><strong className="text-secondary">تقدم الاختبار</strong><span className="text-muted">{answeredCount} من {quiz.questions.length}</span></div>
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-border" role="progressbar" aria-label="الأسئلة المجابة" aria-valuemin={0} aria-valuemax={quiz.questions.length} aria-valuenow={answeredCount}><div className="h-full rounded-full bg-primary" style={{ width: `${quiz.questions.length ? (answeredCount / quiz.questions.length) * 100 : 0}%` }} /></div>
+      </div>
       <ol className="space-y-6">
         {quiz.questions.map((q, qi) => (
           <li key={q.id} className="rounded-xl border border-border bg-surface p-5">
-            <p className="font-bold text-secondary">
-              {qi + 1}. {q.question}
-            </p>
+            <fieldset>
+              <legend className="font-bold leading-7 text-secondary">{qi + 1}. {q.question}</legend>
             <div className="mt-4 space-y-2">
               {q.options.map((o) => {
                 const selected = answers[q.id] === o.key;
@@ -185,6 +197,7 @@ export function QuizRunner({
                 );
               })}
             </div>
+            </fieldset>
           </li>
         ))}
       </ol>
@@ -195,14 +208,14 @@ export function QuizRunner({
         </p>
       )}
 
-      <div className="mt-8 flex items-center justify-between">
+      <div className="mt-8 flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted">
           أجبت على {answeredCount} من {quiz.questions.length}
         </p>
         <button
-          onClick={submit}
+          type="submit"
           disabled={!allAnswered || busy}
-          className="rounded-full bg-secondary px-10 py-3 font-semibold text-secondary-foreground transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
+          className="app-button app-button-primary min-h-12 px-10 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy ? "جارٍ التصحيح…" : "تقديم الإجابات"}
         </button>
@@ -210,6 +223,6 @@ export function QuizRunner({
       <p className="mt-3 text-xs text-muted">
         التصحيح خادمي — النجاح من {quiz.passScore}%.
       </p>
-    </div>
+    </form>
   );
 }

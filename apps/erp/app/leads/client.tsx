@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { OperationError } from "../operation-feedback";
 
 type Option = { value: string; label: string };
 
@@ -19,29 +20,36 @@ export function LeadActions({
   const [showNote, setShowNote] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [retryStatus, setRetryStatus] = useState<string | null>(null);
 
-  async function advance(status: string) {
-    if (status === "lost" || status === "converted") {
+  async function advance(status: string, confirmed = false) {
+    if (!confirmed && (status === "lost" || status === "converted")) {
       setPendingStatus(status);
       setShowNote(true);
       return;
     }
     setBusy(true);
     setError(null);
-    const res = await fetch(`/api/leads/advance`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ leadId, status, notes: note }),
-    });
-    setBusy(false);
-    if (!res.ok) {
-      const d = await res.json().catch(() => ({}));
-      setError(d.message ?? "تعذر تحديث الاستفسار");
-      return;
+    setRetryStatus(status);
+    try {
+      const res = await fetch(`/api/leads/advance`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadId, status, notes: note }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({})) as { message?: string };
+        setError(d.message ?? "تعذر تحديث الاستفسار.");
+        return;
+      }
+      setShowNote(false);
+      setNote("");
+      router.refresh();
+    } catch {
+      setError("تعذر الاتصال بالخدمة. تحقق من الشبكة ثم أعد المحاولة.");
+    } finally {
+      setBusy(false);
     }
-    setShowNote(false);
-    setNote("");
-    router.refresh();
   }
 
   if (options.length === 0) return null;
@@ -50,7 +58,9 @@ export function LeadActions({
     <div className="shrink-0 sm:w-56">
       {showNote ? (
         <div className="space-y-2">
+          <label htmlFor={`lead-note-${leadId}`} className="block text-sm font-bold text-secondary">ملاحظة الإغلاق أو التحويل</label>
           <textarea
+            id={`lead-note-${leadId}`}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="سبب الإغلاق / ملاحظة التحويل…"
@@ -59,15 +69,15 @@ export function LeadActions({
           />
           <div className="flex gap-2">
             <button
-              onClick={() => pendingStatus && advance(pendingStatus)}
+              onClick={() => pendingStatus && void advance(pendingStatus, true)}
               disabled={busy || !note}
-              className="flex-1 rounded-full bg-secondary px-4 py-2 text-xs font-semibold text-secondary-foreground disabled:opacity-60"
+              className="app-button app-button-primary min-h-11 flex-1 text-xs disabled:opacity-60"
             >
               {busy ? "…" : "تأكيد"}
             </button>
             <button
               onClick={() => setShowNote(false)}
-              className="rounded-full border border-border px-4 py-2 text-xs font-semibold text-muted"
+              className="app-button app-button-outline min-h-11 text-xs"
             >
               إلغاء
             </button>
@@ -78,9 +88,9 @@ export function LeadActions({
           {options.map((o) => (
             <button
               key={o.value}
-              onClick={() => advance(o.value)}
+              onClick={() => void advance(o.value)}
               disabled={busy}
-              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-60 ${
+              className={`min-h-11 rounded-xl px-4 py-2 text-xs font-semibold transition-colors disabled:opacity-60 ${
                 o.value === "lost"
                   ? "border border-border text-muted hover:bg-surface"
                   : o.value === "converted"
@@ -93,7 +103,7 @@ export function LeadActions({
           ))}
         </div>
       )}
-      {error && <p className="mt-2 text-xs text-red-700">{error}</p>}
+      <OperationError message={error} busy={busy} onRetry={() => retryStatus && void advance(retryStatus, true)} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
 import { CourseBuilder } from "./course-builder";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4001/v1";
@@ -28,6 +29,7 @@ export default async function EditCoursePage({ params }: { params: Params }) {
   const outline = (await outlineResponse.json()) as Outline;
   return (
     <div className="mx-auto w-full max-w-5xl flex-1 px-5 py-10 md:px-6">
+      <nav className="mb-4 text-sm text-muted" aria-label="مسار التنقل"><Link href="/dashboard" className="inline-flex min-h-11 items-center font-bold hover:text-primary-dark">لوحة التحكم</Link><span className="mx-2" aria-hidden="true">/</span><span aria-current="page">بناء الدورة</span></nav>
       <p className="text-sm font-semibold text-primary-dark">مساحة المدرب / بناء الدورة</p>
       <h1 className="mt-2 text-3xl font-black text-secondary">{course.title}</h1>
       <p className="mt-2 text-muted">الحالة: {course.status === "draft" ? "مسودة" : course.status === "pending_review" ? "بانتظار المراجعة" : course.status}</p>

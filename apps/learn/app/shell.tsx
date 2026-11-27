@@ -1,13 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
+import { SITE_URL, siteUrl } from "@/lib/site-url";
 import { LearnMobileNavigation } from "./mobile-navigation";
 
 const NAV = [
   { href: "/dashboard", label: "لوحة التحكم" },
   { href: "/certificates", label: "شهاداتي" },
-  { href: "/profile", label: "ملفي" },
-  { href: "https://alameedtraining.com/courses", label: "الدورات" },
+  { href: siteUrl("/courses"), label: "الدورات" },
 ];
 const IDENTITY_ACCOUNT_URL = `${process.env.AUTH_ZITADEL_ISSUER ?? "http://localhost:8091"}/ui/console/users/me`;
 
@@ -22,12 +22,27 @@ export async function LearnHeader() {
         </Link>
         {session ? (
           <>
-            <nav className="hidden items-center gap-5 text-sm font-semibold text-muted md:flex" aria-label="تنقل منصة التعلم">{NAV.map((item) => <Link key={item.href} href={item.href} className="hover:text-secondary">{item.label}</Link>)}</nav>
+            <nav className="hidden items-center gap-3 text-sm font-semibold text-muted md:flex lg:gap-5" aria-label="تنقل منصة التعلم">{NAV.map((item) => <Link key={item.href} href={item.href} className="flex min-h-11 items-center whitespace-nowrap px-1 hover:text-secondary">{item.label}</Link>)}</nav>
             <div className="flex items-center gap-2">
-              <span className="hidden max-w-40 truncate text-xs text-muted lg:block">{session.user?.name ?? session.user?.email}</span>
-              <a href={IDENTITY_ACCOUNT_URL} className="hidden min-h-11 items-center rounded-xl border border-border px-4 text-sm font-bold text-secondary hover:border-primary lg:inline-flex">حسابي</a>
-              <form action={async () => { "use server"; await signOut({ redirectTo: "/" }); }}><button className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold text-secondary hover:border-primary">تسجيل الخروج</button></form>
-              <LearnMobileNavigation items={[...NAV, { href: IDENTITY_ACCOUNT_URL, label: "الحساب وكلمة المرور" }]} />
+              <details className="account-menu relative hidden md:block">
+                <summary className="flex min-h-11 max-w-36 cursor-pointer list-none items-center gap-2 rounded-xl border border-border px-3 text-sm font-bold text-secondary hover:border-primary" aria-label="فتح قائمة الحساب">
+                  <span className="truncate">{session.user?.name ?? "حسابي"}</span>
+                  <span aria-hidden="true">⌄</span>
+                </summary>
+                <div className="absolute end-0 top-[calc(100%+.5rem)] z-50 w-64 rounded-2xl border border-border bg-surface p-2 shadow-xl">
+                  <p className="truncate border-b border-border px-3 py-2 text-xs text-muted" dir="auto">{session.user?.email}</p>
+                  <Link href="/profile" className="flex min-h-11 items-center rounded-xl px-3 text-sm font-bold text-secondary hover:bg-surface-soft">ملفي الشخصي</Link>
+                  <a href={IDENTITY_ACCOUNT_URL} className="flex min-h-11 items-center rounded-xl px-3 text-sm font-bold text-secondary hover:bg-surface-soft">الحساب وكلمة المرور</a>
+                  <form action={async () => { "use server"; await signOut({ redirectTo: "/" }); }}>
+                    <button className="flex min-h-11 w-full items-center rounded-xl px-3 text-sm font-bold text-danger hover:bg-red-50">تسجيل الخروج</button>
+                  </form>
+                </div>
+              </details>
+              <LearnMobileNavigation items={[...NAV, { href: "/profile", label: "ملفي الشخصي" }, { href: IDENTITY_ACCOUNT_URL, label: "الحساب وكلمة المرور" }]}>
+                <form action={async () => { "use server"; await signOut({ redirectTo: "/" }); }}>
+                  <button className="flex min-h-11 w-full items-center rounded-xl px-3 text-sm font-bold text-danger hover:bg-red-50">تسجيل الخروج</button>
+                </form>
+              </LearnMobileNavigation>
             </div>
           </>
         ) : <Link href="/login" className="min-h-11 rounded-xl bg-secondary px-5 py-3 text-sm font-bold text-white">تسجيل الدخول</Link>}
@@ -37,5 +52,5 @@ export async function LearnHeader() {
 }
 
 export function LearnFooter() {
-  return <footer className="border-t border-border bg-surface"><div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-6 text-xs text-muted sm:flex-row sm:justify-between"><span>© {new Date().getFullYear()} مركز العميد للتدريب المتقدم</span><Link href="https://alameedtraining.com">الموقع الرسمي</Link></div></footer>;
+  return <footer className="border-t border-border bg-surface"><div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-6 text-xs text-muted sm:flex-row sm:justify-between"><span>© {new Date().getFullYear()} مركز العميد للتدريب</span><Link href={SITE_URL}>الموقع الرسمي</Link></div></footer>;
 }

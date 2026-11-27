@@ -1,8 +1,5 @@
 import { expect, test } from "@playwright/test";
-
-const LEARN = "https://learn.alameedtraining.com";
-const ERP = "https://erp.alameedtraining.com";
-const API = "https://api.alameedtraining.com/v1";
+import { destinationUrl, destinations } from "./environment";
 
 test("public website critical routes render without overflow", async ({ page }) => {
   for (const path of ["/", "/courses", "/about", "/contact", "/verify", "/privacy", "/terms"]) {
@@ -43,7 +40,10 @@ test("mobile navigation opens, closes, and routes correctly", async ({ page }, t
 });
 
 test("portal login surfaces are responsive and reachable", async ({ page }) => {
-  for (const [name, url] of [["learn", `${LEARN}/login`], ["erp", `${ERP}/login`]] as const) {
+  for (const [name, url] of [
+    ["learn", destinationUrl(destinations.learn, "/login")],
+    ["erp", destinationUrl(destinations.erp, "/login")],
+  ] as const) {
     const response = await page.goto(url, { waitUntil: "networkidle" });
     expect(response?.status(), name).toBe(200);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -53,14 +53,14 @@ test("portal login surfaces are responsive and reachable", async ({ page }) => {
 });
 
 test("protected portals preserve requested destination", async ({ page }) => {
-  await page.goto(`${LEARN}/dashboard`);
+  await page.goto(destinationUrl(destinations.learn, "/dashboard"));
   await expect(page).toHaveURL(/\/login\?callbackUrl=%2Fdashboard/);
-  await page.goto(`${ERP}/reports`);
+  await page.goto(destinationUrl(destinations.erp, "/reports"));
   await expect(page).toHaveURL(/\/login\?callbackUrl=%2Freports/);
 });
 
 test("API liveness readiness and authorization", async ({ request }) => {
-  expect((await request.get(`${API}/health`)).status()).toBe(200);
-  expect((await request.get(`${API}/ready`)).status()).toBe(200);
-  expect((await request.get(`${API}/me`)).status()).toBe(401);
+  expect((await request.get(`${destinations.api}/health`)).status()).toBe(200);
+  expect((await request.get(`${destinations.api}/ready`)).status()).toBe(200);
+  expect((await request.get(`${destinations.api}/me`)).status()).toBe(401);
 });

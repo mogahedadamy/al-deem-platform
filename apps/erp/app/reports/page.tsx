@@ -124,13 +124,15 @@ export default async function ReportsPage() {
         <div className="app-card mt-8 p-5 sm:p-6">
           <h2 className="font-black text-secondary">ملخص الدورات والمدربين</h2>
           <p className="mt-1 text-xs text-muted">عدد الطلاب المسجّلين (نشط/مكتمل) لكل دورة منشورة.</p>
-          <div className="app-table-wrap mt-4">
+          <p className="app-table-hint mt-4" id="courses-table-hint">يمكن تمرير الجدول أفقياً عند ضيق الشاشة، وتبقى الدورة في العمود الأول.</p>
+          <div className="app-table-wrap" tabIndex={0} role="region" aria-label="ملخص الدورات والمدربين" aria-describedby="courses-table-hint">
             <table className="text-sm">
+              <caption className="sr-only">عدد الطلاب النشطين والمكتملين لكل دورة منشورة</caption>
               <thead>
                 <tr className="border-b border-border text-right text-muted">
-                  <th className="py-2 pl-3 font-semibold">الدورة</th>
-                  <th className="py-2 pl-3 font-semibold">المدرب</th>
-                  <th className="py-2 pl-3 font-semibold">الطلاب</th>
+                  <th scope="col" className="py-2 pl-3 font-semibold">الدورة</th>
+                  <th scope="col" className="py-2 pl-3 font-semibold">المدرب</th>
+                  <th scope="col" className="py-2 pl-3 font-semibold">الطلاب</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">

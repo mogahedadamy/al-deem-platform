@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 export const SITE = {
-  nameAr: "مركز العميد للتدريب المتقدم",
+  nameAr: "مركز العميد للتدريب",
   nameShort: "مركز العميد",
   nameEn: "Alameed Training Center",
   description:

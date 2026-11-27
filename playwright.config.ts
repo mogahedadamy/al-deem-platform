@@ -17,7 +17,19 @@ export default defineConfig({
   projects: [
     { name: "mobile-320", use: { ...devices["Pixel 5"], viewport: { width: 320, height: 640 } } },
     { name: "mobile", use: { ...devices["Pixel 7"] } },
-    { name: "tablet", use: { ...devices["iPad (gen 7)"], viewport: { width: 768, height: 1024 } } },
+    // The default release matrix stays on the browser installed by CI.
+    { name: "tablet", use: { ...devices["Galaxy Tab S4"], viewport: { width: 768, height: 1024 } } },
+    ...(process.env.E2E_WEBKIT === "1"
+      ? [{
+          name: "tablet-webkit",
+          use: {
+            ...devices["iPad (gen 7)"],
+            viewport: { width: 768, height: 1024 },
+            // Do not pass a local Chromium executable to the optional WebKit run.
+            launchOptions: {},
+          },
+        }]
+      : []),
     { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 900 } } },
     { name: "desktop-wide", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 1000 } } },
   ],

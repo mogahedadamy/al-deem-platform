@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { OperationError } from "../operation-feedback";
 
 export function PaperAdvance({
   requestId,
@@ -21,14 +22,22 @@ export function PaperAdvance({
     if (!window.confirm(`تأكيد الإجراء: ${nextLabel}؟`)) return;
     setBusy(true);
     setError(null);
-    const res = await fetch("/api/papers/advance", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ requestId, status: nextStatus }),
-    });
-    setBusy(false);
-    if (res.ok) router.refresh();
-    else setError("تعذر التحديث");
+    try {
+      const res = await fetch("/api/papers/advance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId, status: nextStatus }),
+      });
+      if (res.ok) router.refresh();
+      else {
+        const body = await res.json().catch(() => null) as { message?: string } | null;
+        setError(body?.message ?? "تعذر تحديث حالة الطلب.");
+      }
+    } catch {
+      setError("تعذر الاتصال بالخدمة. تحقق من الشبكة ثم أعد المحاولة.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -36,11 +45,11 @@ export function PaperAdvance({
       <button
         onClick={advance}
         disabled={busy}
-        className="rounded-full bg-secondary px-6 py-2.5 text-sm font-semibold text-secondary-foreground hover:opacity-90 disabled:opacity-60"
+      className="app-button app-button-primary min-h-11 w-full sm:w-auto"
       >
         {busy ? "…" : nextLabel}
       </button>
-      {error && <p className="mt-1 text-xs text-red-700">{error}</p>}
+      <OperationError message={error} busy={busy} onRetry={() => void advance()} />
     </div>
   );
 }

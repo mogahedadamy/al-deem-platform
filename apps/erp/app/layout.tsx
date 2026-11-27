@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import "@alameed/ui/src/fonts/cairo.css";
 import "./globals.css";
-import { ErpFooter, ErpHeader } from "./shell";
+import { ErpShell } from "./shell";
 
 export const metadata: Metadata = {
   title: {
@@ -16,11 +17,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ar" dir="rtl" className="h-full antialiased">
       <body className="min-h-full bg-background text-foreground">
-        <div className="flex min-h-screen flex-col">
-          <ErpHeader />
-          <main className="flex flex-1 flex-col">{children}</main>
-          <ErpFooter />
-        </div>
+        <a href="#main-content" className="skip-link">تخطَّ إلى المحتوى الرئيسي</a>
+        <ErpShell>{children}</ErpShell>
       </body>
     </html>
   );

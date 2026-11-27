@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@alameed/ui/src/account-entry.css";
 
 :root {
   --font-cairo: "Cairo", "Noto Sans Arabic", Tahoma, Arial, sans-serif;
@@ -65,6 +66,9 @@ button, input, textarea, select { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 ::selection { background: var(--primary-light); color: var(--secondary); }
 :focus-visible { outline: 3px solid hsl(43 62% 52% / .42); outline-offset: 3px; }
+.skip-link { position: fixed; inset-block-start: .75rem; inset-inline-start: .75rem; z-index: 100; transform: translateY(-160%); border-radius: var(--radius-md); background: var(--secondary); padding: .75rem 1rem; color: white; font-weight: 800; box-shadow: var(--shadow-md); }
+.skip-link:focus { transform: translateY(0); }
+.account-menu > summary::-webkit-details-marker { display: none; }
 
 .app-container { width: min(100% - 2rem, 76rem); margin-inline: auto; }
 .app-page { width: min(100% - 2rem, 76rem); margin-inline: auto; padding-block: 2rem 3rem; }
@@ -84,28 +88,6 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .app-input { min-height: 3rem; width: 100%; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); padding: .7rem .9rem; color: var(--foreground); outline: none; transition: border-color .2s, box-shadow .2s; }
 .app-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px hsl(43 62% 52% / .16); }
 .app-empty, .app-alert { border: 1px dashed var(--border); border-radius: var(--radius-lg); background: var(--surface); padding: 2rem 1.25rem; text-align: center; color: var(--muted); }
-.auth-surface { position: relative; display: grid; flex: 1; place-items: center; overflow: hidden; padding: 2rem 1rem; background: radial-gradient(circle at 90% 10%, hsl(43 62% 52% / .16), transparent 30%), radial-gradient(circle at 10% 90%, hsl(201 46% 19% / .10), transparent 36%), var(--background); }
-.auth-card { width: min(100%, 31rem); border: 1px solid var(--border); border-radius: var(--radius-xl); background: hsl(0 0% 100% / .92); padding: clamp(1.5rem, 6vw, 3rem); text-align: center; box-shadow: var(--shadow-md); backdrop-filter: blur(16px); }
-.auth-brand-mark { display: grid; width: 4.75rem; height: 4.75rem; margin-inline: auto; place-items: center; overflow: hidden; border: 1px solid var(--border); border-radius: 1.4rem; background: var(--surface); padding: .5rem; box-shadow: var(--shadow-sm); }
-.auth-eyebrow { margin-top: 1.5rem; color: var(--primary-dark); font-size: .78rem; font-weight: 800; }
-.auth-title { margin-top: .45rem; color: var(--secondary); font-size: clamp(1.75rem, 7vw, 2.35rem); font-weight: 900; line-height: 1.3; letter-spacing: -.03em; }
-.auth-copy { margin: 1rem auto 0; max-width: 24rem; color: var(--muted); font-size: .95rem; line-height: 1.9; }
-.auth-note { margin-top: 1.25rem; color: var(--muted); font-size: .8rem; line-height: 1.7; }
-.auth-card-wide { position: relative; width: min(100%, 35rem); text-align: right; }
-.auth-brand-row { display: flex; align-items: center; gap: .9rem; }
-.auth-brand-row .auth-brand-mark { width: 3.8rem; height: 3.8rem; margin: 0; border-radius: 1.15rem; }
-.auth-mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; margin-top: 2rem; padding: .3rem; border-radius: .9rem; background: var(--surface-soft); }
-.auth-mode-switch button { min-height: 2.75rem; border: 0; border-radius: .65rem; background: transparent; color: var(--muted); font-size: .875rem; font-weight: 800; cursor: pointer; }
-.auth-mode-switch button.is-active { background: var(--surface); color: var(--secondary); box-shadow: var(--shadow-xs); }
-.auth-benefits { display: grid; gap: .6rem; margin-top: 1.5rem; color: var(--muted); font-size: .78rem; line-height: 1.5; }
-.auth-benefits span { display: flex; align-items: center; gap: .5rem; }
-.auth-benefits span::before { content: "✓"; display: grid; width: 1.25rem; height: 1.25rem; place-items: center; flex: 0 0 auto; border-radius: 50%; background: var(--primary-light); color: var(--primary-dark); font-weight: 900; }
-.auth-primary-action { min-height: 3.25rem; font-size: 1rem; }
-.auth-help-row { display: flex; flex-wrap: wrap; justify-content: center; gap: .45rem; margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1rem; color: var(--muted); font-size: .74rem; line-height: 1.65; text-align: center; }
-.auth-help-row a { color: var(--primary-dark); font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
-.auth-orbit { position: absolute; pointer-events: none; border: 1px solid hsl(43 62% 52% / .25); border-radius: 999px; }
-.auth-orbit-one { width: 32rem; height: 32rem; top: -18rem; right: -15rem; }
-.auth-orbit-two { width: 24rem; height: 24rem; bottom: -13rem; left: -12rem; border-color: hsl(201 46% 19% / .18); }
 .app-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-xs); }
 .app-table-wrap table { min-width: 42rem; width: 100%; border-collapse: collapse; }
 .app-table-wrap th { background: var(--surface-soft); color: var(--secondary); font-size: .78rem; font-weight: 800; }

@@ -40,6 +40,8 @@ export function NewCourseForm({ categories }: { categories: { id: string; nameAr
         <label className="block text-sm font-bold text-secondary">المدة بالساعات<input name="durationHours" type="number" min="1" required className={input} /></label>
       </div>
       <label className="block text-sm font-bold text-secondary">رابط صورة الغلاف (HTTPS)<input name="coverImageUrl" type="url" dir="ltr" className={input} /></label>
+      <p className="-mt-3 text-xs leading-6 text-muted">استخدم رابط HTTPS لصورة محسّنة من شبكة CDN؛ لا تُرفع ملفات الوسائط داخل المنصة.</p>
+      {categories.length === 0 && <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">تعذر تحميل الفئات. حدّث الصفحة قبل إنشاء الدورة حتى تختار فئة صحيحة.</p>}
       <label className="flex min-h-11 items-center gap-3 text-sm font-bold text-secondary"><input name="hasLiveSessions" type="checkbox" className="h-5 w-5 accent-[#D4AF37]" /> تتضمن حصصاً مباشرة</label>
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       <button disabled={busy} className="min-h-12 w-full rounded-xl bg-secondary px-6 font-bold text-white disabled:opacity-60">{busy ? "جارٍ الإنشاء…" : "إنشاء الدورة والمتابعة"}</button>

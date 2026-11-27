@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { siteUrl } from "@/lib/site-url";
 
 export default function NotFound() {
   return (
@@ -9,7 +10,7 @@ export default function NotFound() {
         <p className="mt-3 leading-8 text-muted">الرابط غير متاح — عُد إلى لوحة التحكم أو تصفّح الدورات المتاحة.</p>
         <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
           <Link href="/dashboard" className="app-button app-button-primary min-h-12">لوحة التحكم</Link>
-          <a href="https://alameedtraining.com/courses" className="app-button app-button-outline min-h-12">تصفّح الدورات</a>
+          <a href={siteUrl("/courses")} className="app-button app-button-outline min-h-12">تصفّح الدورات</a>
         </div>
       </div>
     </main>

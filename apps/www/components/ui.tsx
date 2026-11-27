@@ -77,7 +77,11 @@ export function PageHero({
     <header className="page-hero">
       <div className="page-hero-grid" aria-hidden="true" />
       <Container className="relative z-10">
-        <span className="section-kicker">{eyebrow}</span>
+        <nav aria-label="مسار التنقل" className="mb-3 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <Link className="inline-flex min-h-11 items-center underline-offset-4 hover:underline" href="/">الرئيسية</Link>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">{eyebrow}</span>
+        </nav>
         <h1>{title}</h1>
         <p>{description}</p>
         {children}

@@ -68,7 +68,7 @@ test.describe("authenticated Zitadel release journey", () => {
       url.origin === new URL(LEARN).origin && url.pathname === "/dashboard",
     );
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByRole("button", { name: "تسجيل الخروج" })).toBeVisible();
+    await expect(page.getByText("تجربة student", { exact: true }).first()).toBeVisible();
 
     const sessionResponse = await page.request.get(`${LEARN}/api/auth/session`);
     expect(sessionResponse.ok()).toBe(true);

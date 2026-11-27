@@ -2,15 +2,11 @@ import Image from "next/image";
 import {
   ArrowLeft,
   ArrowUpLeft,
-  BadgeCheck,
-  BookOpen,
   Check,
   ChevronLeft,
-  CirclePlay,
   Headphones,
   MessageCircle,
   Quote,
-  Sparkles,
 } from "lucide-react";
 import { CourseCard } from "@/components/catalog";
 import { ButtonLink, Container, Eyebrow, SectionHeading } from "@/components/ui";
@@ -26,7 +22,6 @@ import {
   TEAM,
   TRAINING_AREAS,
   TRAINING_PROGRAMS,
-  TRUST_ITEMS,
   VALUE_PROPS,
 } from "@/lib/site-content";
 
@@ -55,53 +50,18 @@ export default async function HomePage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
 
-      <section className="relative isolate overflow-hidden bg-secondary text-white">
-        <Image src="/brand/hero-bg.jpg" alt="" fill priority sizes="100vw" className="-z-20 object-cover object-center" />
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(100deg,rgba(11,35,45,.97)_0%,rgba(11,35,45,.90)_46%,rgba(11,35,45,.52)_100%)]" />
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(235,132,43,.25),transparent_34%)]" />
-
-        <Container className="grid min-h-[calc(100svh-4.5rem)] items-center gap-10 py-12 lg:min-h-[44rem] lg:grid-cols-[1.2fr_.8fr] lg:py-20">
-          <div className="max-w-3xl animate-fade-in">
-            <Eyebrow icon={Sparkles}>تعليم مهني مصمم لواقع العمل</Eyebrow>
-            <h1 className="mt-6 text-[2.35rem] font-black leading-[1.25] tracking-[-.045em] text-white sm:text-5xl lg:text-[4.6rem]">
-              المعرفة التي تبدأ بها،
-              <span className="mt-1 block bg-gradient-to-l from-accent via-orange-300 to-primary-light bg-clip-text text-transparent">والأثر الذي تصنعه.</span>
-            </h1>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-white/75 sm:text-lg lg:text-xl lg:leading-9">
-              برامج تدريبية عملية يقودها خبراء، ومنصة تعلم واضحة ترافقك من اختيار الدورة حتى شهادة قابلة للتحقق.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <ButtonLink href="/courses" className="sm:min-w-44">
-                استكشف الدورات <ArrowLeft className="h-5 w-5" aria-hidden="true" />
-              </ButtonLink>
-              <ButtonLink href="/about" variant="light" className="sm:min-w-40">
-                تعرّف على المركز
-              </ButtonLink>
+      <section className="home-hero" aria-labelledby="home-heading">
+        <div className="home-hero-photo">
+          <Image src="/brand/hero-bg.jpg" alt="" fill preload sizes="(min-width: 768px) 54vw, 100vw" className="object-cover" />
+        </div>
+        <Container className="home-hero-inner">
+          <div className="home-hero-story">
+            <h1 id="home-heading">المعرفة التي تبدأ بها،<span>والأثر الذي تصنعه.</span></h1>
+            <p>برامج تدريبية عملية يقودها خبراء، ومنصة تعلم ترافقك من اختيار الدورة حتى الحصول على شهادة قابلة للتحقق.</p>
+            <div className="home-hero-actions">
+              <ButtonLink href="/courses">استكشف الدورات <ArrowLeft size={19} aria-hidden="true" /></ButtonLink>
+              <ButtonLink href="/about" variant="ghost">تعرّف على المركز</ButtonLink>
             </div>
-            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-white/70">
-              {TRUST_ITEMS.map((item) => (
-                <span key={item.label} className="inline-flex items-center gap-2">
-                  <item.icon className="h-4 w-4 text-accent" aria-hidden="true" /> {item.label}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative hidden min-h-[32rem] lg:block" aria-hidden="true">
-            <div className="absolute left-2 top-5 w-[20rem] rounded-[2rem] border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur-xl">
-              <div className="flex items-center justify-between">
-                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-accent text-secondary"><CirclePlay className="h-6 w-6" /></span>
-                <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/70">تعلّم مرن</span>
-              </div>
-              <p className="mt-12 text-sm text-white/60">رحلتك التعليمية</p>
-              <p className="mt-2 text-2xl font-black">مسار واضح، خطوة بخطوة</p>
-              <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full w-4/5 rounded-full bg-gradient-to-l from-accent to-primary" /></div>
-              <div className="mt-3 flex justify-between text-xs text-white/55"><span>تعلم</span><span>اختبار</span><span>شهادة</span></div>
-            </div>
-            <div className="absolute bottom-8 right-0 w-64 rounded-[1.75rem] border border-white/15 bg-secondary/70 p-5 shadow-2xl backdrop-blur-xl">
-              <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-xl bg-emerald-400/15 text-emerald-300"><BadgeCheck className="h-6 w-6" /></span><div><p className="text-xs text-white/55">الشهادة</p><p className="font-black">موثقة وقابلة للتحقق</p></div></div>
-            </div>
-            <div className="absolute bottom-28 left-0 grid h-24 w-24 animate-float place-items-center rounded-[1.75rem] border border-white/15 bg-white/10 backdrop-blur-xl"><BookOpen className="h-10 w-10 text-accent" /></div>
           </div>
         </Container>
       </section>
@@ -115,6 +75,22 @@ export default async function HomePage() {
               <span className="mt-1 hidden text-xs text-muted-foreground lg:block">{stat.detail}</span>
             </div>
           ))}
+        </Container>
+      </section>
+
+      <section className="section-shell" id="courses">
+        <Container>
+          <div className="featured-heading">
+            <SectionHeading align="start" eyebrow="دورات مختارة" title="اختر دورتك القادمة" description="برامج متنوعة بمستويات واضحة وأسعار معلنة، مع إمكانية التعلم والمتابعة من حساب واحد." />
+            <ButtonLink href="/courses" variant="ghost" className="shrink-0">عرض كل الدورات <ArrowLeft className="h-4 w-4" /></ButtonLink>
+          </div>
+          {featuredCourses.length > 0 ? (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {featuredCourses.map((course, index) => <CourseCard key={course.id} course={course} priority={index < 3} />)}
+            </div>
+          ) : (
+            <div className="card border-dashed p-8 text-center text-muted-foreground">يجري تحديث قائمة الدورات. يمكنك فتح الكتالوج للاطلاع على المتاح.</div>
+          )}
         </Container>
       </section>
 
@@ -158,22 +134,6 @@ export default async function HomePage() {
             </div>
             <ButtonLink href="/about" variant="ghost" className="mt-6">اكتشف قصة المركز <ArrowLeft className="h-4 w-4" /></ButtonLink>
           </div>
-        </Container>
-      </section>
-
-      <section className="section-shell" id="courses">
-        <Container>
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-            <SectionHeading align="start" eyebrow="دورات مختارة" title="ابدأ بما يناسب هدفك اليوم" description="برامج متنوعة بمستويات واضحة وأسعار معلنة، مع إمكانية التعلم والمتابعة من حساب واحد." />
-            <ButtonLink href="/courses" variant="ghost" className="mb-12 shrink-0">عرض كل الدورات <ArrowLeft className="h-4 w-4" /></ButtonLink>
-          </div>
-          {featuredCourses.length > 0 ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {featuredCourses.map((course, index) => <CourseCard key={course.id} course={course} priority={index < 3} />)}
-            </div>
-          ) : (
-            <div className="card border-dashed p-8 text-center text-muted-foreground">يجري تحديث قائمة الدورات. يمكنك فتح الكتالوج للاطلاع على المتاح.</div>
-          )}
         </Container>
       </section>
 
